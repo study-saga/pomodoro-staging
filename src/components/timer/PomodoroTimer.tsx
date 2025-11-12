@@ -42,6 +42,9 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const [hasBeenStarted, setHasBeenStarted] = useState(false);
   const [pausedTimeSeconds, setPausedTimeSeconds] = useState(0);
 
+  // Guard flag to prevent useEffect from interfering during user interactions
+  const isUserInteracting = useRef(false);
+
   const {
     seconds,
     minutes,
@@ -65,20 +68,26 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   }, [getTimerDuration, getExpiryTimestamp, restart]);
 
   const handleReset = useCallback(() => {
+    isUserInteracting.current = true;
     setHasBeenStarted(false);
     setPausedTimeSeconds(0);
     const duration = getTimerDuration(timerType);
     restart(getExpiryTimestamp(duration), false);
+    setTimeout(() => {
+      isUserInteracting.current = false;
+    }, 100);
   }, [timerType, getTimerDuration, getExpiryTimestamp, restart]);
 
   // Smart start/pause/resume handler
   const handleStartPauseResume = useCallback(() => {
+    isUserInteracting.current = true;
+
     if (isRunning) {
       // Currently running → Pause and save remaining time
       const remainingSeconds = minutes * 60 + seconds;
       setPausedTimeSeconds(remainingSeconds);
       pause();
-    } else if (hasBeenStarted) {
+    } else if (hasBeenStarted && pausedTimeSeconds > 0) {
       // Paused → Resume from saved time
       const newExpiry = getExpiryTimestamp(pausedTimeSeconds);
       restart(newExpiry, true);
@@ -87,6 +96,11 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       setHasBeenStarted(true);
       start();
     }
+
+    // Clear flag after state updates complete
+    setTimeout(() => {
+      isUserInteracting.current = false;
+    }, 100);
   }, [isRunning, hasBeenStarted, minutes, seconds, pausedTimeSeconds, pause, start, restart, getExpiryTimestamp]);
 
   // Read notification permission (don't request automatically)
@@ -98,7 +112,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
   // Update timer display when settings change (but not when just pausing/resuming)
   useEffect(() => {
-    if (!isRunning && !hasBeenStarted) {
+    if (!isRunning && !hasBeenStarted && !isUserInteracting.current) {
       const duration = getTimerDuration(timerType);
       restart(getExpiryTimestamp(duration), false);
     }
