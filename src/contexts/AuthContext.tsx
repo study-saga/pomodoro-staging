@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import type { DiscordSDK, DiscordSDKMock } from '@discord/embedded-app-sdk'
 import { authenticateDiscordUser, type DiscordUser } from '../lib/discordAuth'
 import { syncDiscordUserToSupabase, type AppUser } from '../lib/userSync'
+import { getEnvironment } from '../lib/environment'
+import { supabase } from '../lib/supabase'
 
 interface AuthContextType {
   // Authentication state
@@ -38,25 +40,53 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setLoading(true)
       setError(null)
 
-      console.log('[Auth] Starting authentication flow...')
+      const environment = getEnvironment()
+      console.log(`[Auth] Starting authentication flow in ${environment} mode...`)
 
-      // Step 1: Authenticate with Discord
-      const authResult = await authenticateDiscordUser()
+      if (environment === 'discord') {
+        // Discord Activities: Use Discord SDK authentication
+        console.log('[Auth] Using Discord SDK authentication')
+        const authResult = await authenticateDiscordUser()
+        console.log('[Auth] Discord authentication successful')
 
-      console.log('[Auth] Discord authentication successful')
+        const user = await syncDiscordUserToSupabase(authResult.discordUser)
+        console.log('[Auth] User synced to database')
 
-      // Step 2: Sync to Supabase database
-      const user = await syncDiscordUserToSupabase(authResult.discordUser)
+        setDiscordUser(authResult.discordUser)
+        setAppUser(user)
+        setDiscordSdk(authResult.discordSdk)
+        setAuthenticated(true)
+        console.log('[Auth] Authentication complete!')
+      } else {
+        // Browser: Use Supabase Auth
+        console.log('[Auth] Using Supabase Auth (browser mode)')
+        const { data: { session } } = await supabase.auth.getSession()
 
-      console.log('[Auth] User synced to database')
+        if (session?.user) {
+          console.log('[Auth] Supabase session found')
 
-      // Step 3: Set state
-      setDiscordUser(authResult.discordUser)
-      setAppUser(user)
-      setDiscordSdk(authResult.discordSdk)
-      setAuthenticated(true)
+          // Extract Discord data from OAuth metadata
+          const metadata = session.user.user_metadata
+          const discordUser: DiscordUser = {
+            id: metadata.provider_id || metadata.sub,
+            username: metadata.custom_claims?.global_name || metadata.full_name || metadata.name || 'User',
+            discriminator: '0',
+            avatar: metadata.avatar_url,
+            global_name: metadata.custom_claims?.global_name || metadata.full_name,
+          }
 
-      console.log('[Auth] Authentication complete!')
+          const user = await syncDiscordUserToSupabase(discordUser)
+          console.log('[Auth] User synced to database')
+
+          setDiscordUser(discordUser)
+          setAppUser(user)
+          setAuthenticated(true)
+          console.log('[Auth] Authentication complete!')
+        } else {
+          console.log('[Auth] No session found - user needs to log in')
+          setAuthenticated(false)
+        }
+      }
     } catch (err) {
       console.error('[Auth] Authentication failed:', err)
       setError(err instanceof Error ? err.message : 'Authentication failed')
@@ -80,6 +110,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Authenticate on mount
   useEffect(() => {
     authenticateUser()
+
+    // Listen for Supabase auth state changes (browser mode only)
+    if (getEnvironment() === 'browser') {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session) {
+          console.log('[Auth] Supabase auth state changed, re-authenticating')
+          authenticateUser()
+        } else {
+          console.log('[Auth] User signed out')
+          setAuthenticated(false)
+          setDiscordUser(null)
+          setAppUser(null)
+        }
+      })
+
+      return () => {
+        subscription.unsubscribe()
+      }
+    }
   }, [])
 
   const value: AuthContextType = {
