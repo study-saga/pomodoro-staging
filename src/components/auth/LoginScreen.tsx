@@ -11,10 +11,13 @@ export function LoginScreen() {
     setError(null);
 
     try {
+      // Use current origin for redirect (works in both dev and production)
+      const redirectUrl = `${window.location.protocol}//${window.location.host}`;
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'discord',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: redirectUrl,
           scopes: 'identify guilds',
         },
       });
