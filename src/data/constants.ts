@@ -1,7 +1,7 @@
-export const R2_BASE_URL = 'https://pub-7e068d8c526a459ea67ff46fe3762059.r2.dev';
-export const R2_MUSIC_BASE_URL = `${R2_BASE_URL}/music`;
-export const R2_EFFECTS_BASE_URL = `${R2_BASE_URL}/effects`;
-export const R2_BACKGROUNDS_BASE_URL = `${R2_BASE_URL}/backgrounds`;
+// Use Discord proxy paths instead of direct R2 URLs to comply with CSP
+export const R2_MUSIC_BASE_URL = '/r2-audio';
+export const R2_EFFECTS_BASE_URL = '/r2-effects';
+export const R2_BACKGROUNDS_BASE_URL = '/r2-backgrounds';
 
 export const AMBIENT_SOUNDS = [
   { id: 'rain', name: 'Rain', file: `${R2_EFFECTS_BASE_URL}/rain.mp3` },

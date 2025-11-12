@@ -116,9 +116,8 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
   };
 
   const getTrackUrl = (track: Track) => {
-    if (track.file.startsWith('/r2-audio/')) {
-      return `${R2_MUSIC_BASE_URL}${track.file.replace('/r2-audio', '')}`;
-    }
+    // Track files already use Discord proxy paths (/r2-audio/...)
+    // No need to convert them - just return as-is for CSP compliance
     return track.file;
   };
 
