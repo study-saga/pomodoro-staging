@@ -4,7 +4,7 @@ import ReactHowler from 'react-howler';
 import { Play, Pause, SkipBack, SkipForward, Volume2, ImageIcon } from 'lucide-react';
 import type { Track } from '../../types';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import { R2_MUSIC_BASE_URL, BACKGROUNDS } from '../../data/constants';
+import { BACKGROUNDS } from '../../data/constants';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import lofiTracks from '../../data/lofi.json';
 import synthwaveTracks from '../../data/synthwave.json';
