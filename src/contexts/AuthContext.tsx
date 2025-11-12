@@ -109,12 +109,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Authenticate on mount
   useEffect(() => {
     const environment = getEnvironment()
+    console.log('[Auth] Environment detected:', environment)
+    console.log('[Auth] Current URL:', window.location.href)
 
     if (environment === 'browser') {
       // Browser mode: Set up auth state listener BEFORE initial auth
       // This ensures OAuth callback tokens in URL hash are processed first
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log(`[Auth] Auth state change: ${event}`)
+        console.log(`[Auth] Auth state change: ${event}`, session ? 'with session' : 'without session')
 
         if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
           // Session established (either from storage or OAuth callback)
