@@ -108,25 +108,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Authenticate on mount
   useEffect(() => {
-    authenticateUser()
+    const environment = getEnvironment()
 
-    // Listen for Supabase auth state changes (browser mode only)
-    if (getEnvironment() === 'browser') {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (session) {
-          console.log('[Auth] Supabase auth state changed, re-authenticating')
-          authenticateUser()
-        } else {
+    if (environment === 'browser') {
+      // Browser mode: Set up auth state listener BEFORE initial auth
+      // This ensures OAuth callback tokens in URL hash are processed first
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log(`[Auth] Auth state change: ${event}`)
+
+        if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+          // Session established (either from storage or OAuth callback)
+          if (session) {
+            console.log('[Auth] Session found, authenticating user')
+            await authenticateUser()
+          } else {
+            console.log('[Auth] No session found')
+            setAuthenticated(false)
+            setLoading(false)
+          }
+        } else if (event === 'SIGNED_OUT') {
           console.log('[Auth] User signed out')
           setAuthenticated(false)
           setDiscordUser(null)
           setAppUser(null)
+          setLoading(false)
         }
       })
 
       return () => {
         subscription.unsubscribe()
       }
+    } else {
+      // Discord mode: Proceed with immediate authentication
+      authenticateUser()
     }
   }, [])
 
