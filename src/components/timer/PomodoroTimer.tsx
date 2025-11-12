@@ -51,7 +51,6 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     isRunning,
     start,
     pause,
-    resume,
     restart,
   } = useTimer({
     expiryTimestamp: getExpiryTimestamp(getTimerDuration('pomodoro')),
