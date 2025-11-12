@@ -72,7 +72,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             username: metadata.custom_claims?.global_name || metadata.full_name || metadata.name || 'User',
             discriminator: '0',
             avatar: metadata.avatar_url,
-            global_name: metadata.custom_claims?.global_name || metadata.full_name,
           }
 
           const user = await syncDiscordUserToSupabase(discordUser)
