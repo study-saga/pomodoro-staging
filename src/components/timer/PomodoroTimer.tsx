@@ -59,11 +59,18 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   });
 
   const switchTimer = useCallback((type: TimerType, autoStart = false) => {
+    isUserInteracting.current = true;
+
     setTimerType(type);
-    setHasBeenStarted(false);
+    setHasBeenStarted(autoStart); // Set true if auto-starting, false otherwise
     setPausedTimeSeconds(0);
     const duration = getTimerDuration(type);
     restart(getExpiryTimestamp(duration), autoStart);
+
+    // Clear guard after state updates complete
+    setTimeout(() => {
+      isUserInteracting.current = false;
+    }, 100);
   }, [getTimerDuration, getExpiryTimestamp, restart]);
 
   const handleReset = useCallback(() => {
