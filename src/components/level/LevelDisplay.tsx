@@ -49,7 +49,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
   };
 
   return (
-    <div className={`fixed top-4 left-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 ${isMobile ? 'p-3 min-w-[200px]' : 'p-4 min-w-[280px]'}`}>
+    <div className={`fixed top-4 left-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 ${isMobile ? 'p-3 min-w-[200px]' : 'p-4 min-w-[280px]'} hidden sm:block transition-all`}>
       <div className="space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between">
