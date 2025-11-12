@@ -44,6 +44,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     isRunning,
     start,
     pause,
+    resume,
     restart,
   } = useTimer({
     expiryTimestamp: getExpiryTimestamp(getTimerDuration('pomodoro')),
@@ -254,8 +255,8 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       {/* Control Buttons */}
       <div className="flex gap-4">
         <button
-          onClick={isRunning ? pause : start}
-          aria-label={isRunning ? 'Pause timer' : 'Start timer'}
+          onClick={isRunning ? pause : resume}
+          aria-label={isRunning ? 'Pause timer' : 'Resume timer'}
           className="px-8 py-3 bg-white text-gray-900 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg"
         >
           {isRunning ? 'Pause' : 'Start'}
