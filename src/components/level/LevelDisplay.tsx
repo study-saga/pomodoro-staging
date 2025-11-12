@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import {
@@ -25,6 +25,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
   } = useSettingsStore();
 
   const { isMobile } = useDeviceType();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   if (!levelSystemEnabled) return null;
 
@@ -48,8 +49,31 @@ export const LevelDisplay = memo(function LevelDisplay() {
     window.location.reload();
   };
 
-  return (
-    <div className={`fixed top-4 left-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 ${isMobile ? 'p-3 min-w-[200px]' : 'p-4 min-w-[280px]'} hidden sm:block transition-all`}>
+  // Compact badge for medium screens (768-1024px)
+  const CompactBadge = () => (
+    <button
+      onClick={() => setIsExpanded(!isExpanded)}
+      className="fixed top-4 left-4 bg-black/60 backdrop-blur-md rounded-full border border-white/10 px-3 py-2 hover:bg-black/70 transition-all cursor-pointer z-50"
+      aria-label="Toggle stats"
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-lg">{badge}</span>
+        <div className="flex flex-col items-start min-w-[60px]">
+          <span className="text-xs text-white font-medium">Lv {level}</span>
+          <div className="w-full bg-gray-700/50 rounded-full h-1 overflow-hidden">
+            <div
+              className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+
+  // Full stats card
+  const FullCard = () => (
+    <div className={`fixed top-4 left-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 ${isMobile ? 'p-3 min-w-[200px]' : 'p-4 min-w-[280px]'} transition-all z-50`}>
       <div className="space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -131,5 +155,17 @@ export const LevelDisplay = memo(function LevelDisplay() {
         )}
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {/* Hidden on <768px, Compact badge on 768-1024px, Full card on 1024px+ */}
+      <div className="hidden md:block lg:hidden">
+        {isExpanded ? <FullCard /> : <CompactBadge />}
+      </div>
+      <div className="hidden lg:block">
+        <FullCard />
+      </div>
+    </>
   );
 });
