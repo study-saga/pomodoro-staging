@@ -67,11 +67,20 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     const duration = getTimerDuration(type);
     restart(getExpiryTimestamp(duration), autoStart);
 
+    // Explicitly call start() if autoStart is true to ensure timer runs
+    // This is needed because restart()'s autoStart param may not always work reliably
+    if (autoStart) {
+      // Use a small delay to ensure restart completes first
+      setTimeout(() => {
+        start();
+      }, 10);
+    }
+
     // Clear guard after state updates complete
     setTimeout(() => {
       isUserInteracting.current = false;
     }, 100);
-  }, [getTimerDuration, getExpiryTimestamp, restart]);
+  }, [getTimerDuration, getExpiryTimestamp, restart, start]);
 
   const handleReset = useCallback(() => {
     isUserInteracting.current = true;
