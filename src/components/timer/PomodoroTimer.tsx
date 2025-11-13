@@ -265,26 +265,32 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       }
 
       // Auto-start break if enabled (use fresh value from store)
-      if (currentSettings.autoStartBreaks) {
-        console.log('[Timer] Auto-start breaks ENABLED → starting break automatically');
-        switchTimer(nextType, true);
-      } else {
-        console.log('[Timer] Auto-start breaks DISABLED → break ready but not started');
-        switchTimer(nextType, false);
-      }
+      // Use setTimeout to ensure timer state has fully reset after onExpire
+      setTimeout(() => {
+        if (currentSettings.autoStartBreaks) {
+          console.log('[Timer] Auto-start breaks ENABLED → starting break automatically');
+          switchTimer(nextType, true);
+        } else {
+          console.log('[Timer] Auto-start breaks DISABLED → break ready but not started');
+          switchTimer(nextType, false);
+        }
+      }, 100);
     } else {
       // After a break, start Pomodoro
       nextType = 'pomodoro';
       console.log('[Timer] Break complete! Next: Pomodoro');
 
       // Auto-start pomodoro if enabled (use fresh value from store)
-      if (currentSettings.autoStartPomodoros) {
-        console.log('[Timer] Auto-start pomodoros ENABLED → starting pomodoro automatically');
-        switchTimer(nextType, true);
-      } else {
-        console.log('[Timer] Auto-start pomodoros DISABLED → pomodoro ready but not started');
-        switchTimer(nextType, false);
-      }
+      // Use setTimeout to ensure timer state has fully reset after onExpire
+      setTimeout(() => {
+        if (currentSettings.autoStartPomodoros) {
+          console.log('[Timer] Auto-start pomodoros ENABLED → starting pomodoro automatically');
+          switchTimer(nextType, true);
+        } else {
+          console.log('[Timer] Auto-start pomodoros DISABLED → pomodoro ready but not started');
+          switchTimer(nextType, false);
+        }
+      }, 100);
     }
   };
 
