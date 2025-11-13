@@ -14,8 +14,6 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const {
     timers,
     pomodorosBeforeLongBreak,
-    autoStartBreaks,
-    autoStartPomodoros,
     addXP,
     soundEnabled,
     volume,
@@ -214,6 +212,11 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       setPomodoroCount((prev) => prev + 1);
     }
 
+    // CRITICAL: Read fresh auto-start settings from store to avoid stale closure
+    // This function is passed to useTimer which only initializes once,
+    // so we must read current settings instead of relying on captured values
+    const currentSettings = useSettingsStore.getState();
+
     // Determine next timer type
     let nextType: TimerType;
     if (timerType === 'pomodoro') {
@@ -224,19 +227,24 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
         nextType = 'shortBreak';
       }
 
-      // Auto-start break if enabled
-      if (autoStartBreaks) {
+      // Auto-start break if enabled (use fresh value from store)
+      if (currentSettings.autoStartBreaks) {
+        console.log('[Timer] Auto-starting break');
         switchTimer(nextType, true);
       } else {
+        console.log('[Timer] Break ready (auto-start disabled)');
         switchTimer(nextType, false);
       }
     } else {
       // After a break, start Pomodoro
       nextType = 'pomodoro';
 
-      if (autoStartPomodoros) {
+      // Auto-start pomodoro if enabled (use fresh value from store)
+      if (currentSettings.autoStartPomodoros) {
+        console.log('[Timer] Auto-starting pomodoro');
         switchTimer(nextType, true);
       } else {
+        console.log('[Timer] Pomodoro ready (auto-start disabled)');
         switchTimer(nextType, false);
       }
     }

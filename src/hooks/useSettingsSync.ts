@@ -31,6 +31,7 @@ export function useSettingsSync() {
   const isDirtyRef = useRef(false)
   const lastSyncedStateRef = useRef<string>('')
   const periodicSyncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const loadGracePeriodRef = useRef(false) // Prevents false dirty flags during load
 
   /**
    * Get fresh store state (avoids stale closure)
@@ -194,6 +195,7 @@ export function useSettingsSync() {
       isInitialLoadRef.current = true
       prevUserIdRef.current = appUser.id
       isDirtyRef.current = false
+      loadGracePeriodRef.current = false // Will be set to true after load
     }
 
     if (!isInitialLoadRef.current) return
@@ -247,12 +249,19 @@ export function useSettingsSync() {
     isDirtyRef.current = false
     isInitialLoadRef.current = false
 
+    // Grace period: prevent false dirty flags for 100ms after load
+    // This gives Zustand time to batch all state updates and settle
+    loadGracePeriodRef.current = true
+    setTimeout(() => {
+      loadGracePeriodRef.current = false
+    }, 100)
+
     console.log('[Settings Sync] ✓ Loaded from database')
   }, [appUser?.id])
 
   // Track changes and set dirty flag (does NOT sync immediately)
   useEffect(() => {
-    if (isInitialLoadRef.current || !appUser) return
+    if (isInitialLoadRef.current || !appUser || loadGracePeriodRef.current) return
 
     const currentState = serializeSettings()
 
