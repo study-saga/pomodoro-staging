@@ -59,12 +59,15 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const switchTimer = useCallback((type: TimerType, autoStart = false) => {
     isUserInteracting.current = true;
 
+    console.log(`[Timer] Switching to ${type}, autoStart=${autoStart}`);
+
     setTimerType(type);
     setHasBeenStarted(autoStart); // Set true if auto-starting, false otherwise
     setPausedTimeSeconds(0);
 
     // CRITICAL: Read fresh timer durations from store to avoid stale closure
-    // getTimerDuration() uses captured timers from component mount
+    // getTimerDuration() uses captured timers from component mount, so we must
+    // read directly from store at call time to get current values
     const currentSettings = useSettingsStore.getState();
     let duration: number;
     switch (type) {
@@ -79,21 +82,27 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
         break;
     }
 
-    restart(getExpiryTimestamp(duration), autoStart);
+    console.log(`[Timer] Duration for ${type}: ${duration} seconds (${duration / 60} minutes)`);
 
-    // Explicitly call start() if autoStart is true to ensure timer runs
-    // This is needed because restart()'s autoStart param may not always work reliably
+    const expiryTimestamp = getExpiryTimestamp(duration);
+
+    // Restart timer with new expiry time
+    restart(expiryTimestamp, false);
+
+    // If auto-starting, explicitly call start() after restart completes
     if (autoStart) {
-      // Use a small delay to ensure restart completes first
+      // Small delay to ensure restart() has completed updating internal state
+      console.log(`[Timer] Starting timer in 50ms...`);
       setTimeout(() => {
         start();
-      }, 10);
+        console.log(`[Timer] Timer started for ${type}`);
+      }, 50);
     }
 
     // Clear guard after state updates complete
     setTimeout(() => {
       isUserInteracting.current = false;
-    }, 100);
+    }, 150);
   }, [getExpiryTimestamp, restart, start]);
 
   const handleReset = useCallback(() => {
@@ -233,34 +242,45 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     // so we must read current settings instead of relying on captured values
     const currentSettings = useSettingsStore.getState();
 
+    console.log('[Timer] Current settings:', {
+      autoStartBreaks: currentSettings.autoStartBreaks,
+      autoStartPomodoros: currentSettings.autoStartPomodoros,
+      pomodoroCount: pomodoroCount,
+      pomodorosBeforeLongBreak: pomodorosBeforeLongBreak
+    });
+
     // Determine next timer type
     let nextType: TimerType;
     if (timerType === 'pomodoro') {
       // Check if it's time for a long break
-      if ((pomodoroCount + 1) % pomodorosBeforeLongBreak === 0) {
+      const isLongBreakTime = (pomodoroCount + 1) % pomodorosBeforeLongBreak === 0;
+      if (isLongBreakTime) {
         nextType = 'longBreak';
+        console.log('[Timer] Pomodoro complete! Next: Long Break (completed', pomodoroCount + 1, 'pomodoros)');
       } else {
         nextType = 'shortBreak';
+        console.log('[Timer] Pomodoro complete! Next: Short Break (completed', pomodoroCount + 1, 'pomodoros)');
       }
 
       // Auto-start break if enabled (use fresh value from store)
       if (currentSettings.autoStartBreaks) {
-        console.log('[Timer] Auto-starting break');
+        console.log('[Timer] Auto-start breaks ENABLED → starting break automatically');
         switchTimer(nextType, true);
       } else {
-        console.log('[Timer] Break ready (auto-start disabled)');
+        console.log('[Timer] Auto-start breaks DISABLED → break ready but not started');
         switchTimer(nextType, false);
       }
     } else {
       // After a break, start Pomodoro
       nextType = 'pomodoro';
+      console.log('[Timer] Break complete! Next: Pomodoro');
 
       // Auto-start pomodoro if enabled (use fresh value from store)
       if (currentSettings.autoStartPomodoros) {
-        console.log('[Timer] Auto-starting pomodoro');
+        console.log('[Timer] Auto-start pomodoros ENABLED → starting pomodoro automatically');
         switchTimer(nextType, true);
       } else {
-        console.log('[Timer] Pomodoro ready (auto-start disabled)');
+        console.log('[Timer] Auto-start pomodoros DISABLED → pomodoro ready but not started');
         switchTimer(nextType, false);
       }
     }
