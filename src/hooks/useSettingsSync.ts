@@ -229,34 +229,23 @@ export function useSettingsSync() {
     // Load level system preference
     settings.setLevelSystemEnabled(appUser.level_system_enabled)
 
-    // Set initial synced state from appUser (not from store)
-    // This ensures we capture the exact values we just loaded, avoiding stale store reads
-    lastSyncedStateRef.current = JSON.stringify({
-      timer_pomodoro_minutes: appUser.timer_pomodoro_minutes,
-      timer_short_break_minutes: appUser.timer_short_break_minutes,
-      timer_long_break_minutes: appUser.timer_long_break_minutes,
-      pomodoros_before_long_break: appUser.pomodoros_before_long_break,
-      auto_start_breaks: appUser.auto_start_breaks,
-      auto_start_pomodoros: appUser.auto_start_pomodoros,
-      background_id: appUser.background_id,
-      playlist: appUser.playlist,
-      ambient_volumes: appUser.ambient_volumes,
-      sound_enabled: appUser.sound_enabled,
-      volume: appUser.volume,
-      music_volume: appUser.music_volume,
-      level_system_enabled: appUser.level_system_enabled
-    })
-    isDirtyRef.current = false
-    isInitialLoadRef.current = false
+    // CRITICAL: Set initial synced state from STORE (not from appUser)
+    // After loading all settings into store, serialize from actual store state
+    // This ensures lastSyncedState exactly matches what's in the store
+    // If we serialize from appUser, any default values in store will cause false dirty flags
 
-    // Grace period: prevent false dirty flags for 100ms after load
-    // This gives Zustand time to batch all state updates and settle
+    // Grace period: wait for Zustand to batch all state updates before serializing
+    // This prevents false dirty flags from partially updated state
     loadGracePeriodRef.current = true
     setTimeout(() => {
+      // Serialize from store AFTER all updates have settled
+      lastSyncedStateRef.current = serializeSettings()
+      isDirtyRef.current = false
       loadGracePeriodRef.current = false
+      console.log('[Settings Sync] ✓ Loaded from database and captured store state')
     }, 100)
 
-    console.log('[Settings Sync] ✓ Loaded from database')
+    isInitialLoadRef.current = false
   }, [appUser?.id])
 
   // Track changes and set dirty flag (does NOT sync immediately)
@@ -269,6 +258,25 @@ export function useSettingsSync() {
     if (currentState !== lastSyncedStateRef.current) {
       isDirtyRef.current = true
       console.log('[Settings Sync] Settings changed - marked dirty (will sync on trigger)')
+
+      // Debug: show what changed (only in development)
+      if (import.meta.env.DEV) {
+        try {
+          const current = JSON.parse(currentState)
+          const last = JSON.parse(lastSyncedStateRef.current)
+          const changes: string[] = []
+          Object.keys(current).forEach(key => {
+            if (JSON.stringify(current[key]) !== JSON.stringify(last[key])) {
+              changes.push(`${key}: ${JSON.stringify(last[key])} → ${JSON.stringify(current[key])}`)
+            }
+          })
+          if (changes.length > 0) {
+            console.log('[Settings Sync] Changed fields:', changes.join(', '))
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
     }
   }, [
     appUser?.id,
