@@ -29,7 +29,7 @@ export function useSettingsSync() {
   const prevUserIdRef = useRef<string | undefined>(undefined)
   const isDirtyRef = useRef(false)
   const lastSyncedStateRef = useRef<string>('')
-  const periodicSyncIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const periodicSyncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Serialize current settings for comparison
   const serializeSettings = () => {
