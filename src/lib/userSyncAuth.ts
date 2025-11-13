@@ -415,7 +415,44 @@ export async function isRewardUnlocked(
 }
 
 /**
- * Update username with cooldown enforcement
+ * Update username with cooldown enforcement and optional XP cost
+ *
+ * SECURITY: Uses server-side validation to:
+ * - Enforce 7-day cooldown between username changes
+ * - Allow early change for 50 XP (atomically deducted)
+ * - Validate username length and content
+ * - Prevent bypassing XP cost via direct database updates
+ *
+ * @param userId - User's UUID
+ * @param newUsername - New username (max 20 characters)
+ * @param forceWithXP - If true, spend 50 XP to bypass cooldown
+ * @returns Updated user object
+ */
+export async function updateUsernameSecure(
+  userId: string,
+  newUsername: string,
+  forceWithXP: boolean = false
+): Promise<AppUser> {
+  console.log(`[User Sync] Updating username for user ${userId} to: ${newUsername} (forceWithXP: ${forceWithXP})`)
+
+  const { data, error } = await supabase.rpc('update_username', {
+    p_user_id: userId,
+    p_new_username: newUsername,
+    p_force_with_xp: forceWithXP
+  })
+
+  if (error) {
+    console.error('[User Sync] Error updating username:', error)
+    throw new Error(`Failed to update username: ${error.message}`)
+  }
+
+  console.log('[User Sync] Username updated successfully')
+  return data as AppUser
+}
+
+/**
+ * Update username with cooldown enforcement (LEGACY)
+ * @deprecated Use updateUsernameSecure instead
  */
 export async function updateUsername(
   userId: string,
