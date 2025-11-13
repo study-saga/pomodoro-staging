@@ -83,14 +83,22 @@ export async function updateUserSettings(
 }
 
 /**
- * Update user preferences AND all level/stats data atomically
- * Uses RPC function for atomic updates with authorization check
- * Syncs ALL user data for complete cross-device synchronization
+ * Update user settings (CLIENT-CONTROLLED)
+ *
+ * SECURITY: Only syncs settings that users can safely control.
+ * Does NOT sync XP, levels, or stats (those are server-controlled).
+ *
+ * Stats are updated ONLY through server-validated endpoints:
+ * - atomic_save_completed_pomodoro() - When user completes a pomodoro
+ * - increment_user_xp() - Server-controlled XP updates
+ * - increment_pomodoro_totals() - Server-controlled stat updates
+ *
+ * This prevents users from cheating by setting arbitrary XP/levels.
  */
 export async function updateUserPreferences(
   userId: string,
   preferences: {
-    // Timer preferences (6 fields)
+    // Timer preferences (6 fields) - SAFE to sync from client
     timer_pomodoro_minutes?: number
     timer_short_break_minutes?: number
     timer_long_break_minutes?: number
@@ -98,41 +106,24 @@ export async function updateUserPreferences(
     auto_start_breaks?: boolean
     auto_start_pomodoros?: boolean
 
-    // Visual preferences (3 fields)
+    // Visual preferences (3 fields) - SAFE to sync from client
     background_id?: string
     playlist?: 'lofi' | 'synthwave'
     ambient_volumes?: Record<string, number>
 
-    // Audio preferences (3 fields)
+    // Audio preferences (3 fields) - SAFE to sync from client
     sound_enabled?: boolean
     volume?: number
     music_volume?: number
 
-    // System preferences (1 field)
+    // System preferences (2 fields) - SAFE to sync from client
     level_system_enabled?: boolean
-
-    // Level system data (7 fields)
-    xp?: number
-    level?: number
-    prestige_level?: number
-    total_pomodoros?: number
-    total_study_minutes?: number
-    username?: string
-    level_path?: 'elf' | 'human'
-
-    // Milestone tracking (2 fields)
-    total_unique_days?: number
-    last_pomodoro_date?: string | null
-
-    // Login tracking (3 fields)
-    total_login_days?: number
-    consecutive_login_days?: number
-    last_login_date?: string | null
+    level_path?: 'elf' | 'human'  // Visual preference only
   }
 ): Promise<AppUser> {
-  console.log(`[User Sync] Updating ALL user data for user ${userId}`)
+  console.log(`[User Sync] Updating user settings for user ${userId}`)
 
-  const { data, error } = await supabase.rpc('update_user_preferences', {
+  const { data, error } = await supabase.rpc('update_user_settings', {
     p_user_id: userId,
 
     // Timer preferences
@@ -155,32 +146,15 @@ export async function updateUserPreferences(
 
     // System preferences
     p_level_system_enabled: preferences.level_system_enabled ?? null,
-
-    // Level system data
-    p_xp: preferences.xp ?? null,
-    p_level: preferences.level ?? null,
-    p_prestige_level: preferences.prestige_level ?? null,
-    p_total_pomodoros: preferences.total_pomodoros ?? null,
-    p_total_study_minutes: preferences.total_study_minutes ?? null,
-    p_username: preferences.username ?? null,
-    p_level_path: preferences.level_path ?? null,
-
-    // Milestone tracking
-    p_total_unique_days: preferences.total_unique_days ?? null,
-    p_last_pomodoro_date: preferences.last_pomodoro_date ?? null,
-
-    // Login tracking
-    p_total_login_days: preferences.total_login_days ?? null,
-    p_consecutive_login_days: preferences.consecutive_login_days ?? null,
-    p_last_login_date: preferences.last_login_date ?? null
+    p_level_path: preferences.level_path ?? null
   })
 
   if (error) {
-    console.error('[User Sync] Error updating user data:', error)
-    throw new Error(`Failed to update user data: ${error.message}`)
+    console.error('[User Sync] Error updating settings:', error)
+    throw new Error(`Failed to update settings: ${error.message}`)
   }
 
-  console.log('[User Sync] All user data updated successfully')
+  console.log('[User Sync] Settings updated successfully')
   return data as AppUser
 }
 
