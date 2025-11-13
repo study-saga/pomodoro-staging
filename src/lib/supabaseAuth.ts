@@ -91,8 +91,9 @@ export async function signInWithDiscord(): Promise<void> {
 
 /**
  * Fetch or create app user profile
+ * Exported for use in auth state change listeners
  */
-async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
+export async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
   console.log('[Supabase Auth] Fetching app user for auth ID:', authUser.id)
 
   // Extract Discord data from user metadata
