@@ -1,3 +1,4 @@
+// Direct R2 URLs - saves Vercel bandwidth by loading media directly from Cloudflare R2
 export const R2_BASE_URL = 'https://pub-7e068d8c526a459ea67ff46fe3762059.r2.dev';
 export const R2_MUSIC_BASE_URL = `${R2_BASE_URL}/music`;
 export const R2_EFFECTS_BASE_URL = `${R2_BASE_URL}/effects`;
