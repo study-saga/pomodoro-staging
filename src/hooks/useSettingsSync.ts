@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { updateUserPreferences } from '../lib/userSyncAuth'
+import { supabase } from '../lib/supabase'
 
 /**
  * Professional Settings Synchronization Hook
@@ -48,6 +49,73 @@ export function useSettingsSync() {
       music_volume: settings.musicVolume,
       level_system_enabled: settings.levelSystemEnabled
     })
+  }
+
+  /**
+   * Synchronous sync using fetch with keepalive for unload/unmount scenarios
+   * This ensures the request completes even if the page/component is closing
+   */
+  const syncSynchronously = (reason: string) => {
+    if (!appUser || !isDirtyRef.current) return
+
+    console.log(`[Settings Sync] Syncing synchronously (reason: ${reason})`)
+
+    // Get auth session for JWT token
+    const getSessionAndSync = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) {
+          console.warn('[Settings Sync] No session token - cannot sync')
+          return
+        }
+
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+        // Prepare RPC payload
+        const payload = {
+          p_user_id: appUser.id,
+          p_timer_pomodoro_minutes: settings.timers.pomodoro,
+          p_timer_short_break_minutes: settings.timers.shortBreak,
+          p_timer_long_break_minutes: settings.timers.longBreak,
+          p_pomodoros_before_long_break: settings.pomodorosBeforeLongBreak,
+          p_auto_start_breaks: settings.autoStartBreaks,
+          p_auto_start_pomodoros: settings.autoStartPomodoros,
+          p_background_id: settings.background,
+          p_playlist: settings.playlist,
+          p_ambient_volumes: settings.ambientVolumes,
+          p_sound_enabled: settings.soundEnabled,
+          p_volume: settings.volume,
+          p_music_volume: settings.musicVolume,
+          p_level_system_enabled: settings.levelSystemEnabled
+        }
+
+        // Use fetch with keepalive to ensure request completes even on page unload
+        fetch(`${supabaseUrl}/rest/v1/rpc/update_user_preferences`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseAnonKey,
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify(payload),
+          keepalive: true  // Critical: ensures request completes on unload
+        }).then(() => {
+          // Update state on success (won't run if page already unloaded - that's okay)
+          lastSyncedStateRef.current = serializeSettings()
+          isDirtyRef.current = false
+          console.log('[Settings Sync] ✓ Synced synchronously')
+        }).catch((error) => {
+          // Log error but don't retry (page is closing anyway)
+          console.error('[Settings Sync] Synchronous sync failed:', error)
+        })
+      } catch (error) {
+        console.error('[Settings Sync] Failed to get session for sync:', error)
+      }
+    }
+
+    // Fire and forget - don't await
+    getSessionAndSync()
   }
 
   // Sync function - only called when needed
@@ -173,11 +241,11 @@ export function useSettingsSync() {
       }
     }
 
-    // 2. Sync on page unload (less reliable but still useful)
+    // 2. Sync on page unload using fetch with keepalive
     const handleBeforeUnload = () => {
       if (isDirtyRef.current) {
-        // Sync synchronously on unload (beacon API would be better but keep it simple)
-        syncToDatabase('page-unload')
+        // Use synchronous sync with keepalive to ensure completion even as page closes
+        syncSynchronously('page-unload')
       }
     }
 
@@ -201,9 +269,10 @@ export function useSettingsSync() {
         clearInterval(periodicSyncIntervalRef.current)
       }
 
-      // Final sync on unmount if dirty
-      if (isDirtyRef.current) {
-        syncToDatabase('component-unmount')
+      // Final sync on unmount using synchronous fetch with keepalive
+      // React cleanup is synchronous, so we use fetch with keepalive instead of async/await
+      if (isDirtyRef.current && appUser) {
+        syncSynchronously('component-unmount')
       }
     }
   }, [appUser?.id])
