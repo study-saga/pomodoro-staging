@@ -20,15 +20,16 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   } = useSettingsStore();
 
   const getTimerDuration = useCallback((type: TimerType) => {
+    const currentSettings = useSettingsStore.getState();
     switch (type) {
       case 'pomodoro':
-        return timers.pomodoro * 60;
+        return currentSettings.timers.pomodoro * 60;
       case 'shortBreak':
-        return timers.shortBreak * 60;
+        return currentSettings.timers.shortBreak * 60;
       case 'longBreak':
-        return timers.longBreak * 60;
+        return currentSettings.timers.longBreak * 60;
     }
-  }, [timers]);
+  }, []);
 
   const getExpiryTimestamp = useCallback((seconds: number) => {
     const time = new Date();
@@ -51,7 +52,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     pause,
     restart,
   } = useTimer({
-    expiryTimestamp: getExpiryTimestamp(getTimerDuration('pomodoro')),
+    expiryTimestamp: getExpiryTimestamp(getTimerDuration(timerType)),
     onExpire: () => handleTimerComplete(),
     autoStart: false,
   });
@@ -61,23 +62,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
     console.log(`[Timer] Switching to ${type}, autoStart=${autoStart}`);
 
-    // CRITICAL: Read fresh timer durations from store to avoid stale closure
-    // getTimerDuration() uses captured timers from component mount, so we must
-    // read directly from store at call time to get current values
-    const currentSettings = useSettingsStore.getState();
-    let duration: number;
-    switch (type) {
-      case 'pomodoro':
-        duration = currentSettings.timers.pomodoro * 60;
-        break;
-      case 'shortBreak':
-        duration = currentSettings.timers.shortBreak * 60;
-        break;
-      case 'longBreak':
-        duration = currentSettings.timers.longBreak * 60;
-        break;
-    }
-
+    const duration = getTimerDuration(type);
     console.log(`[Timer] Duration for ${type}: ${duration} seconds (${duration / 60} minutes)`);
 
     if (duration <= 0) {
@@ -85,32 +70,27 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       return;
     }
 
-    const expiryTimestamp = getExpiryTimestamp(duration);
-    console.log(`[Timer] Expiry timestamp:`, expiryTimestamp);
+    // Create expiry timestamp
+    const time = new Date();
+    time.setSeconds(time.getSeconds() + duration);
 
-    // Update state in batch
+    console.log(`[Timer] Expiry timestamp:`, time, `Current time:`, new Date());
+
+    // Update UI state
     setTimerType(type);
     setPausedTimeSeconds(0);
     setHasBeenStarted(autoStart);
 
-    // Always restart with autoStart=false first to ensure proper display reset
-    restart(expiryTimestamp, false);
-
-    // If auto-starting, start the timer after restart completes
-    if (autoStart) {
-      console.log(`[Timer] Scheduling auto-start for ${type}`);
-      // Use a slightly longer delay to ensure restart has fully completed
-      setTimeout(() => {
-        console.log(`[Timer] Auto-starting timer for ${type}`);
-        start();
-      }, 50);
-    }
+    // Call restart with the autoStart parameter directly
+    // This should update the display AND start if autoStart=true
+    restart(time, autoStart);
+    console.log(`[Timer] Called restart with autoStart=${autoStart}`);
 
     // Clear guard after state updates complete
     setTimeout(() => {
       isUserInteracting.current = false;
-    }, 200);
-  }, [getExpiryTimestamp, restart, start]);
+    }, 150);
+  }, [getTimerDuration, restart]);
 
   const handleReset = useCallback(() => {
     isUserInteracting.current = true;
