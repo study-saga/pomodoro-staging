@@ -85,22 +85,27 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
     const expiryTimestamp = getExpiryTimestamp(duration);
 
-    // If auto-starting, restart with autoStart=true to immediately begin
+    // Always restart with autoStart=false to ensure timer display is properly reset
+    restart(expiryTimestamp, false);
+
+    // If auto-starting, start the timer after restart completes
     if (autoStart) {
       console.log(`[Timer] Auto-starting timer for ${type}`);
       setHasBeenStarted(true);
-      restart(expiryTimestamp, true); // Pass true to autoStart the timer
+      // Use requestAnimationFrame to ensure restart has completed
+      requestAnimationFrame(() => {
+        start();
+        console.log(`[Timer] Timer auto-started for ${type}`);
+      });
     } else {
-      // Manual switch - reset to initial state
       setHasBeenStarted(false);
-      restart(expiryTimestamp, false);
     }
 
     // Clear guard after state updates complete
     setTimeout(() => {
       isUserInteracting.current = false;
     }, 150);
-  }, [getExpiryTimestamp, restart]);
+  }, [getExpiryTimestamp, restart, start]);
 
   const handleReset = useCallback(() => {
     isUserInteracting.current = true;
