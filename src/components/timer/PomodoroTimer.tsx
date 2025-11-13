@@ -62,7 +62,23 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     setTimerType(type);
     setHasBeenStarted(autoStart); // Set true if auto-starting, false otherwise
     setPausedTimeSeconds(0);
-    const duration = getTimerDuration(type);
+
+    // CRITICAL: Read fresh timer durations from store to avoid stale closure
+    // getTimerDuration() uses captured timers from component mount
+    const currentSettings = useSettingsStore.getState();
+    let duration: number;
+    switch (type) {
+      case 'pomodoro':
+        duration = currentSettings.timers.pomodoro * 60;
+        break;
+      case 'shortBreak':
+        duration = currentSettings.timers.shortBreak * 60;
+        break;
+      case 'longBreak':
+        duration = currentSettings.timers.longBreak * 60;
+        break;
+    }
+
     restart(getExpiryTimestamp(duration), autoStart);
 
     // Explicitly call start() if autoStart is true to ensure timer runs
@@ -78,7 +94,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     setTimeout(() => {
       isUserInteracting.current = false;
     }, 100);
-  }, [getTimerDuration, getExpiryTimestamp, restart, start]);
+  }, [getExpiryTimestamp, restart, start]);
 
   const handleReset = useCallback(() => {
     isUserInteracting.current = true;
