@@ -41,13 +41,21 @@ export function useSettingsSync() {
   const getCurrentSettings = () => useSettingsStore.getState()
 
   /**
-   * Serialize ALL settings and user data for comparison
-   * Includes timer prefs, visual prefs, audio, level system, stats, milestones, login tracking
+   * Serialize ONLY user settings for comparison (14 fields)
+   *
+   * SECURITY: Only includes settings that are safe for client to control.
+   * Does NOT include XP, levels, or stats (server-controlled, read-only from client).
+   *
+   * Stats/XP/levels are READ from database but NEVER written by client.
+   * They're updated ONLY through server-validated endpoints:
+   * - atomic_save_completed_pomodoro()
+   * - increment_user_xp()
+   * - increment_pomodoro_totals()
    */
   const serializeSettings = (settingsOverride?: ReturnType<typeof getCurrentSettings>) => {
     const s = settingsOverride ?? getCurrentSettings()
     return JSON.stringify({
-      // Timer preferences (6 fields)
+      // Timer preferences (6 fields) - CLIENT-CONTROLLED
       timer_pomodoro_minutes: s.timers.pomodoro,
       timer_short_break_minutes: s.timers.shortBreak,
       timer_long_break_minutes: s.timers.longBreak,
@@ -55,36 +63,26 @@ export function useSettingsSync() {
       auto_start_breaks: s.autoStartBreaks,
       auto_start_pomodoros: s.autoStartPomodoros,
 
-      // Visual preferences (3 fields)
+      // Visual preferences (3 fields) - CLIENT-CONTROLLED
       background_id: s.background,
       playlist: s.playlist,
       ambient_volumes: s.ambientVolumes,
 
-      // Audio preferences (3 fields)
+      // Audio preferences (3 fields) - CLIENT-CONTROLLED
       sound_enabled: s.soundEnabled,
       volume: s.volume,
       music_volume: s.musicVolume,
 
-      // System preferences (1 field)
+      // System preferences (2 fields) - CLIENT-CONTROLLED
       level_system_enabled: s.levelSystemEnabled,
+      level_path: s.levelPath
 
-      // Level system data (7 fields)
-      xp: s.xp,
-      level: s.level,
-      prestige_level: s.prestigeLevel,
-      total_pomodoros: s.totalPomodoros,
-      total_study_minutes: s.totalStudyMinutes,
-      username: s.username,
-      level_path: s.levelPath,
-
-      // Milestone tracking (2 fields)
-      total_unique_days: s.totalUniqueDays,
-      last_pomodoro_date: s.lastPomodoroDate,
-
-      // Login tracking (3 fields)
-      total_login_days: s.totalLoginDays,
-      consecutive_login_days: s.consecutiveLoginDays,
-      last_login_date: s.lastLoginDate
+      // NOT INCLUDED (server-controlled, read-only from client):
+      // - xp, level, prestige_level
+      // - total_pomodoros, total_study_minutes
+      // - total_unique_days, last_pomodoro_date
+      // - total_login_days, consecutive_login_days, last_login_date
+      // - username (has cooldown, needs special handling)
     })
   }
 
@@ -113,11 +111,11 @@ export function useSettingsSync() {
         // Get fresh settings state (avoid stale closure)
         const currentSettings = getCurrentSettings()
 
-        // Prepare RPC payload with ALL user data
+        // SECURITY: Only send settings (14 fields), NOT stats/XP/levels
         const payload = {
           p_user_id: appUser.id,
 
-          // Timer preferences
+          // Timer preferences (6 fields)
           p_timer_pomodoro_minutes: currentSettings.timers.pomodoro,
           p_timer_short_break_minutes: currentSettings.timers.shortBreak,
           p_timer_long_break_minutes: currentSettings.timers.longBreak,
@@ -125,39 +123,22 @@ export function useSettingsSync() {
           p_auto_start_breaks: currentSettings.autoStartBreaks,
           p_auto_start_pomodoros: currentSettings.autoStartPomodoros,
 
-          // Visual preferences
+          // Visual preferences (3 fields)
           p_background_id: currentSettings.background,
           p_playlist: currentSettings.playlist,
           p_ambient_volumes: currentSettings.ambientVolumes,
 
-          // Audio preferences
+          // Audio preferences (3 fields)
           p_sound_enabled: currentSettings.soundEnabled,
           p_volume: currentSettings.volume,
           p_music_volume: currentSettings.musicVolume,
 
-          // System preferences
+          // System preferences (2 fields)
           p_level_system_enabled: currentSettings.levelSystemEnabled,
-
-          // Level system data
-          p_xp: currentSettings.xp,
-          p_level: currentSettings.level,
-          p_prestige_level: currentSettings.prestigeLevel,
-          p_total_pomodoros: currentSettings.totalPomodoros,
-          p_total_study_minutes: currentSettings.totalStudyMinutes,
-          p_username: currentSettings.username,
-          p_level_path: currentSettings.levelPath,
-
-          // Milestone tracking
-          p_total_unique_days: currentSettings.totalUniqueDays,
-          p_last_pomodoro_date: currentSettings.lastPomodoroDate,
-
-          // Login tracking
-          p_total_login_days: currentSettings.totalLoginDays,
-          p_consecutive_login_days: currentSettings.consecutiveLoginDays,
-          p_last_login_date: currentSettings.lastLoginDate
+          p_level_path: currentSettings.levelPath
         }
 
-        const endpoint = `${supabaseUrl}/rest/v1/rpc/update_user_preferences`
+        const endpoint = `${supabaseUrl}/rest/v1/rpc/update_user_settings`
 
         // Prepare headers for Beacon API (as URL parameters since Beacon doesn't support custom headers)
         // We'll use fetch with keepalive as Beacon doesn't support custom headers
@@ -210,8 +191,9 @@ export function useSettingsSync() {
       // Get fresh settings state (avoid stale closure)
       const currentSettings = getCurrentSettings()
 
+      // SECURITY: Only sync settings (14 fields), NOT stats/XP/levels
       await updateUserPreferences(appUser.id, {
-        // Timer preferences
+        // Timer preferences (6 fields)
         timer_pomodoro_minutes: currentSettings.timers.pomodoro,
         timer_short_break_minutes: currentSettings.timers.shortBreak,
         timer_long_break_minutes: currentSettings.timers.longBreak,
@@ -219,36 +201,19 @@ export function useSettingsSync() {
         auto_start_breaks: currentSettings.autoStartBreaks,
         auto_start_pomodoros: currentSettings.autoStartPomodoros,
 
-        // Visual preferences
+        // Visual preferences (3 fields)
         background_id: currentSettings.background,
         playlist: currentSettings.playlist,
         ambient_volumes: currentSettings.ambientVolumes,
 
-        // Audio preferences
+        // Audio preferences (3 fields)
         sound_enabled: currentSettings.soundEnabled,
         volume: currentSettings.volume,
         music_volume: currentSettings.musicVolume,
 
-        // System preferences
+        // System preferences (2 fields)
         level_system_enabled: currentSettings.levelSystemEnabled,
-
-        // Level system data
-        xp: currentSettings.xp,
-        level: currentSettings.level,
-        prestige_level: currentSettings.prestigeLevel,
-        total_pomodoros: currentSettings.totalPomodoros,
-        total_study_minutes: currentSettings.totalStudyMinutes,
-        username: currentSettings.username,
-        level_path: currentSettings.levelPath,
-
-        // Milestone tracking
-        total_unique_days: currentSettings.totalUniqueDays,
-        last_pomodoro_date: currentSettings.lastPomodoroDate,
-
-        // Login tracking
-        total_login_days: currentSettings.totalLoginDays,
-        consecutive_login_days: currentSettings.consecutiveLoginDays,
-        last_login_date: currentSettings.lastLoginDate
+        level_path: currentSettings.levelPath
       })
 
       // Update last synced state and clear dirty flag
@@ -376,38 +341,37 @@ export function useSettingsSync() {
     }
   }, [
     appUser?.id,
-    // Timer preferences
+    // ONLY track CLIENT-CONTROLLED settings (14 fields)
+    // Do NOT track server-controlled stats/XP/levels
+
+    // Timer preferences (6 fields)
     settings.timers.pomodoro,
     settings.timers.shortBreak,
     settings.timers.longBreak,
     settings.pomodorosBeforeLongBreak,
     settings.autoStartBreaks,
     settings.autoStartPomodoros,
-    // Visual preferences
+
+    // Visual preferences (3 fields)
     settings.background,
     settings.playlist,
     JSON.stringify(settings.ambientVolumes),
-    // Audio preferences
+
+    // Audio preferences (3 fields)
     settings.soundEnabled,
     settings.volume,
     settings.musicVolume,
-    // System preferences
+
+    // System preferences (2 fields)
     settings.levelSystemEnabled,
-    // Level system data
-    settings.xp,
-    settings.level,
-    settings.prestigeLevel,
-    settings.totalPomodoros,
-    settings.totalStudyMinutes,
-    settings.username,
-    settings.levelPath,
-    // Milestone tracking
-    settings.totalUniqueDays,
-    settings.lastPomodoroDate,
-    // Login tracking
-    settings.totalLoginDays,
-    settings.consecutiveLoginDays,
-    settings.lastLoginDate
+    settings.levelPath
+
+    // NOT TRACKED (server-controlled, changes don't trigger sync):
+    // - xp, level, prestigeLevel
+    // - totalPomodoros, totalStudyMinutes
+    // - totalUniqueDays, lastPomodoroDate
+    // - totalLoginDays, consecutiveLoginDays, lastLoginDate
+    // - username
   ])
 
   // Set up sync triggers
