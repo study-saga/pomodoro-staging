@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 
 export function useDeviceType() {
   const [isMobile, setIsMobile] = useState(() => {
-    // Initial detection
+    // Initial detection - use 1024px breakpoint for compact Level UI
     if (typeof window === 'undefined') return false
-    return window.innerWidth < 768 || window.matchMedia('(orientation: portrait)').matches
+    return window.innerWidth < 1024
   })
 
   useEffect(() => {
     const checkDevice = () => {
-      const mobile = window.innerWidth < 768 || window.matchMedia('(orientation: portrait)').matches
+      // Show compact version below 1024px
+      const mobile = window.innerWidth < 1024
       setIsMobile(mobile)
     }
 
