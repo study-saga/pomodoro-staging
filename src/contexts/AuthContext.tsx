@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import type { DiscordSDK, DiscordSDKMock } from '@discord/embedded-app-sdk'
 
@@ -69,6 +69,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Common state
   const [appUser, setAppUser] = useState<AppUser | null>(null)
   const [isDiscordActivity] = useState(isInDiscordActivity())
+
+  // Track if auth has been initialized (prevent duplicate runs in strict mode)
+  const authInitializedRef = useRef(false)
+
+  // Track last processed session to prevent duplicate fetches
+  const lastProcessedSessionRef = useRef<string | null>(null)
 
   /**
    * Discord Activity authentication flow
@@ -205,6 +211,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Authenticate on mount
   useEffect(() => {
+    // Prevent duplicate initialization in React strict mode
+    if (authInitializedRef.current) {
+      console.log('[Auth] Already initialized, skipping duplicate mount')
+      return
+    }
+    authInitializedRef.current = true
+
     if (isDiscordActivity) {
       console.log('[Auth] Environment: Discord Activity')
       authenticateDiscordActivity()
@@ -216,6 +229,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log('[Auth] Auth state changed:', newSession ? 'signed in' : 'signed out')
 
         if (newSession) {
+          // Deduplicate: Skip if we've already processed this session
+          const sessionId = newSession.access_token
+          if (lastProcessedSessionRef.current === sessionId) {
+            console.log('[Auth] Already processed this session, skipping duplicate fetch')
+            return
+          }
+          lastProcessedSessionRef.current = sessionId
+
           setSession(newSession)
           setUser(newSession.user)
           setAuthenticated(true)
@@ -230,6 +251,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             console.error('[Auth] Failed to fetch user after auth change:', err)
           }
         } else {
+          lastProcessedSessionRef.current = null
           setSession(null)
           setUser(null)
           setAppUser(null)
