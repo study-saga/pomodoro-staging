@@ -9,6 +9,7 @@ import { syncDiscordUserToSupabase, type AppUser as DiscordAppUser } from '../li
 // Web authentication (for base website)
 import { authenticateWithSupabase, onAuthStateChange, signOut as supabaseSignOut } from '../lib/supabaseAuth'
 import type { AppUser as SupabaseAppUser } from '../lib/supabaseAuth'
+import { supabase } from '../lib/supabase'
 
 // Unified AppUser type
 type AppUser = DiscordAppUser | SupabaseAppUser
@@ -104,6 +105,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   /**
+   * Check if we're in the middle of an OAuth callback
+   */
+  const isOAuthCallback = (): boolean => {
+    const params = new URLSearchParams(window.location.search)
+    const hash = window.location.hash
+
+    // Supabase adds hash parameters after OAuth redirect
+    // Check for access_token or error in hash
+    return hash.includes('access_token') ||
+           hash.includes('error') ||
+           params.has('code')
+  }
+
+  /**
    * Web authentication flow (Supabase OAuth)
    */
   const authenticateWeb = async () => {
@@ -195,9 +210,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       authenticateDiscordActivity()
     } else {
       console.log('[Auth] Environment: Web')
-      authenticateWeb()
 
-      // Listen for auth state changes (handles OAuth callbacks on web only)
+      // Set up auth state change listener first (handles OAuth callbacks)
       const { data: { subscription } } = onAuthStateChange(async (newSession) => {
         console.log('[Auth] Auth state changed:', newSession ? 'signed in' : 'signed out')
 
@@ -205,6 +219,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setSession(newSession)
           setUser(newSession.user)
           setAuthenticated(true)
+          setLoading(false)
 
           // Fetch updated user profile
           try {
@@ -220,6 +235,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setAuthenticated(false)
         }
       })
+
+      // Check if we're in the middle of an OAuth callback
+      if (isOAuthCallback()) {
+        console.log('[Auth] OAuth callback detected, waiting for session...')
+        // Don't call authenticateWeb() - let the auth state change listener handle it
+        // But check after a short delay if no session was established
+        setTimeout(async () => {
+          const { data: { session: currentSession } } = await supabase.auth.getSession()
+          if (!currentSession) {
+            console.log('[Auth] OAuth callback did not establish session, retrying...')
+            setLoading(false)
+            setError('OAuth authentication failed. Please try again.')
+          }
+        }, 3000) // Wait 3 seconds for OAuth to process
+      } else {
+        // No OAuth callback - check for existing session or redirect to login
+        console.log('[Auth] No OAuth callback, checking for session...')
+        authenticateWeb()
+      }
 
       return () => {
         subscription.unsubscribe()
