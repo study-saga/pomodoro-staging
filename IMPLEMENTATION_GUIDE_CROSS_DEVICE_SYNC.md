@@ -106,7 +106,7 @@ SELECT * FROM user_unlocked_rewards LIMIT 1;
 Create a new file `src/hooks/useSettingsSync.ts`:
 
 ```typescript
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { updateUserPreferences } from '../lib/userSyncAuth'
@@ -119,10 +119,19 @@ export function useSettingsSync() {
   const settings = useSettingsStore()
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isInitialLoadRef = useRef(true)
+  const prevUserIdRef = useRef<string | undefined>(undefined)
 
   // Load settings from database on mount/login
   useEffect(() => {
-    if (!appUser || !isInitialLoadRef.current) return
+    if (!appUser) return
+
+    // Reset flag if user changed (logout/login with different user)
+    if (prevUserIdRef.current !== appUser.id) {
+      isInitialLoadRef.current = true
+      prevUserIdRef.current = appUser.id
+    }
+
+    if (!isInitialLoadRef.current) return
 
     console.log('[Settings Sync] Loading user preferences from database')
 
@@ -155,6 +164,13 @@ export function useSettingsSync() {
 
     isInitialLoadRef.current = false
   }, [appUser?.id]) // Re-run if user changes (logout/login)
+
+  // Serialize ambientVolumes to stable string for dependency comparison
+  // This prevents infinite re-render from object identity changes
+  const ambientVolumesKey = useMemo(
+    () => JSON.stringify(settings.ambientVolumes),
+    [settings.ambientVolumes]
+  )
 
   // Sync settings to database when they change (debounced)
   useEffect(() => {
@@ -217,7 +233,7 @@ export function useSettingsSync() {
     settings.autoStartPomodoros,
     settings.background,
     settings.playlist,
-    settings.ambientVolumes,
+    ambientVolumesKey, // Use serialized string instead of object reference
     settings.soundEnabled,
     settings.volume,
     settings.musicVolume,

@@ -123,7 +123,7 @@ export async function updateUserPreferences(
     p_auto_start_pomodoros: preferences.auto_start_pomodoros ?? null,
     p_background_id: preferences.background_id ?? null,
     p_playlist: preferences.playlist ?? null,
-    p_ambient_volumes: preferences.ambient_volumes ? JSON.stringify(preferences.ambient_volumes) : null,
+    p_ambient_volumes: preferences.ambient_volumes ?? null, // Supabase serializes JSONB automatically
     p_sound_enabled: preferences.sound_enabled ?? null,
     p_volume: preferences.volume ?? null,
     p_music_volume: preferences.music_volume ?? null,
