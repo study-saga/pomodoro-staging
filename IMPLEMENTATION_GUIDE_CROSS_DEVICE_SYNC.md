@@ -510,7 +510,7 @@ useEffect(() => {
   const hasNeverSynced =
     appUser.timer_pomodoro_minutes === 25 &&
     appUser.background_id === 'default' &&
-    Object.keys(appUser.ambient_volumes).length === 0
+    Object.keys(appUser.ambient_volumes ?? {}).length === 0
 
   if (hasNeverSynced) {
     console.log('[Settings Sync] First-time sync: migrating localStorage to database')
