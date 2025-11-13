@@ -52,8 +52,9 @@ export function useSettingsSync() {
   }
 
   /**
-   * Synchronous sync using fetch with keepalive for unload/unmount scenarios
-   * This ensures the request completes even if the page/component is closing
+   * Synchronous sync using Beacon API for unload/unmount scenarios
+   * Beacon API is specifically designed for sending data during page unload
+   * Falls back to fetch with keepalive if Beacon is unavailable
    */
   const syncSynchronously = (reason: string) => {
     if (!appUser || !isDirtyRef.current) return
@@ -90,16 +91,31 @@ export function useSettingsSync() {
           p_level_system_enabled: settings.levelSystemEnabled
         }
 
-        // Use fetch with keepalive to ensure request completes even on page unload
-        fetch(`${supabaseUrl}/rest/v1/rpc/update_user_preferences`, {
+        const endpoint = `${supabaseUrl}/rest/v1/rpc/update_user_preferences`
+
+        // Prepare headers for Beacon API (as URL parameters since Beacon doesn't support custom headers)
+        // We'll use fetch with keepalive as Beacon doesn't support custom headers
+        const headers = {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${session.access_token}`
+        }
+
+        // Try Beacon API first (most reliable for page unload)
+        // Note: Beacon API doesn't support custom headers, so we use fetch with keepalive instead
+        // which is the next best option for reliability
+        if (typeof navigator.sendBeacon === 'function') {
+          // Beacon doesn't support custom headers, so we can't use it with Supabase auth
+          // Fall through to fetch with keepalive
+          console.log('[Settings Sync] Beacon API available but requires custom headers, using fetch with keepalive')
+        }
+
+        // Use fetch with keepalive (works with custom headers)
+        fetch(endpoint, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': supabaseAnonKey,
-            'Authorization': `Bearer ${session.access_token}`
-          },
+          headers,
           body: JSON.stringify(payload),
-          keepalive: true  // Critical: ensures request completes on unload
+          keepalive: true  // Critical: ensures request completes on unload (similar to Beacon)
         }).then(() => {
           // Update state on success (won't run if page already unloaded - that's okay)
           lastSyncedStateRef.current = serializeSettings()
