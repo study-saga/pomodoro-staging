@@ -38,25 +38,11 @@ export interface AuthResult {
 }
 
 /**
- * Check if running inside Discord iframe
- */
-function isInDiscord(): boolean {
-  const params = new URLSearchParams(window.location.search)
-  return params.has('frame_id') || params.has('instance_id')
-}
-
-/**
  * Initialize Supabase Auth session
  * Checks for existing session or redirects to Discord OAuth
  */
 export async function authenticateWithSupabase(): Promise<AuthResult> {
   console.log('[Supabase Auth] Checking for existing session...')
-
-  // Check if we're in Discord's iframe context
-  if (!isInDiscord()) {
-    console.error('[Supabase Auth] Not running in Discord context')
-    throw new Error('Discord Activities must be launched from Discord. Please open this app from Discord\'s Activities menu.')
-  }
 
   // Check for existing session
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -97,15 +83,18 @@ export async function authenticateWithSupabase(): Promise<AuthResult> {
 export async function signInWithDiscord(): Promise<void> {
   console.log('[Supabase Auth] Initiating Discord OAuth flow...')
 
-  // Get the current URL for redirect, preserving Discord query params
-  // Discord Activities require frame_id/instance_id to be preserved
+  // Get the current URL for redirect
+  // For web: Just use the base URL
+  // For Discord Activity: Preserve frame_id/instance_id query params
   const redirectTo = window.location.origin + window.location.pathname + window.location.search
+
+  console.log('[Supabase Auth] Redirect URL:', redirectTo)
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'discord',
     options: {
       redirectTo,
-      scopes: 'identify guilds', // Email is optional - not all users share it
+      scopes: 'identify email guilds', // Include email for web users
       skipBrowserRedirect: false,
     }
   })

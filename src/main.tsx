@@ -4,14 +4,26 @@ import { patchUrlMappings } from '@discord/embedded-app-sdk'
 import './index.css'
 import App from './App.tsx'
 
-// Configure Discord proxy URL mappings for external requests
-// This allows requests to Supabase to bypass CSP restrictions
-patchUrlMappings([
-  {
-    prefix: '/supabase',
-    target: 'btjhclvebbtjxmdnprwz.supabase.co'
-  }
-])
+// Check if running inside Discord Activity
+const isDiscordActivity = () => {
+  const params = new URLSearchParams(window.location.search)
+  return params.has('frame_id') || params.has('instance_id')
+}
+
+// Configure Discord proxy URL mappings ONLY for Discord Activities
+// This allows requests to Supabase to bypass CSP restrictions in Discord iframe
+// Do NOT apply on web - it breaks Supabase OAuth!
+if (isDiscordActivity()) {
+  console.log('[Main] Discord Activity detected - applying URL mappings')
+  patchUrlMappings([
+    {
+      prefix: '/supabase',
+      target: 'btjhclvebbtjxmdnprwz.supabase.co'
+    }
+  ])
+} else {
+  console.log('[Main] Web environment detected - skipping URL mappings')
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
