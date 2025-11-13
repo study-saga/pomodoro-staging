@@ -11,26 +11,14 @@ const isDiscordActivity = () => {
 }
 
 // Configure Discord proxy URL mappings ONLY for Discord Activities
-// This allows requests to Supabase and R2 to bypass CSP restrictions in Discord iframe
-// Do NOT apply on web - Vercel rewrites handle R2 paths on web
+// This allows requests to Supabase to bypass CSP restrictions in Discord iframe
+// R2 media files use direct URLs and load from R2 (saves Vercel bandwidth!)
 if (isDiscordActivity()) {
   console.log('[Main] Discord Activity detected - applying URL mappings')
   patchUrlMappings([
     {
       prefix: '/supabase',
       target: 'btjhclvebbtjxmdnprwz.supabase.co'
-    },
-    {
-      prefix: '/r2-audio',
-      target: 'pub-7e068d8c526a459ea67ff46fe3762059.r2.dev/music'
-    },
-    {
-      prefix: '/r2-effects',
-      target: 'pub-7e068d8c526a459ea67ff46fe3762059.r2.dev/effects'
-    },
-    {
-      prefix: '/r2-backgrounds',
-      target: 'pub-7e068d8c526a459ea67ff46fe3762059.r2.dev/backgrounds'
     }
   ])
 } else {
