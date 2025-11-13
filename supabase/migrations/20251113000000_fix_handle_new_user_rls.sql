@@ -16,12 +16,13 @@ BEGIN
   );
 
   -- Extract username (Discord users may not have full_name)
+  -- IMPORTANT: Never use Discord ID in fallback username to protect PII
   v_username := COALESCE(
     NEW.raw_user_meta_data->>'full_name',
     NEW.raw_user_meta_data->>'name',
     NEW.raw_user_meta_data->>'user_name',
     NEW.raw_user_meta_data->>'username',
-    'Discord User ' || substring(v_discord_id, 1, 8)
+    'Discord User ' || substring(md5(random()::text || clock_timestamp()::text), 1, 8)
   );
 
   -- Extract avatar URL

@@ -270,15 +270,20 @@ That's it! Settings will now automatically:
 
 ### Step 4: Update Milestone Reward System
 
-Update `src/store/useSettingsStore.ts` to actually unlock rewards:
+Update `src/store/useSettingsStore.ts` to accept `userId` parameter:
 
 ```typescript
+// In the store interface, update the signature:
+interface SettingsStore extends Settings {
+  // ... other methods
+  unlockMilestoneReward: (milestone: MilestoneReward, userId: string) => Promise<void>;
+}
+
 // Replace the console.log implementation with real database unlock
-unlockMilestoneReward: async (milestone) => {
+unlockMilestoneReward: async (milestone, userId) => {
   console.log(`🎉 Milestone Unlocked: ${milestone.title}`)
 
-  const { appUser } = useAuth.getState() // Get current user
-  if (!appUser) {
+  if (!userId) {
     console.warn('[Milestones] Cannot unlock reward: user not authenticated')
     return
   }
@@ -286,7 +291,7 @@ unlockMilestoneReward: async (milestone) => {
   try {
     // Unlock reward in database
     await unlockMilestoneReward(
-      appUser.id,
+      userId,
       milestone.rewardType as 'background' | 'theme' | 'badge' | 'playlist',
       milestone.unlockId,
       milestone.id
@@ -301,6 +306,19 @@ unlockMilestoneReward: async (milestone) => {
   } catch (error) {
     console.error('[Milestones] Failed to unlock reward:', error)
   }
+}
+```
+
+**Then in components that call this, pass the userId:**
+
+```typescript
+// In your component:
+const { appUser } = useAuth()
+const { unlockMilestoneReward } = useSettingsStore()
+
+// When milestone is reached:
+if (appUser) {
+  await unlockMilestoneReward(milestone, appUser.id)
 }
 ```
 
