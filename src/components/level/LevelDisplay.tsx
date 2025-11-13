@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import {
@@ -25,7 +25,6 @@ export const LevelDisplay = memo(function LevelDisplay() {
   } = useSettingsStore();
 
   const { isMobile } = useDeviceType();
-  const [isExpanded, setIsExpanded] = useState(false);
 
   if (!levelSystemEnabled) return null;
 
@@ -55,21 +54,21 @@ export const LevelDisplay = memo(function LevelDisplay() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-white">{username}</h2>
-            <p className="text-xs text-gray-300">{levelName}</p>
+            <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>{username}</h2>
+            <p className={isMobile ? 'text-[10px] text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
           </div>
-          <div className="text-3xl">{badge}</div>
+          <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
         </div>
 
         {/* XP Progress Bar */}
         <div>
-          <div className="flex justify-between text-xs text-gray-300 mb-1">
+          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-[10px] mb-0.5' : 'text-xs mb-1'}`}>
             <span>{roleEmoji} Level {level}</span>
             <span>
               {xp} / {xpNeeded} XP
             </span>
           </div>
-          <div className="w-full bg-gray-700/50 rounded-full h-2 overflow-hidden">
+          <div className={`w-full bg-gray-700/50 rounded-full overflow-hidden ${isMobile ? 'h-1.5' : 'h-2'}`}>
             <div
               className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
@@ -80,24 +79,24 @@ export const LevelDisplay = memo(function LevelDisplay() {
         {/* Prestige Stars */}
         {prestigeLevel > 0 && (
           <div className="text-center pt-1">
-            <span className="text-yellow-400 text-sm">
+            <span className={`text-yellow-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
               {"⭐".repeat(Math.min(prestigeLevel, 5))}
             </span>
           </div>
         )}
 
         {/* Milestone Progress */}
-        <div className="pt-2 border-t border-white/10">
-          <div className="flex justify-between text-xs text-gray-300 mb-1">
+        <div className={`border-t border-white/10 ${isMobile ? 'pt-1.5' : 'pt-2'}`}>
+          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-[10px] mb-0.5' : 'text-xs mb-1'}`}>
             <span>📅 Active Days</span>
             <span>{totalUniqueDays} days</span>
           </div>
           {nextMilestone ? (
-            <div className="text-xs text-gray-400">
+            <div className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
               Next: {nextMilestone.title} at {nextMilestone.days} days
             </div>
           ) : (
-            <div className="text-xs text-green-400">
+            <div className={`text-green-400 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
               All milestones completed! 🎉
             </div>
           )}
@@ -123,8 +122,8 @@ export const LevelDisplay = memo(function LevelDisplay() {
 
         {/* Login Streak Display */}
         {consecutiveLoginDays > 0 && (
-          <div className="pt-2 border-t border-white/10">
-            <div className="flex justify-between text-xs text-gray-300">
+          <div className={`border-t border-white/10 ${isMobile ? 'pt-1.5' : 'pt-2'}`}>
+            <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
               <span>🎁 Login Streak</span>
               <span>{consecutiveLoginDays} days</span>
             </div>
@@ -132,17 +131,5 @@ export const LevelDisplay = memo(function LevelDisplay() {
         )}
       </div>
     </div>
-  );
-
-  return (
-    <>
-      {/* Hidden on <768px, Compact badge on 768-1024px, Full card on 1024px+ */}
-      <div className="hidden md:block lg:hidden">
-        {isExpanded ? <FullCard /> : <CompactBadge />}
-      </div>
-      <div className="hidden lg:block">
-        <FullCard />
-      </div>
-    </>
   );
 });
