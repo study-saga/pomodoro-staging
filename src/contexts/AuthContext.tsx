@@ -7,7 +7,7 @@ import { authenticateDiscordUser, type DiscordUser } from '../lib/discordAuth'
 import { syncDiscordUserToSupabase, type AppUser as DiscordAppUser } from '../lib/userSync'
 
 // Web authentication (for base website)
-import { authenticateWithSupabase, onAuthStateChange, signOut as supabaseSignOut } from '../lib/supabaseAuth'
+import { authenticateWithSupabase, onAuthStateChange, signOut as supabaseSignOut, fetchOrCreateAppUser } from '../lib/supabaseAuth'
 import type { AppUser as SupabaseAppUser } from '../lib/supabaseAuth'
 import { supabase } from '../lib/supabase'
 
@@ -221,10 +221,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setAuthenticated(true)
           setLoading(false)
 
-          // Fetch updated user profile
+          // Fetch user profile directly (don't call authenticateWithSupabase again)
+          // We already have the session, so just fetch the app user
           try {
-            const result = await authenticateWithSupabase()
-            setAppUser(result.appUser)
+            const appUser = await fetchOrCreateAppUser(newSession.user)
+            setAppUser(appUser)
           } catch (err) {
             console.error('[Auth] Failed to fetch user after auth change:', err)
           }
