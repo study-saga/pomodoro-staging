@@ -49,50 +49,27 @@ export const LevelDisplay = memo(function LevelDisplay() {
     window.location.reload();
   };
 
-  // Compact badge for medium screens (768-1024px)
-  const CompactBadge = () => (
-    <button
-      onClick={() => setIsExpanded(!isExpanded)}
-      className="fixed top-4 left-4 bg-black/60 backdrop-blur-md rounded-full border border-white/10 px-3 py-2 hover:bg-black/70 transition-all cursor-pointer z-50"
-      aria-label="Toggle stats"
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-lg">{badge}</span>
-        <div className="flex flex-col items-start min-w-[60px]">
-          <span className="text-xs text-white font-medium">Lv {level}</span>
-          <div className="w-full bg-gray-700/50 rounded-full h-1 overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      </div>
-    </button>
-  );
-
-  // Full stats card
-  const FullCard = () => (
-    <div className={`fixed top-4 left-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 ${isMobile ? 'p-3 min-w-[200px]' : 'p-4 min-w-[280px]'} transition-all z-50`}>
-      <div className="space-y-3">
+  return (
+    <div className={`fixed top-4 left-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
+      <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-white">{username}</h2>
-            <p className="text-xs text-gray-300">{levelName}</p>
+            <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>{username}</h2>
+            <p className={isMobile ? 'text-[10px] text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
           </div>
-          <div className="text-3xl">{badge}</div>
+          <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
         </div>
 
         {/* XP Progress Bar */}
         <div>
-          <div className="flex justify-between text-xs text-gray-300 mb-1">
+          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-[10px] mb-0.5' : 'text-xs mb-1'}`}>
             <span>{roleEmoji} Level {level}</span>
             <span>
               {xp} / {xpNeeded} XP
             </span>
           </div>
-          <div className="w-full bg-gray-700/50 rounded-full h-2 overflow-hidden">
+          <div className={`w-full bg-gray-700/50 rounded-full overflow-hidden ${isMobile ? 'h-1.5' : 'h-2'}`}>
             <div
               className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
@@ -103,24 +80,24 @@ export const LevelDisplay = memo(function LevelDisplay() {
         {/* Prestige Stars */}
         {prestigeLevel > 0 && (
           <div className="text-center pt-1">
-            <span className="text-yellow-400 text-sm">
+            <span className={`text-yellow-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
               {"⭐".repeat(Math.min(prestigeLevel, 5))}
             </span>
           </div>
         )}
 
         {/* Milestone Progress */}
-        <div className="pt-2 border-t border-white/10">
-          <div className="flex justify-between text-xs text-gray-300 mb-1">
+        <div className={`border-t border-white/10 ${isMobile ? 'pt-1.5' : 'pt-2'}`}>
+          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-[10px] mb-0.5' : 'text-xs mb-1'}`}>
             <span>📅 Active Days</span>
             <span>{totalUniqueDays} days</span>
           </div>
           {nextMilestone ? (
-            <div className="text-xs text-gray-400">
+            <div className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
               Next: {nextMilestone.title} at {nextMilestone.days} days
             </div>
           ) : (
-            <div className="text-xs text-green-400">
+            <div className={`text-green-400 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
               All milestones completed! 🎉
             </div>
           )}
@@ -146,8 +123,8 @@ export const LevelDisplay = memo(function LevelDisplay() {
 
         {/* Login Streak Display */}
         {consecutiveLoginDays > 0 && (
-          <div className="pt-2 border-t border-white/10">
-            <div className="flex justify-between text-xs text-gray-300">
+          <div className={`border-t border-white/10 ${isMobile ? 'pt-1.5' : 'pt-2'}`}>
+            <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
               <span>🎁 Login Streak</span>
               <span>{consecutiveLoginDays} days</span>
             </div>
