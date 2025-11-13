@@ -49,32 +49,9 @@ export const LevelDisplay = memo(function LevelDisplay() {
     window.location.reload();
   };
 
-  // Compact badge for medium screens (768-1024px)
-  const CompactBadge = () => (
-    <button
-      onClick={() => setIsExpanded(!isExpanded)}
-      className="fixed top-4 left-4 bg-black/60 backdrop-blur-md rounded-full border border-white/10 px-3 py-2 hover:bg-black/70 transition-all cursor-pointer z-50"
-      aria-label="Toggle stats"
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-lg">{badge}</span>
-        <div className="flex flex-col items-start min-w-[60px]">
-          <span className="text-xs text-white font-medium">Lv {level}</span>
-          <div className="w-full bg-gray-700/50 rounded-full h-1 overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      </div>
-    </button>
-  );
-
-  // Full stats card
-  const FullCard = () => (
-    <div className={`fixed top-4 left-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 ${isMobile ? 'p-3 min-w-[200px]' : 'p-4 min-w-[280px]'} transition-all z-50`}>
-      <div className="space-y-3">
+  return (
+    <div className={`fixed top-4 left-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
+      <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

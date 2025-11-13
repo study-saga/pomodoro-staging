@@ -9,9 +9,11 @@ import { LevelUpCelebration } from './components/level/LevelUpCelebration';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCounter';
 import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
+import { LoginScreen } from './components/auth/LoginScreen';
 import { useLevelNotifications } from './hooks/useLevelNotifications';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { getEnvironment } from './lib/environment';
 
 function AppContent() {
   const { authenticated, loading, error } = useAuth();
@@ -48,50 +50,40 @@ function AppContent() {
     );
   }
 
-  // Error state
-  if (error || !authenticated) {
-    const isDiscordError = error?.includes('Discord Activities must be launched from Discord')
+  // Not authenticated
+  if (!authenticated) {
+    const environment = getEnvironment();
 
-    return (
-      <div className="relative min-h-screen overflow-hidden">
-        <VideoBackground />
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center max-w-md mx-auto px-4">
-            <div className="text-6xl mb-4">{isDiscordError ? '🎮' : '⚠️'}</div>
-            <h1 className="text-white text-2xl font-bold mb-2">
-              {isDiscordError ? 'Launch from Discord' : 'Authentication Failed'}
-            </h1>
-            <p className="text-white/80 mb-4">
-              {isDiscordError ? (
-                <>
-                  This app must be launched from Discord's Activities menu.
-                  <br /><br />
-                  <strong>How to launch:</strong>
-                  <br />
-                  1. Open Discord
-                  <br />
-                  2. Go to any server or DM
-                  <br />
-                  3. Click the rocket icon (🚀)
-                  <br />
-                  4. Select this Activity
-                </>
-              ) : (
-                error || 'Unable to connect to Discord. Please try again.'
-              )}
-            </p>
-            {!isDiscordError && (
+    // Browser: Show login screen
+    if (environment === 'browser') {
+      return <LoginScreen />;
+    }
+
+    // Discord with error: Show error message
+    if (error) {
+      return (
+        <div className="relative min-h-screen overflow-hidden">
+          <VideoBackground />
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center max-w-md mx-auto px-4">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h1 className="text-white text-2xl font-bold mb-2">
+                Authentication Failed
+              </h1>
+              <p className="text-white/80 mb-4">
+                {error || 'Unable to connect to Discord. Please try again.'}
+              </p>
               <button
                 onClick={() => window.location.reload()}
                 className="px-6 py-3 bg-white text-gray-900 rounded-lg font-bold hover:bg-gray-100 transition-colors"
               >
                 Retry
               </button>
-            )}
+            </div>
           </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   // Authenticated - show main app
