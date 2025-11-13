@@ -12,7 +12,7 @@ const isDiscordActivity = () => {
 
 // Configure Discord proxy URL mappings ONLY for Discord Activities
 // This allows requests to Supabase to bypass CSP restrictions in Discord iframe
-// Do NOT apply on web - it breaks Supabase OAuth!
+// R2 media files use direct URLs and load from R2 (saves Vercel bandwidth!)
 if (isDiscordActivity()) {
   console.log('[Main] Discord Activity detected - applying URL mappings')
   patchUrlMappings([

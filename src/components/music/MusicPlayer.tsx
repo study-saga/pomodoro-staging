@@ -4,7 +4,7 @@ import ReactHowler from 'react-howler';
 import { Play, Pause, SkipBack, SkipForward, Volume2, ImageIcon } from 'lucide-react';
 import type { Track } from '../../types';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import { R2_MUSIC_BASE_URL, BACKGROUNDS } from '../../data/constants';
+import { BACKGROUNDS } from '../../data/constants';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import lofiTracks from '../../data/lofi.json';
 import synthwaveTracks from '../../data/synthwave.json';
@@ -116,9 +116,8 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
   };
 
   const getTrackUrl = (track: Track) => {
-    if (track.file.startsWith('/r2-audio/')) {
-      return `${R2_MUSIC_BASE_URL}${track.file.replace('/r2-audio', '')}`;
-    }
+    // Track files already use Discord proxy paths (/r2-audio/...)
+    // No need to convert them - just return as-is for CSP compliance
     return track.file;
   };
 

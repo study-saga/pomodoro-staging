@@ -52,7 +52,7 @@ export async function incrementPomodoroTotals(
 }
 
 /**
- * Update user settings
+ * Update user settings (legacy - use updateUserPreferences for full control)
  */
 export async function updateUserSettings(
   userId: string,
@@ -80,6 +80,63 @@ export async function updateUserSettings(
   }
 
   console.log('[User Sync] Settings updated successfully')
+}
+
+/**
+ * Update user preferences (timer, visual, audio) atomically
+ * Uses RPC function for atomic updates with authorization check
+ */
+export async function updateUserPreferences(
+  userId: string,
+  preferences: {
+    // Timer preferences
+    timer_pomodoro_minutes?: number
+    timer_short_break_minutes?: number
+    timer_long_break_minutes?: number
+    pomodoros_before_long_break?: number
+    auto_start_breaks?: boolean
+    auto_start_pomodoros?: boolean
+
+    // Visual preferences
+    background_id?: string
+    playlist?: 'lofi' | 'synthwave'
+    ambient_volumes?: Record<string, number>
+
+    // Audio preferences
+    sound_enabled?: boolean
+    volume?: number
+    music_volume?: number
+
+    // Level system
+    level_system_enabled?: boolean
+  }
+): Promise<AppUser> {
+  console.log(`[User Sync] Updating preferences for user ${userId}`, preferences)
+
+  const { data, error } = await supabase.rpc('update_user_preferences', {
+    p_user_id: userId,
+    p_timer_pomodoro_minutes: preferences.timer_pomodoro_minutes ?? null,
+    p_timer_short_break_minutes: preferences.timer_short_break_minutes ?? null,
+    p_timer_long_break_minutes: preferences.timer_long_break_minutes ?? null,
+    p_pomodoros_before_long_break: preferences.pomodoros_before_long_break ?? null,
+    p_auto_start_breaks: preferences.auto_start_breaks ?? null,
+    p_auto_start_pomodoros: preferences.auto_start_pomodoros ?? null,
+    p_background_id: preferences.background_id ?? null,
+    p_playlist: preferences.playlist ?? null,
+    p_ambient_volumes: preferences.ambient_volumes ?? null, // Supabase serializes JSONB automatically
+    p_sound_enabled: preferences.sound_enabled ?? null,
+    p_volume: preferences.volume ?? null,
+    p_music_volume: preferences.music_volume ?? null,
+    p_level_system_enabled: preferences.level_system_enabled ?? null
+  })
+
+  if (error) {
+    console.error('[User Sync] Error updating preferences:', error)
+    throw new Error(`Failed to update preferences: ${error.message}`)
+  }
+
+  console.log('[User Sync] Preferences updated successfully')
+  return data as AppUser
 }
 
 /**
@@ -256,5 +313,119 @@ export async function getUserStats(userId: string): Promise<{
     totalMinutes: user.total_study_minutes,
     averagePerDay,
     currentStreak: user.consecutive_login_days
+  }
+}
+
+/**
+ * Unlock a milestone reward for the user
+ */
+export async function unlockMilestoneReward(
+  userId: string,
+  rewardType: 'background' | 'theme' | 'badge' | 'playlist',
+  unlockId: string,
+  milestoneId?: string
+): Promise<string> {
+  console.log(`[User Sync] Unlocking reward for user ${userId}: ${rewardType}/${unlockId}`)
+
+  const { data: rewardId, error } = await supabase.rpc('unlock_milestone_reward', {
+    p_user_id: userId,
+    p_reward_type: rewardType,
+    p_unlock_id: unlockId,
+    p_milestone_id: milestoneId || null
+  })
+
+  if (error) {
+    console.error('[User Sync] Error unlocking reward:', error)
+    throw new Error(`Failed to unlock reward: ${error.message}`)
+  }
+
+  console.log('[User Sync] Reward unlocked successfully:', rewardId)
+  return rewardId as string
+}
+
+/**
+ * Get all unlocked rewards for a user
+ */
+export async function getUserUnlockedRewards(
+  userId: string,
+  rewardType?: 'background' | 'theme' | 'badge' | 'playlist'
+): Promise<Array<{
+  id: string
+  reward_type: string
+  unlock_id: string
+  milestone_id: string | null
+  unlocked_at: string
+}>> {
+  console.log(`[User Sync] Fetching unlocked rewards for user ${userId}`)
+
+  const { data, error } = await supabase.rpc('get_user_unlocked_rewards', {
+    p_user_id: userId,
+    p_reward_type: rewardType || null
+  })
+
+  if (error) {
+    console.error('[User Sync] Error fetching rewards:', error)
+    throw new Error(`Failed to fetch unlocked rewards: ${error.message}`)
+  }
+
+  return data || []
+}
+
+/**
+ * Check if a specific reward is unlocked for the user
+ */
+export async function isRewardUnlocked(
+  userId: string,
+  rewardType: 'background' | 'theme' | 'badge' | 'playlist',
+  unlockId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('user_unlocked_rewards')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('reward_type', rewardType)
+    .eq('unlock_id', unlockId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('[User Sync] Error checking reward:', error)
+    return false
+  }
+
+  return data !== null
+}
+
+/**
+ * Update username with cooldown enforcement
+ */
+export async function updateUsername(
+  userId: string,
+  newUsername: string,
+  cooldownHours: number = 720 // 30 days default
+): Promise<{
+  success: boolean
+  message: string
+  user?: AppUser
+}> {
+  console.log(`[User Sync] Updating username for user ${userId} to: ${newUsername}`)
+
+  const { data, error } = await supabase.rpc('update_username_with_cooldown', {
+    p_user_id: userId,
+    p_new_username: newUsername,
+    p_cooldown_hours: cooldownHours
+  })
+
+  if (error) {
+    console.error('[User Sync] Error updating username:', error)
+    throw new Error(`Failed to update username: ${error.message}`)
+  }
+
+  // RPC returns a table, get first row
+  const result = Array.isArray(data) ? data[0] : data
+
+  return {
+    success: result.success,
+    message: result.message,
+    user: result.user_data as AppUser
   }
 }

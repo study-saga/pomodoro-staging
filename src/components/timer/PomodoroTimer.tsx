@@ -38,6 +38,13 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     return time;
   }, []);
 
+  // Track timer state for proper pause/resume
+  const [hasBeenStarted, setHasBeenStarted] = useState(false);
+  const [pausedTimeSeconds, setPausedTimeSeconds] = useState(0);
+
+  // Guard flag to prevent useEffect from interfering during user interactions
+  const isUserInteracting = useRef(false);
+
   const {
     seconds,
     minutes,
@@ -52,15 +59,55 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   });
 
   const switchTimer = useCallback((type: TimerType, autoStart = false) => {
+    isUserInteracting.current = true;
+
     setTimerType(type);
+    setHasBeenStarted(autoStart); // Set true if auto-starting, false otherwise
+    setPausedTimeSeconds(0);
     const duration = getTimerDuration(type);
     restart(getExpiryTimestamp(duration), autoStart);
+
+    // Clear guard after state updates complete
+    setTimeout(() => {
+      isUserInteracting.current = false;
+    }, 100);
   }, [getTimerDuration, getExpiryTimestamp, restart]);
 
   const handleReset = useCallback(() => {
+    isUserInteracting.current = true;
+    setHasBeenStarted(false);
+    setPausedTimeSeconds(0);
     const duration = getTimerDuration(timerType);
     restart(getExpiryTimestamp(duration), false);
+    setTimeout(() => {
+      isUserInteracting.current = false;
+    }, 100);
   }, [timerType, getTimerDuration, getExpiryTimestamp, restart]);
+
+  // Smart start/pause/resume handler
+  const handleStartPauseResume = useCallback(() => {
+    isUserInteracting.current = true;
+
+    if (isRunning) {
+      // Currently running → Pause and save remaining time
+      const remainingSeconds = minutes * 60 + seconds;
+      setPausedTimeSeconds(remainingSeconds);
+      pause();
+    } else if (hasBeenStarted && pausedTimeSeconds > 0) {
+      // Paused → Resume from saved time
+      const newExpiry = getExpiryTimestamp(pausedTimeSeconds);
+      restart(newExpiry, true);
+    } else {
+      // Initial state → Start fresh
+      setHasBeenStarted(true);
+      start();
+    }
+
+    // Clear flag after state updates complete
+    setTimeout(() => {
+      isUserInteracting.current = false;
+    }, 100);
+  }, [isRunning, hasBeenStarted, minutes, seconds, pausedTimeSeconds, pause, start, restart, getExpiryTimestamp]);
 
   // Read notification permission (don't request automatically)
   useEffect(() => {
@@ -69,13 +116,13 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     }
   }, []);
 
-  // Update timer display when settings change
+  // Update timer display when settings change (but not when just pausing/resuming)
   useEffect(() => {
-    if (!isRunning) {
+    if (!isRunning && !hasBeenStarted && !isUserInteracting.current) {
       const duration = getTimerDuration(timerType);
       restart(getExpiryTimestamp(duration), false);
     }
-  }, [timers, getTimerDuration, getExpiryTimestamp, restart, isRunning, timerType]);
+  }, [timers.pomodoro, timers.shortBreak, timers.longBreak, timerType, getTimerDuration, getExpiryTimestamp, restart, isRunning, hasBeenStarted]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -88,11 +135,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       switch (e.key.toLowerCase()) {
         case ' ':
           e.preventDefault();
-          if (isRunning) {
-            pause();
-          } else {
-            start();
-          }
+          handleStartPauseResume();
           break;
         case 'r':
           e.preventDefault();
@@ -103,7 +146,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isRunning, start, pause, handleReset]);
+  }, [handleStartPauseResume, handleReset]);
 
   // Cleanup flash timeout on unmount
   useEffect(() => {
@@ -254,11 +297,11 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       {/* Control Buttons */}
       <div className="flex gap-4">
         <button
-          onClick={isRunning ? pause : start}
-          aria-label={isRunning ? 'Pause timer' : 'Start timer'}
+          onClick={handleStartPauseResume}
+          aria-label={isRunning ? 'Pause timer' : hasBeenStarted ? 'Resume timer' : 'Start timer'}
           className="px-8 py-3 bg-white text-gray-900 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg"
         >
-          {isRunning ? 'Pause' : 'Start'}
+          {isRunning ? 'Pause' : hasBeenStarted ? 'Resume' : 'Start'}
         </button>
         <button
           onClick={handleReset}
