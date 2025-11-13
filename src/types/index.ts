@@ -84,3 +84,12 @@ export interface TimerState {
   timeLeft: number;
   pomodoroCount: number;
 }
+
+export interface UnlockedReward {
+  id: string;
+  user_id: string;
+  reward_type: 'background' | 'theme' | 'badge' | 'playlist';
+  unlock_id: string;
+  milestone_id: string | null;
+  unlocked_at: string;
+}
