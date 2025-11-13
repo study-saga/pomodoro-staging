@@ -32,22 +32,33 @@ export function useSettingsSync() {
   const lastSyncedStateRef = useRef<string>('')
   const periodicSyncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Serialize current settings for comparison
-  const serializeSettings = () => {
+  /**
+   * Get fresh store state (avoids stale closure)
+   * Critical: sync handlers close over settings from when effect first ran,
+   * so we must read fresh state at call time to avoid syncing outdated values
+   */
+  const getCurrentSettings = () => useSettingsStore.getState()
+
+  /**
+   * Serialize settings for comparison
+   * Can serialize from store state or from a specific settings object (e.g., appUser)
+   */
+  const serializeSettings = (settingsOverride?: ReturnType<typeof getCurrentSettings>) => {
+    const s = settingsOverride ?? getCurrentSettings()
     return JSON.stringify({
-      timer_pomodoro_minutes: settings.timers.pomodoro,
-      timer_short_break_minutes: settings.timers.shortBreak,
-      timer_long_break_minutes: settings.timers.longBreak,
-      pomodoros_before_long_break: settings.pomodorosBeforeLongBreak,
-      auto_start_breaks: settings.autoStartBreaks,
-      auto_start_pomodoros: settings.autoStartPomodoros,
-      background_id: settings.background,
-      playlist: settings.playlist,
-      ambient_volumes: settings.ambientVolumes,
-      sound_enabled: settings.soundEnabled,
-      volume: settings.volume,
-      music_volume: settings.musicVolume,
-      level_system_enabled: settings.levelSystemEnabled
+      timer_pomodoro_minutes: s.timers.pomodoro,
+      timer_short_break_minutes: s.timers.shortBreak,
+      timer_long_break_minutes: s.timers.longBreak,
+      pomodoros_before_long_break: s.pomodorosBeforeLongBreak,
+      auto_start_breaks: s.autoStartBreaks,
+      auto_start_pomodoros: s.autoStartPomodoros,
+      background_id: s.background,
+      playlist: s.playlist,
+      ambient_volumes: s.ambientVolumes,
+      sound_enabled: s.soundEnabled,
+      volume: s.volume,
+      music_volume: s.musicVolume,
+      level_system_enabled: s.levelSystemEnabled
     })
   }
 
@@ -73,22 +84,25 @@ export function useSettingsSync() {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
         const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+        // Get fresh settings state (avoid stale closure)
+        const currentSettings = getCurrentSettings()
+
         // Prepare RPC payload
         const payload = {
           p_user_id: appUser.id,
-          p_timer_pomodoro_minutes: settings.timers.pomodoro,
-          p_timer_short_break_minutes: settings.timers.shortBreak,
-          p_timer_long_break_minutes: settings.timers.longBreak,
-          p_pomodoros_before_long_break: settings.pomodorosBeforeLongBreak,
-          p_auto_start_breaks: settings.autoStartBreaks,
-          p_auto_start_pomodoros: settings.autoStartPomodoros,
-          p_background_id: settings.background,
-          p_playlist: settings.playlist,
-          p_ambient_volumes: settings.ambientVolumes,
-          p_sound_enabled: settings.soundEnabled,
-          p_volume: settings.volume,
-          p_music_volume: settings.musicVolume,
-          p_level_system_enabled: settings.levelSystemEnabled
+          p_timer_pomodoro_minutes: currentSettings.timers.pomodoro,
+          p_timer_short_break_minutes: currentSettings.timers.shortBreak,
+          p_timer_long_break_minutes: currentSettings.timers.longBreak,
+          p_pomodoros_before_long_break: currentSettings.pomodorosBeforeLongBreak,
+          p_auto_start_breaks: currentSettings.autoStartBreaks,
+          p_auto_start_pomodoros: currentSettings.autoStartPomodoros,
+          p_background_id: currentSettings.background,
+          p_playlist: currentSettings.playlist,
+          p_ambient_volumes: currentSettings.ambientVolumes,
+          p_sound_enabled: currentSettings.soundEnabled,
+          p_volume: currentSettings.volume,
+          p_music_volume: currentSettings.musicVolume,
+          p_level_system_enabled: currentSettings.levelSystemEnabled
         }
 
         const endpoint = `${supabaseUrl}/rest/v1/rpc/update_user_preferences`
@@ -141,20 +155,23 @@ export function useSettingsSync() {
     try {
       console.log(`[Settings Sync] Syncing to database (reason: ${reason})`)
 
+      // Get fresh settings state (avoid stale closure)
+      const currentSettings = getCurrentSettings()
+
       await updateUserPreferences(appUser.id, {
-        timer_pomodoro_minutes: settings.timers.pomodoro,
-        timer_short_break_minutes: settings.timers.shortBreak,
-        timer_long_break_minutes: settings.timers.longBreak,
-        pomodoros_before_long_break: settings.pomodorosBeforeLongBreak,
-        auto_start_breaks: settings.autoStartBreaks,
-        auto_start_pomodoros: settings.autoStartPomodoros,
-        background_id: settings.background,
-        playlist: settings.playlist,
-        ambient_volumes: settings.ambientVolumes,
-        sound_enabled: settings.soundEnabled,
-        volume: settings.volume,
-        music_volume: settings.musicVolume,
-        level_system_enabled: settings.levelSystemEnabled
+        timer_pomodoro_minutes: currentSettings.timers.pomodoro,
+        timer_short_break_minutes: currentSettings.timers.shortBreak,
+        timer_long_break_minutes: currentSettings.timers.longBreak,
+        pomodoros_before_long_break: currentSettings.pomodorosBeforeLongBreak,
+        auto_start_breaks: currentSettings.autoStartBreaks,
+        auto_start_pomodoros: currentSettings.autoStartPomodoros,
+        background_id: currentSettings.background,
+        playlist: currentSettings.playlist,
+        ambient_volumes: currentSettings.ambientVolumes,
+        sound_enabled: currentSettings.soundEnabled,
+        volume: currentSettings.volume,
+        music_volume: currentSettings.musicVolume,
+        level_system_enabled: currentSettings.levelSystemEnabled
       })
 
       // Update last synced state and clear dirty flag
@@ -210,8 +227,23 @@ export function useSettingsSync() {
     // Load level system preference
     settings.setLevelSystemEnabled(appUser.level_system_enabled)
 
-    // Set initial synced state
-    lastSyncedStateRef.current = serializeSettings()
+    // Set initial synced state from appUser (not from store)
+    // This ensures we capture the exact values we just loaded, avoiding stale store reads
+    lastSyncedStateRef.current = JSON.stringify({
+      timer_pomodoro_minutes: appUser.timer_pomodoro_minutes,
+      timer_short_break_minutes: appUser.timer_short_break_minutes,
+      timer_long_break_minutes: appUser.timer_long_break_minutes,
+      pomodoros_before_long_break: appUser.pomodoros_before_long_break,
+      auto_start_breaks: appUser.auto_start_breaks,
+      auto_start_pomodoros: appUser.auto_start_pomodoros,
+      background_id: appUser.background_id,
+      playlist: appUser.playlist,
+      ambient_volumes: appUser.ambient_volumes,
+      sound_enabled: appUser.sound_enabled,
+      volume: appUser.volume,
+      music_volume: appUser.music_volume,
+      level_system_enabled: appUser.level_system_enabled
+    })
     isDirtyRef.current = false
     isInitialLoadRef.current = false
 
