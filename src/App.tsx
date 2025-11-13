@@ -11,6 +11,7 @@ import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCount
 import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { useLevelNotifications } from './hooks/useLevelNotifications';
+import { useSettingsSync } from './hooks/useSettingsSync';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { getEnvironment } from './lib/environment';
@@ -20,6 +21,9 @@ function AppContent() {
   const { showLevelUp, levelUpData } = useLevelNotifications();
   const trackLogin = useSettingsStore((state) => state.trackLogin);
   const consecutiveLoginDays = useSettingsStore((state) => state.consecutiveLoginDays);
+
+  // Enable cross-device settings sync
+  useSettingsSync();
 
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [showDailyGift, setShowDailyGift] = useState(false);
