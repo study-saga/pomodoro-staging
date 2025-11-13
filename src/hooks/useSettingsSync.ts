@@ -41,25 +41,50 @@ export function useSettingsSync() {
   const getCurrentSettings = () => useSettingsStore.getState()
 
   /**
-   * Serialize settings for comparison
-   * Can serialize from store state or from a specific settings object (e.g., appUser)
+   * Serialize ALL settings and user data for comparison
+   * Includes timer prefs, visual prefs, audio, level system, stats, milestones, login tracking
    */
   const serializeSettings = (settingsOverride?: ReturnType<typeof getCurrentSettings>) => {
     const s = settingsOverride ?? getCurrentSettings()
     return JSON.stringify({
+      // Timer preferences (6 fields)
       timer_pomodoro_minutes: s.timers.pomodoro,
       timer_short_break_minutes: s.timers.shortBreak,
       timer_long_break_minutes: s.timers.longBreak,
       pomodoros_before_long_break: s.pomodorosBeforeLongBreak,
       auto_start_breaks: s.autoStartBreaks,
       auto_start_pomodoros: s.autoStartPomodoros,
+
+      // Visual preferences (3 fields)
       background_id: s.background,
       playlist: s.playlist,
       ambient_volumes: s.ambientVolumes,
+
+      // Audio preferences (3 fields)
       sound_enabled: s.soundEnabled,
       volume: s.volume,
       music_volume: s.musicVolume,
-      level_system_enabled: s.levelSystemEnabled
+
+      // System preferences (1 field)
+      level_system_enabled: s.levelSystemEnabled,
+
+      // Level system data (7 fields)
+      xp: s.xp,
+      level: s.level,
+      prestige_level: s.prestigeLevel,
+      total_pomodoros: s.totalPomodoros,
+      total_study_minutes: s.totalStudyMinutes,
+      username: s.username,
+      level_path: s.levelPath,
+
+      // Milestone tracking (2 fields)
+      total_unique_days: s.totalUniqueDays,
+      last_pomodoro_date: s.lastPomodoroDate,
+
+      // Login tracking (3 fields)
+      total_login_days: s.totalLoginDays,
+      consecutive_login_days: s.consecutiveLoginDays,
+      last_login_date: s.lastLoginDate
     })
   }
 
@@ -88,22 +113,48 @@ export function useSettingsSync() {
         // Get fresh settings state (avoid stale closure)
         const currentSettings = getCurrentSettings()
 
-        // Prepare RPC payload
+        // Prepare RPC payload with ALL user data
         const payload = {
           p_user_id: appUser.id,
+
+          // Timer preferences
           p_timer_pomodoro_minutes: currentSettings.timers.pomodoro,
           p_timer_short_break_minutes: currentSettings.timers.shortBreak,
           p_timer_long_break_minutes: currentSettings.timers.longBreak,
           p_pomodoros_before_long_break: currentSettings.pomodorosBeforeLongBreak,
           p_auto_start_breaks: currentSettings.autoStartBreaks,
           p_auto_start_pomodoros: currentSettings.autoStartPomodoros,
+
+          // Visual preferences
           p_background_id: currentSettings.background,
           p_playlist: currentSettings.playlist,
           p_ambient_volumes: currentSettings.ambientVolumes,
+
+          // Audio preferences
           p_sound_enabled: currentSettings.soundEnabled,
           p_volume: currentSettings.volume,
           p_music_volume: currentSettings.musicVolume,
-          p_level_system_enabled: currentSettings.levelSystemEnabled
+
+          // System preferences
+          p_level_system_enabled: currentSettings.levelSystemEnabled,
+
+          // Level system data
+          p_xp: currentSettings.xp,
+          p_level: currentSettings.level,
+          p_prestige_level: currentSettings.prestigeLevel,
+          p_total_pomodoros: currentSettings.totalPomodoros,
+          p_total_study_minutes: currentSettings.totalStudyMinutes,
+          p_username: currentSettings.username,
+          p_level_path: currentSettings.levelPath,
+
+          // Milestone tracking
+          p_total_unique_days: currentSettings.totalUniqueDays,
+          p_last_pomodoro_date: currentSettings.lastPomodoroDate,
+
+          // Login tracking
+          p_total_login_days: currentSettings.totalLoginDays,
+          p_consecutive_login_days: currentSettings.consecutiveLoginDays,
+          p_last_login_date: currentSettings.lastLoginDate
         }
 
         const endpoint = `${supabaseUrl}/rest/v1/rpc/update_user_preferences`
@@ -160,19 +211,44 @@ export function useSettingsSync() {
       const currentSettings = getCurrentSettings()
 
       await updateUserPreferences(appUser.id, {
+        // Timer preferences
         timer_pomodoro_minutes: currentSettings.timers.pomodoro,
         timer_short_break_minutes: currentSettings.timers.shortBreak,
         timer_long_break_minutes: currentSettings.timers.longBreak,
         pomodoros_before_long_break: currentSettings.pomodorosBeforeLongBreak,
         auto_start_breaks: currentSettings.autoStartBreaks,
         auto_start_pomodoros: currentSettings.autoStartPomodoros,
+
+        // Visual preferences
         background_id: currentSettings.background,
         playlist: currentSettings.playlist,
         ambient_volumes: currentSettings.ambientVolumes,
+
+        // Audio preferences
         sound_enabled: currentSettings.soundEnabled,
         volume: currentSettings.volume,
         music_volume: currentSettings.musicVolume,
-        level_system_enabled: currentSettings.levelSystemEnabled
+
+        // System preferences
+        level_system_enabled: currentSettings.levelSystemEnabled,
+
+        // Level system data
+        xp: currentSettings.xp,
+        level: currentSettings.level,
+        prestige_level: currentSettings.prestigeLevel,
+        total_pomodoros: currentSettings.totalPomodoros,
+        total_study_minutes: currentSettings.totalStudyMinutes,
+        username: currentSettings.username,
+        level_path: currentSettings.levelPath,
+
+        // Milestone tracking
+        total_unique_days: currentSettings.totalUniqueDays,
+        last_pomodoro_date: currentSettings.lastPomodoroDate,
+
+        // Login tracking
+        total_login_days: currentSettings.totalLoginDays,
+        consecutive_login_days: currentSettings.consecutiveLoginDays,
+        last_login_date: currentSettings.lastLoginDate
       })
 
       // Update last synced state and clear dirty flag
@@ -200,7 +276,7 @@ export function useSettingsSync() {
 
     if (!isInitialLoadRef.current) return
 
-    console.log('[Settings Sync] Loading preferences from database (one-time)')
+    console.log('[Settings Sync] Loading ALL user data from database (one-time)')
 
     // Load timer preferences
     settings.setPomodoroDuration(appUser.timer_pomodoro_minutes)
@@ -226,8 +302,28 @@ export function useSettingsSync() {
     settings.setVolume(appUser.volume)
     settings.setMusicVolume(appUser.music_volume)
 
-    // Load level system preference
+    // Load system preferences
     settings.setLevelSystemEnabled(appUser.level_system_enabled)
+
+    // Load level system data (directly set state to avoid re-calculating XP/levels)
+    useSettingsStore.setState({
+      xp: appUser.xp,
+      level: appUser.level,
+      prestigeLevel: appUser.prestige_level,
+      totalPomodoros: appUser.total_pomodoros,
+      totalStudyMinutes: appUser.total_study_minutes,
+      username: appUser.username,
+      levelPath: appUser.level_path,
+
+      // Milestone tracking
+      totalUniqueDays: appUser.total_unique_days,
+      lastPomodoroDate: appUser.last_pomodoro_date,
+
+      // Login tracking
+      totalLoginDays: appUser.total_login_days,
+      consecutiveLoginDays: appUser.consecutive_login_days,
+      lastLoginDate: appUser.last_login_date
+    })
 
     // CRITICAL: Set initial synced state from STORE (not from appUser)
     // After loading all settings into store, serialize from actual store state
@@ -280,19 +376,38 @@ export function useSettingsSync() {
     }
   }, [
     appUser?.id,
+    // Timer preferences
     settings.timers.pomodoro,
     settings.timers.shortBreak,
     settings.timers.longBreak,
     settings.pomodorosBeforeLongBreak,
     settings.autoStartBreaks,
     settings.autoStartPomodoros,
+    // Visual preferences
     settings.background,
     settings.playlist,
     JSON.stringify(settings.ambientVolumes),
+    // Audio preferences
     settings.soundEnabled,
     settings.volume,
     settings.musicVolume,
-    settings.levelSystemEnabled
+    // System preferences
+    settings.levelSystemEnabled,
+    // Level system data
+    settings.xp,
+    settings.level,
+    settings.prestigeLevel,
+    settings.totalPomodoros,
+    settings.totalStudyMinutes,
+    settings.username,
+    settings.levelPath,
+    // Milestone tracking
+    settings.totalUniqueDays,
+    settings.lastPomodoroDate,
+    // Login tracking
+    settings.totalLoginDays,
+    settings.consecutiveLoginDays,
+    settings.lastLoginDate
   ])
 
   // Set up sync triggers

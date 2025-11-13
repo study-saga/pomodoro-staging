@@ -8,22 +8,31 @@ export interface AppUser {
   username: string
   avatar: string | null
 
-  // Gamification
+  // Level system data
   level: number
   xp: number
   prestige_level: number
   level_path: 'elf' | 'human'
 
-  // Activity
-  consecutive_login_days: number
-  total_unique_days: number
+  // Stats tracking
   total_pomodoros: number
   total_study_minutes: number
 
-  // Settings
+  // Milestone tracking
+  total_unique_days: number
+  last_pomodoro_date: string | null
+
+  // Login tracking
+  consecutive_login_days: number
+  total_login_days: number
+  last_login_date: string | null
+
+  // Audio settings
   sound_enabled: boolean
   volume: number
   music_volume: number
+
+  // System settings
   level_system_enabled: boolean
 
   // Timer preferences (cross-device sync)
@@ -43,7 +52,6 @@ export interface AppUser {
   last_username_change: string | null
 
   // Timestamps
-  last_login_date: string | null
   last_login: string
   created_at: string
   updated_at: string

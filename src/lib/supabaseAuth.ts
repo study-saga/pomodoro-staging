@@ -14,17 +14,32 @@ export interface AppUser {
   discord_id: string
   username: string
   avatar: string | null
+
+  // Level system data
   level: number
   xp: number
   prestige_level: number
   level_path: 'elf' | 'human'
-  consecutive_login_days: number
-  total_unique_days: number
+
+  // Stats tracking
   total_pomodoros: number
   total_study_minutes: number
+
+  // Milestone tracking
+  total_unique_days: number
+  last_pomodoro_date: string | null
+
+  // Login tracking
+  consecutive_login_days: number
+  total_login_days: number
+  last_login_date: string | null
+
+  // Audio settings
   sound_enabled: boolean
   volume: number
   music_volume: number
+
+  // System settings
   level_system_enabled: boolean
 
   // Timer preferences (cross-device sync)
