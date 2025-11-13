@@ -29,13 +29,16 @@ AND conname LIKE '%level%';
 -- Expected: Should show all 29+ parameters including new ones
 SELECT
   'RPC Function Parameters' as test_name,
-  parameter_name,
-  data_type,
-  ordinal_position
-FROM information_schema.parameters
-WHERE specific_schema = 'public'
-  AND routine_name = 'update_user_preferences'
-ORDER BY ordinal_position;
+  p.parameter_name,
+  p.data_type,
+  p.ordinal_position
+FROM information_schema.parameters p
+JOIN information_schema.routines r
+  ON p.specific_name = r.specific_name
+  AND p.specific_schema = r.specific_schema
+WHERE r.routine_schema = 'public'
+  AND r.routine_name = 'update_user_preferences'
+ORDER BY p.ordinal_position;
 
 -- 4. CHECK: Count of parameters (should be ~30 including p_user_id)
 SELECT
@@ -45,34 +48,49 @@ SELECT
     WHEN COUNT(*) >= 30 THEN '✓ PASS'
     ELSE '✗ FAIL - Missing parameters'
   END as status
-FROM information_schema.parameters
-WHERE specific_schema = 'public'
-  AND routine_name = 'update_user_preferences';
+FROM information_schema.parameters p
+JOIN information_schema.routines r
+  ON p.specific_name = r.specific_name
+  AND p.specific_schema = r.specific_schema
+WHERE r.routine_schema = 'public'
+  AND r.routine_name = 'update_user_preferences';
 
 -- 5. CHECK: Verify specific new parameters exist
 SELECT
   'New Parameters Check' as test_name,
   CASE
     WHEN EXISTS (
-      SELECT 1 FROM information_schema.parameters
-      WHERE routine_name = 'update_user_preferences'
-      AND parameter_name = 'p_xp'
+      SELECT 1 FROM information_schema.parameters p
+      JOIN information_schema.routines r
+        ON p.specific_name = r.specific_name
+        AND p.specific_schema = r.specific_schema
+      WHERE r.routine_name = 'update_user_preferences'
+        AND r.routine_schema = 'public'
+        AND p.parameter_name = 'p_xp'
     ) THEN '✓ p_xp exists'
     ELSE '✗ p_xp MISSING'
   END as xp_param,
   CASE
     WHEN EXISTS (
-      SELECT 1 FROM information_schema.parameters
-      WHERE routine_name = 'update_user_preferences'
-      AND parameter_name = 'p_total_login_days'
+      SELECT 1 FROM information_schema.parameters p
+      JOIN information_schema.routines r
+        ON p.specific_name = r.specific_name
+        AND p.specific_schema = r.specific_schema
+      WHERE r.routine_name = 'update_user_preferences'
+        AND r.routine_schema = 'public'
+        AND p.parameter_name = 'p_total_login_days'
     ) THEN '✓ p_total_login_days exists'
     ELSE '✗ p_total_login_days MISSING'
   END as login_days_param,
   CASE
     WHEN EXISTS (
-      SELECT 1 FROM information_schema.parameters
-      WHERE routine_name = 'update_user_preferences'
-      AND parameter_name = 'p_last_pomodoro_date'
+      SELECT 1 FROM information_schema.parameters p
+      JOIN information_schema.routines r
+        ON p.specific_name = r.specific_name
+        AND p.specific_schema = r.specific_schema
+      WHERE r.routine_name = 'update_user_preferences'
+        AND r.routine_schema = 'public'
+        AND p.parameter_name = 'p_last_pomodoro_date'
     ) THEN '✓ p_last_pomodoro_date exists'
     ELSE '✗ p_last_pomodoro_date MISSING'
   END as pomodoro_date_param;
