@@ -61,9 +61,6 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
     console.log(`[Timer] Switching to ${type}, autoStart=${autoStart}`);
 
-    setTimerType(type);
-    setPausedTimeSeconds(0);
-
     // CRITICAL: Read fresh timer durations from store to avoid stale closure
     // getTimerDuration() uses captured timers from component mount, so we must
     // read directly from store at call time to get current values
@@ -83,28 +80,36 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
     console.log(`[Timer] Duration for ${type}: ${duration} seconds (${duration / 60} minutes)`);
 
-    const expiryTimestamp = getExpiryTimestamp(duration);
+    if (duration <= 0) {
+      console.error(`[Timer] Invalid duration: ${duration} seconds for ${type}`);
+      return;
+    }
 
-    // Always restart with autoStart=false to ensure timer display is properly reset
+    const expiryTimestamp = getExpiryTimestamp(duration);
+    console.log(`[Timer] Expiry timestamp:`, expiryTimestamp);
+
+    // Update state in batch
+    setTimerType(type);
+    setPausedTimeSeconds(0);
+    setHasBeenStarted(autoStart);
+
+    // Always restart with autoStart=false first to ensure proper display reset
     restart(expiryTimestamp, false);
 
     // If auto-starting, start the timer after restart completes
     if (autoStart) {
-      console.log(`[Timer] Auto-starting timer for ${type}`);
-      setHasBeenStarted(true);
-      // Use requestAnimationFrame to ensure restart has completed
-      requestAnimationFrame(() => {
+      console.log(`[Timer] Scheduling auto-start for ${type}`);
+      // Use a slightly longer delay to ensure restart has fully completed
+      setTimeout(() => {
+        console.log(`[Timer] Auto-starting timer for ${type}`);
         start();
-        console.log(`[Timer] Timer auto-started for ${type}`);
-      });
-    } else {
-      setHasBeenStarted(false);
+      }, 50);
     }
 
     // Clear guard after state updates complete
     setTimeout(() => {
       isUserInteracting.current = false;
-    }, 150);
+    }, 200);
   }, [getExpiryTimestamp, restart, start]);
 
   const handleReset = useCallback(() => {
