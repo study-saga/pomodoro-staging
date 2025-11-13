@@ -83,13 +83,22 @@ export async function updateUserSettings(
 }
 
 /**
- * Update user preferences (timer, visual, audio) atomically
- * Uses RPC function for atomic updates with authorization check
+ * Update user settings (CLIENT-CONTROLLED)
+ *
+ * SECURITY: Only syncs settings that users can safely control.
+ * Does NOT sync XP, levels, or stats (those are server-controlled).
+ *
+ * Stats are updated ONLY through server-validated endpoints:
+ * - atomic_save_completed_pomodoro() - When user completes a pomodoro
+ * - increment_user_xp() - Server-controlled XP updates
+ * - increment_pomodoro_totals() - Server-controlled stat updates
+ *
+ * This prevents users from cheating by setting arbitrary XP/levels.
  */
 export async function updateUserPreferences(
   userId: string,
   preferences: {
-    // Timer preferences
+    // Timer preferences (6 fields) - SAFE to sync from client
     timer_pomodoro_minutes?: number
     timer_short_break_minutes?: number
     timer_long_break_minutes?: number
@@ -97,45 +106,55 @@ export async function updateUserPreferences(
     auto_start_breaks?: boolean
     auto_start_pomodoros?: boolean
 
-    // Visual preferences
+    // Visual preferences (3 fields) - SAFE to sync from client
     background_id?: string
     playlist?: 'lofi' | 'synthwave'
     ambient_volumes?: Record<string, number>
 
-    // Audio preferences
+    // Audio preferences (3 fields) - SAFE to sync from client
     sound_enabled?: boolean
     volume?: number
     music_volume?: number
 
-    // Level system
+    // System preferences (2 fields) - SAFE to sync from client
     level_system_enabled?: boolean
+    level_path?: 'elf' | 'human'  // Visual preference only
   }
 ): Promise<AppUser> {
-  console.log(`[User Sync] Updating preferences for user ${userId}`, preferences)
+  console.log(`[User Sync] Updating user settings for user ${userId}`)
 
-  const { data, error } = await supabase.rpc('update_user_preferences', {
+  const { data, error } = await supabase.rpc('update_user_settings', {
     p_user_id: userId,
+
+    // Timer preferences
     p_timer_pomodoro_minutes: preferences.timer_pomodoro_minutes ?? null,
     p_timer_short_break_minutes: preferences.timer_short_break_minutes ?? null,
     p_timer_long_break_minutes: preferences.timer_long_break_minutes ?? null,
     p_pomodoros_before_long_break: preferences.pomodoros_before_long_break ?? null,
     p_auto_start_breaks: preferences.auto_start_breaks ?? null,
     p_auto_start_pomodoros: preferences.auto_start_pomodoros ?? null,
+
+    // Visual preferences
     p_background_id: preferences.background_id ?? null,
     p_playlist: preferences.playlist ?? null,
-    p_ambient_volumes: preferences.ambient_volumes ?? null, // Supabase serializes JSONB automatically
+    p_ambient_volumes: preferences.ambient_volumes ?? null,
+
+    // Audio preferences
     p_sound_enabled: preferences.sound_enabled ?? null,
     p_volume: preferences.volume ?? null,
     p_music_volume: preferences.music_volume ?? null,
-    p_level_system_enabled: preferences.level_system_enabled ?? null
+
+    // System preferences
+    p_level_system_enabled: preferences.level_system_enabled ?? null,
+    p_level_path: preferences.level_path ?? null
   })
 
   if (error) {
-    console.error('[User Sync] Error updating preferences:', error)
-    throw new Error(`Failed to update preferences: ${error.message}`)
+    console.error('[User Sync] Error updating settings:', error)
+    throw new Error(`Failed to update settings: ${error.message}`)
   }
 
-  console.log('[User Sync] Preferences updated successfully')
+  console.log('[User Sync] Settings updated successfully')
   return data as AppUser
 }
 

@@ -1,53 +1,9 @@
 import { supabase } from './supabase'
 import type { DiscordUser } from './discordAuth'
+import type { AppUser } from './types'
 
-export interface AppUser {
-  id: string
-  auth_user_id: string
-  discord_id: string
-  username: string
-  avatar: string | null
-
-  // Gamification
-  level: number
-  xp: number
-  prestige_level: number
-  level_path: 'elf' | 'human'
-
-  // Activity
-  consecutive_login_days: number
-  total_unique_days: number
-  total_pomodoros: number
-  total_study_minutes: number
-
-  // Settings
-  sound_enabled: boolean
-  volume: number
-  music_volume: number
-  level_system_enabled: boolean
-
-  // Timer preferences (cross-device sync)
-  timer_pomodoro_minutes: number
-  timer_short_break_minutes: number
-  timer_long_break_minutes: number
-  pomodoros_before_long_break: number
-  auto_start_breaks: boolean
-  auto_start_pomodoros: boolean
-
-  // Visual preferences (cross-device sync)
-  background_id: string
-  playlist: 'lofi' | 'synthwave'
-  ambient_volumes: Record<string, number>
-
-  // Username change tracking
-  last_username_change: string | null
-
-  // Timestamps
-  last_login_date: string | null
-  last_login: string
-  created_at: string
-  updated_at: string
-}
+// Re-export for backward compatibility
+export type { AppUser }
 
 /**
  * Sync Discord user to Supabase database
