@@ -10,11 +10,16 @@ import {
   getLevelName,
   getBadgeForLevel,
 } from '../../data/levels';
+import { useAuth } from '../../contexts/AuthContext';
+import { updateUsernameSecure } from '../../lib/userSyncAuth';
 
 export function SettingsModal() {
+  const { appUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'music' | 'progress'>('timer');
   const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [usernameLoading, setUsernameLoading] = useState(false);
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -147,13 +152,74 @@ export function SettingsModal() {
     }
   }, [isOpen, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, username]);
 
-  const handleSaveUsername = () => {
-    if (canEditUsername()) {
-      setUsername(usernameInput);
-    } else if (xp >= 50) {
-      if (window.confirm('Changing username early costs 50 XP. Continue?')) {
-        setUsername(usernameInput, true);
+  const handleSaveUsername = async () => {
+    if (!appUser) {
+      setUsernameError('You must be logged in to change username');
+      return;
+    }
+
+    if (!usernameInput || usernameInput.trim().length === 0) {
+      setUsernameError('Username cannot be empty');
+      return;
+    }
+
+    if (usernameInput.length > 20) {
+      setUsernameError('Username cannot exceed 20 characters');
+      return;
+    }
+
+    if (usernameInput === username) {
+      setUsernameError('That is already your username');
+      return;
+    }
+
+    setUsernameError(null);
+    setUsernameLoading(true);
+
+    try {
+      const canEditFree = canEditUsername();
+
+      if (canEditFree) {
+        // Free username change (cooldown has passed)
+        const updatedUser = await updateUsernameSecure(appUser.id, usernameInput, false);
+
+        // Update local Zustand store with new username and timestamp
+        setUsername(usernameInput);
+
+        console.log('[Settings] Username updated successfully (free):', updatedUser.username);
+        alert('Username updated successfully!');
+      } else if (xp >= 50) {
+        // Ask user if they want to spend 50 XP
+        if (window.confirm('Changing username early costs 50 XP. Continue?')) {
+          const updatedUser = await updateUsernameSecure(appUser.id, usernameInput, true);
+
+          // Update local Zustand store with new username, XP, and timestamp
+          setUsername(usernameInput, true);
+
+          console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
+          alert('Username updated! 50 XP deducted.');
+        }
+      } else {
+        setUsernameError('Insufficient XP. You need 50 XP to change username early.');
       }
+    } catch (error) {
+      console.error('[Settings] Error updating username:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      // Parse error message for user-friendly display
+      if (errorMessage.includes('Insufficient XP')) {
+        setUsernameError('You do not have enough XP (need 50 XP)');
+      } else if (errorMessage.includes('cooldown')) {
+        setUsernameError('Username change is on cooldown. Wait or pay 50 XP.');
+      } else if (errorMessage.includes('empty')) {
+        setUsernameError('Username cannot be empty');
+      } else if (errorMessage.includes('20 characters')) {
+        setUsernameError('Username cannot exceed 20 characters');
+      } else {
+        setUsernameError(`Failed to update username: ${errorMessage}`);
+      }
+    } finally {
+      setUsernameLoading(false);
     }
   };
 
@@ -745,18 +811,28 @@ export function SettingsModal() {
                   <input
                     type="text"
                     value={usernameInput}
-                    onChange={(e) => setUsernameInput(e.target.value.slice(0, 20))}
+                    onChange={(e) => {
+                      setUsernameInput(e.target.value.slice(0, 20));
+                      setUsernameError(null); // Clear error when typing
+                    }}
                     maxLength={20}
-                    className="flex-1 bg-white/10 text-white px-4 py-2 rounded-lg border border-white/20"
+                    disabled={usernameLoading}
+                    className="flex-1 bg-white/10 text-white px-4 py-2 rounded-lg border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="User"
                   />
                   <button
                     onClick={handleSaveUsername}
-                    className="px-6 py-2 bg-white text-black font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                    disabled={usernameLoading}
+                    className="px-6 py-2 bg-white text-black font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Save Username
+                    {usernameLoading ? 'Saving...' : 'Save Username'}
                   </button>
                 </div>
+                {usernameError && (
+                  <p className="text-red-400 text-sm mt-2">
+                    ⚠ {usernameError}
+                  </p>
+                )}
               </div>
 
               <div>
