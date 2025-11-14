@@ -165,11 +165,12 @@ export const useSettingsStore = create<SettingsStore>()(
             const { supabase } = await import('../lib/supabase');
 
             // Get current auth user
-            const { data: { user } } = await supabase.auth.getSession();
-            if (!user) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) {
               console.warn('[addXP] No authenticated user - XP saved locally only');
               return;
             }
+            const user = session.user;
 
             // Get appUser to find user_id and discord_id
             const { data: appUser } = await supabase

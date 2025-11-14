@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useSettingsStore } from '../../store/useSettingsStore';
 
 interface DailyGiftGridProps {
   show: boolean;
@@ -14,28 +14,70 @@ interface GiftBox {
   id: number;
   type: GiftType;
   value: string;
+  xpAmount?: number; // Actual XP to award
   isRevealed: boolean;
   isSelected: boolean;
 }
 
 export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps) {
-  // Initialize 12 gift boxes (6x2 grid)
-  // Days 1-9 are regular XP, day 10 is special tomato, days 11-12 are gifts
+  const addXP = useSettingsStore((state) => state.addXP);
+
+  // Generate randomized gifts based on the day (seeded randomness for consistency)
   const initializeGifts = (day: number): GiftBox[] => {
-    const baseGifts: Omit<GiftBox, 'isRevealed' | 'isSelected'>[] = [
-      { id: 1, type: 'xp', value: '+10xp' },
-      { id: 2, type: 'xp', value: '+10xp' },
-      { id: 3, type: 'xp', value: '+10xp' },
-      { id: 4, type: 'xp', value: '+10xp' },
-      { id: 5, type: 'xp', value: '+10xp' },
-      { id: 6, type: 'xp', value: '+10xp' },
-      { id: 7, type: 'xp', value: '+10xp' },
-      { id: 8, type: 'xp', value: '+10xp' },
-      { id: 9, type: 'xp', value: '+10xp' },
-      { id: 10, type: 'special', value: '🍅' },
-      { id: 11, type: 'gift', value: '' },
-      { id: 12, type: 'gift', value: '' },
-    ];
+    // Seed the random number generator with the day for consistent results
+    const seededRandom = (seed: number) => {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    };
+
+    const baseGifts: Omit<GiftBox, 'isRevealed' | 'isSelected'>[] = [];
+
+    for (let i = 1; i <= 12; i++) {
+      const random = seededRandom(i * 137); // Use prime number for better distribution
+
+      if (i === 10) {
+        // Day 10 is always the special tomato with bonus XP
+        baseGifts.push({
+          id: i,
+          type: 'special',
+          value: '🍅',
+          xpAmount: 50 // 5x bonus
+        });
+      } else if (i === 12) {
+        // Day 12 is always a mystery gift with huge XP
+        baseGifts.push({
+          id: i,
+          type: 'gift',
+          value: '🎁',
+          xpAmount: 100 // 10x bonus
+        });
+      } else {
+        // Days 1-9, 11: Randomized XP rewards
+        let xpAmount: number;
+        let displayValue: string;
+
+        if (random < 0.5) {
+          // 50% chance: Small reward (10 XP = 1 minute)
+          xpAmount = 10;
+          displayValue = '+10xp';
+        } else if (random < 0.8) {
+          // 30% chance: Medium reward (20 XP = 2 minutes)
+          xpAmount = 20;
+          displayValue = '+20xp';
+        } else {
+          // 20% chance: Large reward (30 XP = 3 minutes)
+          xpAmount = 30;
+          displayValue = '+30xp';
+        }
+
+        baseGifts.push({
+          id: i,
+          type: 'xp',
+          value: displayValue,
+          xpAmount
+        });
+      }
+    }
 
     return baseGifts.map(gift => ({
       ...gift,
@@ -46,15 +88,17 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
   };
 
   const [gifts, setGifts] = useState<GiftBox[]>(() => initializeGifts(currentDay));
+  const [xpAwarded, setXpAwarded] = useState(false);
 
   // Reinitialize gifts when show becomes true with updated currentDay
   useEffect(() => {
     if (show) {
       setGifts(initializeGifts(currentDay));
+      setXpAwarded(false); // Reset XP awarded flag
     }
   }, [show, currentDay]);
 
-  // Auto-reveal current day's gift and auto-close after 2.5 seconds
+  // Auto-reveal current day's gift, award XP, and auto-close
   useEffect(() => {
     if (show && currentDay >= 1 && currentDay <= 12) {
       // Wait 0.5s for entrance animation, then reveal current day's gift
@@ -63,19 +107,31 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
           ...g,
           isRevealed: g.id <= currentDay,
         })));
+
+        // Award XP for the current day's gift
+        if (!xpAwarded) {
+          const currentGift = gifts.find(g => g.id === currentDay);
+          if (currentGift?.xpAmount) {
+            // Convert XP to minutes (10 XP = 1 minute)
+            const minutes = currentGift.xpAmount / 10;
+            addXP(minutes);
+            setXpAwarded(true);
+            console.log(`[DailyGift] Awarded ${currentGift.xpAmount} XP (${minutes} minute equivalent) for day ${currentDay}`);
+          }
+        }
       }, 500);
 
-      // Auto-close after 2.5 seconds total
+      // Auto-close after 3 seconds total (give user time to see the reward)
       const closeTimer = setTimeout(() => {
         onClose();
-      }, 2500);
+      }, 3000);
 
       return () => {
         clearTimeout(revealTimer);
         clearTimeout(closeTimer);
       };
     }
-  }, [show, currentDay, onClose]);
+  }, [show, currentDay, onClose, gifts, xpAwarded, addXP]);
 
   return (
     <AnimatePresence>
@@ -227,15 +283,16 @@ function GiftCard({ gift, index }: GiftCardProps) {
           </motion.span>
         )}
 
-        {/* Revealed gift boxes show gift icon */}
+        {/* Revealed gift boxes show gift emoji */}
         {gift.type === 'gift' && gift.isRevealed && (
-          <motion.div
+          <motion.span
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 200 }}
+            className="text-5xl"
           >
-            <Gift className="w-10 h-10 text-yellow-400" />
-          </motion.div>
+            {gift.value}
+          </motion.span>
         )}
       </div>
     </motion.div>
