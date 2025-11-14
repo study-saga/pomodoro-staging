@@ -45,6 +45,7 @@ interface SettingsStore extends Settings {
 
   // Level system actions
   addXP: (minutes: number) => void;
+  addDailyGiftXP: (xpAmount: number) => void;
   setUsername: (username: string, forceWithXP?: boolean) => void;
   setLevelPath: (path: 'elf' | 'human') => void;
   setLevelSystemEnabled: (enabled: boolean) => void;
@@ -193,6 +194,69 @@ export const useSettingsStore = create<SettingsStore>()(
             console.log('[addXP] ✓ XP synced to database');
           } catch (error) {
             console.error('[addXP] Failed to sync XP to database:', error);
+            // Non-fatal - local XP is already saved
+          }
+        })();
+      },
+
+      addDailyGiftXP: (xpAmount) => {
+        const state = get();
+        let newXP = state.xp + xpAmount;
+        let newLevel = state.level;
+        let newPrestigeLevel = state.prestigeLevel;
+
+        // Check for level ups
+        while (newLevel < MAX_LEVEL && newXP >= getXPNeeded(newLevel)) {
+          newXP -= getXPNeeded(newLevel);
+          newLevel++;
+        }
+
+        // Check for prestige
+        if (newLevel >= MAX_LEVEL && newXP > 0) {
+          newPrestigeLevel++;
+          newLevel = 1;
+          // XP continues to accumulate
+        }
+
+        // Update local store first (optimistic update for instant UI feedback)
+        set({
+          xp: newXP,
+          level: newLevel,
+          prestigeLevel: newPrestigeLevel,
+        });
+
+        // Sync to database in background (fire and forget)
+        (async () => {
+          try {
+            const { incrementUserXP } = await import('../lib/userSyncAuth');
+            const { supabase } = await import('../lib/supabase');
+
+            // Get current auth user
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) {
+              console.warn('[addDailyGiftXP] No authenticated user - XP saved locally only');
+              return;
+            }
+            const user = session.user;
+
+            // Get appUser to find user_id
+            const { data: appUser } = await supabase
+              .from('users')
+              .select('id')
+              .eq('auth_user_id', user.id)
+              .maybeSingle();
+
+            if (!appUser) {
+              console.warn('[addDailyGiftXP] No app user found - XP saved locally only');
+              return;
+            }
+
+            // Increment XP in database using the dedicated RPC function
+            await incrementUserXP(appUser.id, xpAmount);
+
+            console.log(`[addDailyGiftXP] ✓ ${xpAmount} XP synced to database`);
+          } catch (error) {
+            console.error('[addDailyGiftXP] Failed to sync XP to database:', error);
             // Non-fatal - local XP is already saved
           }
         })();

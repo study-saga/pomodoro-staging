@@ -20,7 +20,7 @@ interface GiftBox {
 }
 
 export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps) {
-  const addXP = useSettingsStore((state) => state.addXP);
+  const addDailyGiftXP = useSettingsStore((state) => state.addDailyGiftXP);
 
   // Generate randomized gifts based on the day (seeded randomness for consistency)
   const initializeGifts = (day: number): GiftBox[] => {
@@ -112,11 +112,10 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
         if (!xpAwarded) {
           const currentGift = gifts.find(g => g.id === currentDay);
           if (currentGift?.xpAmount) {
-            // Convert XP to minutes (10 XP = 1 minute)
-            const minutes = currentGift.xpAmount / 10;
-            addXP(minutes);
+            // Award XP directly (no pomodoro creation)
+            addDailyGiftXP(currentGift.xpAmount);
             setXpAwarded(true);
-            console.log(`[DailyGift] Awarded ${currentGift.xpAmount} XP (${minutes} minute equivalent) for day ${currentDay}`);
+            console.log(`[DailyGift] Awarded ${currentGift.xpAmount} XP for day ${currentDay}`);
           }
         }
       }, 500);
@@ -131,7 +130,7 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
         clearTimeout(closeTimer);
       };
     }
-  }, [show, currentDay, onClose, gifts, xpAwarded, addXP]);
+  }, [show, currentDay, onClose, gifts, xpAwarded, addDailyGiftXP]);
 
   return (
     <AnimatePresence>
