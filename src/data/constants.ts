@@ -1,8 +1,24 @@
-// Direct R2 URLs - saves Vercel bandwidth by loading media directly from Cloudflare R2
-export const R2_BASE_URL = 'https://pub-7e068d8c526a459ea67ff46fe3762059.r2.dev';
-export const R2_MUSIC_BASE_URL = `${R2_BASE_URL}/music`;
-export const R2_EFFECTS_BASE_URL = `${R2_BASE_URL}/effects`;
-export const R2_BACKGROUNDS_BASE_URL = `${R2_BASE_URL}/backgrounds`;
+// Check if running in Discord Activity (needs proxied URLs to bypass CSP)
+const isDiscordActivity = () => {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.has('frame_id') || params.has('instance_id');
+};
+
+// R2 URLs - Use Discord proxy in Activities, direct URLs on web
+// Discord Activity: Use mapped URLs (bypasses CSP restrictions)
+// Web environment: Use direct R2 URLs (saves Vercel bandwidth)
+export const R2_MUSIC_BASE_URL = isDiscordActivity()
+  ? '/r2-audio'
+  : 'https://pub-7e068d8c526a459ea67ff46fe3762059.r2.dev/music';
+
+export const R2_EFFECTS_BASE_URL = isDiscordActivity()
+  ? '/r2-effects'
+  : 'https://pub-7e068d8c526a459ea67ff46fe3762059.r2.dev/effects';
+
+export const R2_BACKGROUNDS_BASE_URL = isDiscordActivity()
+  ? '/r2-backgrounds'
+  : 'https://pub-7e068d8c526a459ea67ff46fe3762059.r2.dev/backgrounds';
 
 export const AMBIENT_SOUNDS = [
   { id: 'rain', name: 'Rain', file: `${R2_EFFECTS_BASE_URL}/rain.mp3` },
