@@ -146,6 +146,7 @@ export const useSettingsStore = create<SettingsStore>()(
           }
         }
 
+        // Update local store first (optimistic update for instant UI feedback)
         set({
           xp: newXP,
           level: newLevel,
@@ -155,6 +156,45 @@ export const useSettingsStore = create<SettingsStore>()(
           totalUniqueDays: newTotalUniqueDays,
           lastPomodoroDate: today,
         });
+
+        // Sync to database in background (fire and forget)
+        // This ensures XP persists across page refreshes
+        (async () => {
+          try {
+            const { saveCompletedPomodoro } = await import('../lib/userSyncAuth');
+            const { supabase } = await import('../lib/supabase');
+
+            // Get current auth user
+            const { data: { user } } = await supabase.auth.getSession();
+            if (!user) {
+              console.warn('[addXP] No authenticated user - XP saved locally only');
+              return;
+            }
+
+            // Get appUser to find user_id and discord_id
+            const { data: appUser } = await supabase
+              .from('users')
+              .select('id, discord_id')
+              .eq('auth_user_id', user.id)
+              .maybeSingle();
+
+            if (!appUser) {
+              console.warn('[addXP] No app user found - XP saved locally only');
+              return;
+            }
+
+            // Save pomodoro to database (this atomically updates XP and stats)
+            await saveCompletedPomodoro(appUser.id, appUser.discord_id, {
+              duration_minutes: minutes,
+              xp_earned: xpGained,
+            });
+
+            console.log('[addXP] ✓ XP synced to database');
+          } catch (error) {
+            console.error('[addXP] Failed to sync XP to database:', error);
+            // Non-fatal - local XP is already saved
+          }
+        })();
       },
 
       setUsername: (username, forceWithXP = false) => {

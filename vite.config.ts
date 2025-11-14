@@ -6,8 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    host: '0.0.0.0', // Allow external connections
     hmr: {
-      clientPort: 443, // Required for Discord Activities (HTTPS proxy)
+      host: 'dev.study-saga.com', // Your custom domain
+      clientPort: 443, // HTTPS port
+      protocol: 'wss', // Secure WebSocket for HMR
     },
   },
 })
