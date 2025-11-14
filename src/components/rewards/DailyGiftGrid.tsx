@@ -100,37 +100,42 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
 
   // Auto-reveal current day's gift, award XP, and auto-close
   useEffect(() => {
-    if (show && currentDay >= 1 && currentDay <= 12) {
-      // Wait 0.5s for entrance animation, then reveal current day's gift
-      const revealTimer = setTimeout(() => {
-        setGifts(prev => prev.map(g => ({
-          ...g,
-          isRevealed: g.id <= currentDay,
-        })));
-
-        // Award XP for the current day's gift
-        if (!xpAwarded) {
-          const currentGift = gifts.find(g => g.id === currentDay);
-          if (currentGift?.xpAmount) {
-            // Award XP directly (no pomodoro creation)
-            addDailyGiftXP(currentGift.xpAmount);
-            setXpAwarded(true);
-            console.log(`[DailyGift] Awarded ${currentGift.xpAmount} XP for day ${currentDay}`);
-          }
-        }
-      }, 500);
-
-      // Auto-close after 3 seconds total (give user time to see the reward)
-      const closeTimer = setTimeout(() => {
-        onClose();
-      }, 3000);
-
-      return () => {
-        clearTimeout(revealTimer);
-        clearTimeout(closeTimer);
-      };
+    if (!show || currentDay < 1 || currentDay > 12) {
+      return;
     }
-  }, [show, currentDay, onClose, gifts, xpAwarded, addDailyGiftXP]);
+
+    // Wait 0.5s for entrance animation, then reveal current day's gift
+    const revealTimer = setTimeout(() => {
+      setGifts(prev => prev.map(g => ({
+        ...g,
+        isRevealed: g.id <= currentDay,
+      })));
+
+      // Award XP for the current day's gift
+      if (!xpAwarded) {
+        const currentGift = gifts.find(g => g.id === currentDay);
+        if (currentGift?.xpAmount) {
+          // Award XP directly (no pomodoro creation)
+          addDailyGiftXP(currentGift.xpAmount);
+          setXpAwarded(true);
+          console.log(`[DailyGift] Awarded ${currentGift.xpAmount} XP for day ${currentDay}`);
+        }
+      }
+    }, 500);
+
+    // Auto-close after 3 seconds total (give user time to see the reward)
+    const closeTimer = setTimeout(() => {
+      console.log('[DailyGift] Auto-closing modal');
+      onClose();
+    }, 3000);
+
+    return () => {
+      clearTimeout(revealTimer);
+      clearTimeout(closeTimer);
+    };
+    // Only re-run when show or currentDay changes, not when gifts/xpAwarded changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show, currentDay]);
 
   return (
     <AnimatePresence>
