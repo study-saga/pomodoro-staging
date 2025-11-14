@@ -21,6 +21,7 @@ interface GiftBox {
 
 export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps) {
   const addDailyGiftXP = useSettingsStore((state) => state.addDailyGiftXP);
+  const markDailyGiftClaimed = useSettingsStore((state) => state.markDailyGiftClaimed);
 
   // Generate randomized gifts based on the day (seeded randomness for consistency)
   const initializeGifts = (day: number): GiftBox[] => {
@@ -117,6 +118,8 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
         if (currentGift?.xpAmount) {
           // Award XP directly (no pomodoro creation)
           addDailyGiftXP(currentGift.xpAmount);
+          // Mark gift as claimed for today
+          markDailyGiftClaimed();
           setXpAwarded(true);
           console.log(`[DailyGift] Awarded ${currentGift.xpAmount} XP for day ${currentDay}`);
         }

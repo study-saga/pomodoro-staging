@@ -30,13 +30,16 @@ function AppContent() {
 
   // Check if user visited today and show daily gift
   useEffect(() => {
-    const { isNewDay } = trackLogin();
+    const { isNewDay, giftAlreadyClaimed } = trackLogin();
 
-    if (isNewDay) {
-      // Show the daily gift for the current day
+    // Only show gift if it's a new day OR if user hasn't claimed today's gift yet
+    if ((isNewDay || !giftAlreadyClaimed) && consecutiveLoginDays > 0) {
+      console.log('[App] Showing daily gift - New day:', isNewDay, 'Already claimed:', giftAlreadyClaimed);
       setShowDailyGift(true);
+    } else {
+      console.log('[App] Not showing daily gift - New day:', isNewDay, 'Already claimed:', giftAlreadyClaimed);
     }
-  }, [trackLogin]);
+  }, [trackLogin, consecutiveLoginDays]);
 
   // Loading state
   if (loading) {

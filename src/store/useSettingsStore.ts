@@ -57,7 +57,8 @@ interface SettingsStore extends Settings {
   simulateUniqueDay: () => void; // Dev-only function to test milestones
 
   // Login tracking
-  trackLogin: () => { isNewDay: boolean; currentDay: number };
+  trackLogin: () => { isNewDay: boolean; currentDay: number; giftAlreadyClaimed: boolean };
+  markDailyGiftClaimed: () => void;
 
   // Computed
   canEditUsername: () => boolean;
@@ -347,10 +348,12 @@ export const useSettingsStore = create<SettingsStore>()(
 
         // Check if this is a new day
         if (state.lastLoginDate === today) {
-          // Same day, no updates needed
+          // Same day, check if gift was already claimed today
+          const giftAlreadyClaimed = state.lastDailyGiftDate === today;
           return {
             isNewDay: false,
             currentDay: state.consecutiveLoginDays,
+            giftAlreadyClaimed,
           };
         }
 
@@ -372,10 +375,18 @@ export const useSettingsStore = create<SettingsStore>()(
           totalLoginDays: newTotalLoginDays,
         });
 
+        // Gift hasn't been claimed today (it's a new day)
         return {
           isNewDay: true,
           currentDay: newConsecutiveDays,
+          giftAlreadyClaimed: false,
         };
+      },
+
+      markDailyGiftClaimed: () => {
+        const today = new Date().toISOString().split('T')[0];
+        set({ lastDailyGiftDate: today });
+        console.log('[DailyGift] Marked daily gift as claimed for', today);
       },
 
       // Computed
