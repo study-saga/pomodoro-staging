@@ -28,7 +28,7 @@ function AppContent() {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [showDailyGift, setShowDailyGift] = useState(false);
 
-  // Check if user visited today and show daily gift
+  // Check if user visited today and show daily gift (only on mount)
   useEffect(() => {
     const { isNewDay, giftAlreadyClaimed } = trackLogin();
 
@@ -39,7 +39,9 @@ function AppContent() {
     } else {
       console.log('[App] Not showing daily gift - New day:', isNewDay, 'Already claimed:', giftAlreadyClaimed);
     }
-  }, [trackLogin, consecutiveLoginDays]);
+    // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Loading state
   if (loading) {
