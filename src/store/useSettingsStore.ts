@@ -350,6 +350,7 @@ export const useSettingsStore = create<SettingsStore>()(
         if (state.lastLoginDate === today) {
           // Same day, check if gift was already claimed today
           const giftAlreadyClaimed = state.lastDailyGiftDate === today;
+          console.log('[trackLogin] Same day - lastDailyGiftDate:', state.lastDailyGiftDate, 'today:', today, 'claimed:', giftAlreadyClaimed);
           return {
             isNewDay: false,
             currentDay: state.consecutiveLoginDays,
@@ -376,6 +377,7 @@ export const useSettingsStore = create<SettingsStore>()(
         });
 
         // Gift hasn't been claimed today (it's a new day)
+        console.log('[trackLogin] New day - consecutiveLoginDays:', newConsecutiveDays, 'giftAlreadyClaimed: false');
         return {
           isNewDay: true,
           currentDay: newConsecutiveDays,
