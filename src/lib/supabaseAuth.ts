@@ -7,47 +7,10 @@
 
 import { supabase } from './supabase'
 import type { User, Session } from '@supabase/supabase-js'
+import type { AppUser } from './types'
 
-export interface AppUser {
-  id: string
-  auth_user_id: string
-  discord_id: string
-  username: string
-  avatar: string | null
-  level: number
-  xp: number
-  prestige_level: number
-  level_path: 'elf' | 'human'
-  consecutive_login_days: number
-  total_unique_days: number
-  total_pomodoros: number
-  total_study_minutes: number
-  sound_enabled: boolean
-  volume: number
-  music_volume: number
-  level_system_enabled: boolean
-
-  // Timer preferences (cross-device sync)
-  timer_pomodoro_minutes: number
-  timer_short_break_minutes: number
-  timer_long_break_minutes: number
-  pomodoros_before_long_break: number
-  auto_start_breaks: boolean
-  auto_start_pomodoros: boolean
-
-  // Visual preferences (cross-device sync)
-  background_id: string
-  playlist: 'lofi' | 'synthwave'
-  ambient_volumes: Record<string, number>
-
-  // Username change tracking
-  last_username_change: string | null
-
-  // Timestamps
-  last_login: string | null
-  created_at: string
-  updated_at: string
-}
+// Re-export for backward compatibility
+export type { AppUser }
 
 export interface AuthResult {
   user: User
@@ -128,8 +91,9 @@ export async function signInWithDiscord(): Promise<void> {
 
 /**
  * Fetch or create app user profile
+ * Exported for use in auth state change listeners
  */
-async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
+export async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
   console.log('[Supabase Auth] Fetching app user for auth ID:', authUser.id)
 
   // Extract Discord data from user metadata
