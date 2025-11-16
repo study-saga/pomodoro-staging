@@ -6,7 +6,8 @@ import { saveCompletedPomodoro } from '../../lib/userSyncAuth';
 import { useAuth } from '../../contexts/AuthContext';
 import type { TimerType } from '../../types';
 
-const XP_PER_MINUTE = 10;
+const XP_PER_MINUTE_POMODORO = 2;
+const XP_PER_MINUTE_BREAK = 1;
 
 export const PomodoroTimer = memo(function PomodoroTimer() {
   const [timerType, setTimerType] = useState<TimerType>('pomodoro');
@@ -224,13 +225,13 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     }
     flashTimeoutRef.current = setTimeout(() => setIsFlashing(false), 1000);
 
-    // Award XP if it was a Pomodoro
+    // Award XP based on timer type
     if (timerType === 'pomodoro') {
       const durationMinutes = timers.pomodoro;
-      const xpEarned = durationMinutes * XP_PER_MINUTE;
+      const xpEarned = durationMinutes * XP_PER_MINUTE_POMODORO;
 
       // Update local state immediately (for instant UI feedback)
-      addXP(durationMinutes);
+      addXP(xpEarned);
       setPomodoroCount((prev) => prev + 1);
 
       // Save to database (async - don't block UI)
@@ -257,6 +258,18 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       } else {
         console.warn('[Timer] Cannot save pomodoro - user not authenticated', { appUser });
       }
+    } else if (timerType === 'shortBreak' || timerType === 'longBreak') {
+      // Award XP for breaks (1 XP per minute) - don't increment pomodoro count
+      const durationMinutes = timerType === 'shortBreak' ? timers.shortBreak : timers.longBreak;
+      const xpEarned = durationMinutes * XP_PER_MINUTE_BREAK;
+
+      console.log(`[Timer] ${timerType} complete! Awarding ${xpEarned} XP (${durationMinutes} min × ${XP_PER_MINUTE_BREAK} XP/min)`);
+
+      // Manually update XP without incrementing pomodoro count
+      const currentState = useSettingsStore.getState();
+      useSettingsStore.setState({
+        xp: currentState.xp + xpEarned
+      });
     }
 
     // CRITICAL: Read fresh auto-start settings from store to avoid stale closure
