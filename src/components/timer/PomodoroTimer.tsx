@@ -2,7 +2,11 @@ import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useTimer } from 'react-timer-hook';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { BELL_SOUND } from '../../data/constants';
+import { saveCompletedPomodoro } from '../../lib/userSyncAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import type { TimerType } from '../../types';
+
+const XP_PER_MINUTE = 10;
 
 export const PomodoroTimer = memo(function PomodoroTimer() {
   const [timerType, setTimerType] = useState<TimerType>('pomodoro');
@@ -10,6 +14,8 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [isFlashing, setIsFlashing] = useState(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const { appUser } = useAuth();
 
   const {
     timers,
@@ -220,8 +226,37 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
     // Award XP if it was a Pomodoro
     if (timerType === 'pomodoro') {
-      addXP(timers.pomodoro);
+      const durationMinutes = timers.pomodoro;
+      const xpEarned = durationMinutes * XP_PER_MINUTE;
+
+      // Update local state immediately (for instant UI feedback)
+      addXP(durationMinutes);
       setPomodoroCount((prev) => prev + 1);
+
+      // Save to database (async - don't block UI)
+      if (appUser?.id && appUser?.discord_id) {
+        console.log('[Timer] Saving pomodoro to database...', {
+          userId: appUser.id,
+          discordId: appUser.discord_id,
+          duration: durationMinutes,
+          xp: xpEarned
+        });
+
+        saveCompletedPomodoro(appUser.id, appUser.discord_id, {
+          duration_minutes: durationMinutes,
+          xp_earned: xpEarned,
+          task_name: null,
+          notes: null
+        })
+          .then(() => {
+            console.log('[Timer] ✓ Pomodoro saved to database successfully');
+          })
+          .catch((error) => {
+            console.error('[Timer] ✗ Failed to save pomodoro to database:', error);
+          });
+      } else {
+        console.warn('[Timer] Cannot save pomodoro - user not authenticated', { appUser });
+      }
     }
 
     // CRITICAL: Read fresh auto-start settings from store to avoid stale closure
