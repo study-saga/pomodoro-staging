@@ -245,8 +245,8 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
         saveCompletedPomodoro(appUser.id, appUser.discord_id, {
           duration_minutes: durationMinutes,
           xp_earned: xpEarned,
-          task_name: null,
-          notes: null
+          task_name: undefined,
+          notes: undefined
         })
           .then(() => {
             console.log('[Timer] ✓ Pomodoro saved to database successfully');
