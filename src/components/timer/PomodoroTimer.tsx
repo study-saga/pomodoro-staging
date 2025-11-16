@@ -231,7 +231,8 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       const xpEarned = durationMinutes * XP_PER_MINUTE_POMODORO;
 
       // Update local state immediately (for instant UI feedback)
-      addXP(xpEarned);
+      // NOTE: addXP expects MINUTES, not XP amount (it calculates XP internally)
+      addXP(durationMinutes);
       setPomodoroCount((prev) => prev + 1);
 
       // Save to database (async - don't block UI)
