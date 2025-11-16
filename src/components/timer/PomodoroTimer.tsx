@@ -2,7 +2,12 @@ import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useTimer } from 'react-timer-hook';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { BELL_SOUND } from '../../data/constants';
+import { saveCompletedPomodoro } from '../../lib/userSyncAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import type { TimerType } from '../../types';
+
+const XP_PER_MINUTE_POMODORO = 2;
+const XP_PER_MINUTE_BREAK = 1;
 
 export const PomodoroTimer = memo(function PomodoroTimer() {
   const [timerType, setTimerType] = useState<TimerType>('pomodoro');
@@ -10,6 +15,8 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [isFlashing, setIsFlashing] = useState(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const { appUser } = useAuth();
 
   const {
     timers,
@@ -218,10 +225,52 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     }
     flashTimeoutRef.current = setTimeout(() => setIsFlashing(false), 1000);
 
-    // Award XP if it was a Pomodoro
+    // Award XP based on timer type
     if (timerType === 'pomodoro') {
-      addXP(timers.pomodoro);
+      const durationMinutes = timers.pomodoro;
+      const xpEarned = durationMinutes * XP_PER_MINUTE_POMODORO;
+
+      // Update local state immediately (for instant UI feedback)
+      // NOTE: addXP expects MINUTES, not XP amount (it calculates XP internally)
+      addXP(durationMinutes);
       setPomodoroCount((prev) => prev + 1);
+
+      // Save to database (async - don't block UI)
+      if (appUser?.id && appUser?.discord_id) {
+        console.log('[Timer] Saving pomodoro to database...', {
+          userId: appUser.id,
+          discordId: appUser.discord_id,
+          duration: durationMinutes,
+          xp: xpEarned
+        });
+
+        saveCompletedPomodoro(appUser.id, appUser.discord_id, {
+          duration_minutes: durationMinutes,
+          xp_earned: xpEarned,
+          task_name: undefined,
+          notes: undefined
+        })
+          .then(() => {
+            console.log('[Timer] ✓ Pomodoro saved to database successfully');
+          })
+          .catch((error) => {
+            console.error('[Timer] ✗ Failed to save pomodoro to database:', error);
+          });
+      } else {
+        console.warn('[Timer] Cannot save pomodoro - user not authenticated', { appUser });
+      }
+    } else if (timerType === 'shortBreak' || timerType === 'longBreak') {
+      // Award XP for breaks (1 XP per minute) - don't increment pomodoro count
+      const durationMinutes = timerType === 'shortBreak' ? timers.shortBreak : timers.longBreak;
+      const xpEarned = durationMinutes * XP_PER_MINUTE_BREAK;
+
+      console.log(`[Timer] ${timerType} complete! Awarding ${xpEarned} XP (${durationMinutes} min × ${XP_PER_MINUTE_BREAK} XP/min)`);
+
+      // Manually update XP without incrementing pomodoro count
+      const currentState = useSettingsStore.getState();
+      useSettingsStore.setState({
+        xp: currentState.xp + xpEarned
+      });
     }
 
     // CRITICAL: Read fresh auto-start settings from store to avoid stale closure

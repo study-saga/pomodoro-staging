@@ -24,7 +24,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
     consecutiveLoginDays,
   } = useSettingsStore();
 
-  const { isMobile } = useDeviceType();
+  const { isMobile } = useDeviceType(1024); // Use 1024px for Level UI layout
 
   if (!levelSystemEnabled) return null;
 

@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react'
 
-export function useDeviceType() {
+export function useDeviceType(breakpoint: number = 768) {
   const [isMobile, setIsMobile] = useState(() => {
-    // Initial detection - use 1024px breakpoint for compact Level UI
+    // Initial detection - use specified breakpoint
     if (typeof window === 'undefined') return false
-    return window.innerWidth < 1024
+    return window.innerWidth < breakpoint
   })
 
   useEffect(() => {
     const checkDevice = () => {
-      // Show compact version below 1024px
-      const mobile = window.innerWidth < 1024
+      // Show mobile version below specified breakpoint
+      const mobile = window.innerWidth < breakpoint
       setIsMobile(mobile)
     }
 
@@ -33,7 +33,7 @@ export function useDeviceType() {
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('orientationchange', checkDevice)
     }
-  }, [])
+  }, [breakpoint])
 
   return { isMobile }
 }
