@@ -10,15 +10,15 @@ const isDiscordActivity = () => {
 // Web environment: Use direct R2 URLs (saves Vercel bandwidth)
 export const R2_MUSIC_BASE_URL = isDiscordActivity()
   ? '/r2-audio'
-  : 'https://pub-7e068d8c526a459ea67ff46fe3762059.r2.dev/music';
+  : 'https://cdn.study-saga.com/music';
 
 export const R2_EFFECTS_BASE_URL = isDiscordActivity()
   ? '/r2-effects'
-  : 'https://pub-7e068d8c526a459ea67ff46fe3762059.r2.dev/effects';
+  : 'https://cdn.study-saga.com/effects';
 
 export const R2_BACKGROUNDS_BASE_URL = isDiscordActivity()
   ? '/r2-backgrounds'
-  : 'https://pub-7e068d8c526a459ea67ff46fe3762059.r2.dev/backgrounds';
+  : 'https://cdn.study-saga.com/backgrounds';
 
 export const AMBIENT_SOUNDS = [
   { id: 'rain', name: 'Rain', file: `${R2_EFFECTS_BASE_URL}/rain.mp3` },
