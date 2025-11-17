@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 // @ts-ignore - No types available for react-howler
 import ReactHowler from 'react-howler';
+import { Howler } from 'howler';
 import { Play, Pause, SkipBack, SkipForward, Volume2, ImageIcon } from 'lucide-react';
 import type { Track } from '../../types';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -23,10 +24,10 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
   const [showBackgrounds, setShowBackgrounds] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
-  const { isMobile } = useDeviceType();
+  const { isMobile, isPortrait } = useDeviceType();
 
-  // Filter backgrounds based on device type
-  const targetOrientation = isMobile ? 'vertical' : 'horizontal';
+  // Filter backgrounds based on viewport orientation (portrait vs landscape)
+  const targetOrientation = isPortrait ? 'vertical' : 'horizontal';
   const filteredBackgrounds = BACKGROUNDS.filter(bg => bg.orientation === targetOrientation);
 
   const playerRef = useRef<any>(null);
@@ -68,6 +69,37 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
       if (seekIntervalRef.current) {
         clearInterval(seekIntervalRef.current);
       }
+    };
+  }, [playing]);
+
+  // Handle audio context resumption on mobile lock/unlock
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        // Page became visible (user unlocked phone or switched back to tab)
+        try {
+          // Resume the Howler audio context if it's suspended
+          if (Howler.ctx && Howler.ctx.state === 'suspended') {
+            await Howler.ctx.resume();
+            console.log('[MusicPlayer] Audio context resumed');
+          }
+
+          // If music was playing before lock, ensure it continues
+          if (playing && playerRef.current) {
+            // Force a small seek to re-trigger playback
+            const currentSeek = playerRef.current.seek();
+            playerRef.current.seek(currentSeek);
+          }
+        } catch (error) {
+          console.error('[MusicPlayer] Failed to resume audio context:', error);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [playing]);
 
@@ -200,7 +232,7 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
 
               {/* Volume Slider Popup */}
               {showVolumeSlider && (
-                <div className={`absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-xl rounded-lg p-4 border border-white/10 ${isMobile ? 'w-64' : 'w-48'}`}>
+                <div className={`absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-xl rounded-lg p-4 border border-white/10 ${isMobile ? 'w-48' : 'w-48'}`}>
                   <div className="flex items-center gap-3">
                     <Volume2 size={16} className="text-gray-400" />
                     <div className="flex-1 relative">
