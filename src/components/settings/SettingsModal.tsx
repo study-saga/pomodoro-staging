@@ -314,7 +314,7 @@ export function SettingsModal() {
         <div
           role="tablist"
           aria-label="Settings categories"
-          className={`flex ${isMobile ? 'gap-0 overflow-x-auto' : 'gap-1'} px-4 pt-4 border-b border-white/10 shrink-0`}
+          className={`flex ${isMobile ? 'gap-1 overflow-x-auto scroll-smooth snap-x snap-mandatory' : 'gap-1'} px-4 pt-4 border-b border-white/10 shrink-0`}
         >
           {tabs.map((tab) => (
             <button
@@ -324,7 +324,7 @@ export function SettingsModal() {
               aria-controls={`${tab.id}-panel`}
               id={`${tab.id}-tab`}
               onClick={() => setActiveTab(tab.id)}
-              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap' : 'px-4 py-2'} font-medium transition-colors relative ${
+              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap snap-start' : 'px-4 py-2'} font-medium transition-colors relative ${
                 activeTab === tab.id
                   ? 'text-white'
                   : 'text-gray-400 hover:text-gray-300'

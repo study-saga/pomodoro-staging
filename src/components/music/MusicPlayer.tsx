@@ -200,7 +200,7 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
 
               {/* Volume Slider Popup */}
               {showVolumeSlider && (
-                <div className={`absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-xl rounded-lg p-4 border border-white/10 ${isMobile ? 'w-64' : 'w-48'}`}>
+                <div className={`absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-xl rounded-lg p-4 border border-white/10 ${isMobile ? 'w-48' : 'w-48'}`}>
                   <div className="flex items-center gap-3">
                     <Volume2 size={16} className="text-gray-400" />
                     <div className="flex-1 relative">

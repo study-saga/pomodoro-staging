@@ -58,14 +58,14 @@ export function MusicCreditsModal({ tracks, onClose }: MusicCreditsModalProps) {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className={`relative bg-gray-900 rounded-2xl shadow-2xl border border-white/10 ${
+          className={`relative bg-gray-900 rounded-2xl shadow-2xl border border-white/10 flex flex-col ${
             isMobile
               ? 'w-full h-full rounded-none'
               : 'w-[90vw] max-w-4xl h-[80vh] max-h-[800px]'
           }`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-white/20">
+          <div className="flex items-center justify-between p-6 border-b border-white/20 shrink-0">
             <div>
               <h2 className={`font-bold text-white ${isMobile ? 'text-xl' : 'text-2xl'}`}>
                 Music Credits
@@ -84,7 +84,7 @@ export function MusicCreditsModal({ tracks, onClose }: MusicCreditsModalProps) {
           </div>
 
           {/* Scrollable Content */}
-          <div className="overflow-y-auto h-[calc(100%-100px)] p-6">
+          <div className="overflow-y-auto flex-1 p-6">
             {/* Lofi Section */}
             <div className="mb-8">
               <h3 className={`font-bold text-white mb-4 ${isMobile ? 'text-lg' : 'text-xl'}`}>
