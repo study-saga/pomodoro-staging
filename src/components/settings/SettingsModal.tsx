@@ -189,7 +189,7 @@ export function SettingsModal() {
 
       if (canEditFree) {
         // Free username change (cooldown has passed)
-        const updatedUser = await updateUsernameSecure(appUser.id, usernameInput, false);
+        const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, false);
 
         // Update local Zustand store with new username and timestamp
         setUsername(usernameInput);
@@ -199,7 +199,7 @@ export function SettingsModal() {
       } else if (xp >= 50) {
         // Ask user if they want to spend 50 XP
         if (window.confirm('Changing username early costs 50 XP. Continue?')) {
-          const updatedUser = await updateUsernameSecure(appUser.id, usernameInput, true);
+          const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, true);
 
           // Update local Zustand store with new username, XP, and timestamp
           setUsername(usernameInput, true);

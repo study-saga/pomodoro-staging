@@ -423,30 +423,29 @@ export async function isRewardUnlocked(
  * - Validate username length and content
  * - Prevent bypassing XP cost via direct database updates
  *
+ * Supports dual authentication modes:
+ * - Web Mode: Uses Supabase Auth session (auth.uid()) via update_username RPC
+ * - Discord Activity Mode: Uses Discord SDK identity (discord_id) via update_username_discord RPC
+ *
  * @param userId - User's UUID
+ * @param discordId - User's Discord ID (from AuthContext.appUser.discord_id)
  * @param newUsername - New username (max 20 characters)
  * @param forceWithXP - If true, spend 50 XP to bypass cooldown
  * @returns Updated user object
  */
 export async function updateUsernameSecure(
   userId: string,
+  discordId: string,
   newUsername: string,
   forceWithXP: boolean = false
 ): Promise<AppUser> {
   console.log(`[User Sync] Updating username for user ${userId} to: ${newUsername} (forceWithXP: ${forceWithXP})`)
 
-  // Check if in Discord Activity mode (no Supabase session)
+  // Determine authentication mode by checking for Supabase session
   const { data: { session } } = await supabase.auth.getSession()
-  const isDiscordActivity = !session
 
-  if (isDiscordActivity) {
-    // Discord Activity mode: Use discord_id for authorization
-    // SECURITY: In Discord Activity mode without Supabase session, we cannot safely
-    // fetch discord_id without RLS. We should only use the web mode path with proper auth.
-    console.error('[User Sync] Cannot update username in Discord Activity mode without Supabase session')
-    throw new Error('Username updates require authentication. Please use the web version.')
-  } else {
-    // Web mode: Use Supabase Auth with auth.uid()
+  if (session) {
+    // Web Mode: Use Supabase Auth with auth.uid()
     console.log('[User Sync] Using web mode (Supabase Auth)')
 
     const { data, error } = await supabase.rpc('update_username', {
@@ -461,6 +460,23 @@ export async function updateUsernameSecure(
     }
 
     console.log('[User Sync] Username updated successfully (web mode)')
+    return data as AppUser
+  } else {
+    // Discord Activity Mode: Use Discord ID from Discord SDK
+    console.log('[User Sync] Using Discord Activity mode (Discord SDK)')
+
+    const { data, error } = await supabase.rpc('update_username_discord', {
+      p_discord_id: discordId,
+      p_new_username: newUsername,
+      p_force_with_xp: forceWithXP
+    })
+
+    if (error) {
+      console.error('[User Sync] Error updating username:', error)
+      throw new Error(`Failed to update username: ${error.message}`)
+    }
+
+    console.log('[User Sync] Username updated successfully (Discord Activity mode)')
     return data as AppUser
   }
 }

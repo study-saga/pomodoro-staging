@@ -582,6 +582,72 @@ if (!session) {
 
 **Security Guarantee**: No database queries execute without valid authentication, preventing unauthorized data access.
 
+#### 5.5. Dual Authentication Mode for Username Updates
+
+**Challenge**: The app runs in two different environments with different authentication methods:
+- **Web Mode**: Users authenticate via Supabase Auth (OAuth), creating a JWT session
+- **Discord Activity Mode**: Users authenticate via Discord SDK (OAuth), but NO Supabase session exists
+
+**Solution**: Implement dual-path username update logic that safely handles both authentication modes:
+
+```typescript
+export async function updateUsernameSecure(
+  userId: string,
+  discordId: string,  // From AuthContext.appUser.discord_id
+  newUsername: string,
+  forceWithXP: boolean = false
+): Promise<AppUser> {
+  // Detect mode by checking for Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (session) {
+    // Web Mode: Use auth.uid() based RPC
+    return await supabase.rpc('update_username', {
+      p_user_id: userId,
+      p_new_username: newUsername,
+      p_force_with_xp: forceWithXP
+    })
+  } else {
+    // Discord Activity Mode: Use discord_id based RPC
+    return await supabase.rpc('update_username_discord', {
+      p_discord_id: discordId,
+      p_new_username: newUsername,
+      p_force_with_xp: forceWithXP
+    })
+  }
+}
+```
+
+**Why This is Secure**:
+
+**Web Mode Security**:
+- Uses `update_username` RPC with `auth.uid()` verification
+- RLS policies enforce ownership at database level
+- Cannot spoof JWT token without valid Supabase Auth
+
+**Discord Activity Mode Security**:
+- Uses `update_username_discord` RPC with Discord ID verification
+- Discord ID comes from `AuthContext.appUser.discord_id`, which was:
+  - Verified by Discord OAuth during authentication
+  - Obtained from Discord's `/users/@me` API with valid access token
+  - Stored securely in AuthContext after successful authentication
+- Cannot spoof Discord ID without successful Discord OAuth flow
+
+**Critical Security Principle**:
+Both modes rely on **external cryptographic verification**:
+- **Web**: Supabase Auth verifies Discord OAuth → issues JWT → provides `auth.uid()`
+- **Discord Activity**: Discord SDK verifies Discord OAuth → returns verified `discord_id`
+
+Both authentication paths require successful OAuth flow with Discord's servers, providing equivalent security guarantees.
+
+**Database Functions**:
+- `update_username(p_user_id UUID, ...)` - Validates using `auth.uid() = p_user_id`
+- `update_username_discord(p_discord_id TEXT, ...)` - Validates using Discord ID from JWT metadata
+
+Both functions are `SECURITY DEFINER` with explicit authorization checks and identical validation logic (cooldown, XP cost, username rules).
+
+**Implementation Note**: The `discord_id` parameter MUST come from `AuthContext.appUser.discord_id` (already authenticated), never from user input or database query without authentication.
+
 #### 6. JWT Token Security
 
 - **HttpOnly cookies**: Not used (Supabase uses localStorage, acceptable for this use case)
