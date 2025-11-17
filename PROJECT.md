@@ -550,14 +550,46 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 **Guarantees**: Either ALL operations succeed, or ALL are rolled back. No partial failures.
 
-#### 5. JWT Token Security
+#### 5. Client-Side Authentication Enforcement
+
+**Critical Security Requirement**: All database queries MUST be executed with an authenticated Supabase client session.
+
+**Problem**: Client-side code that queries the database without verifying the user is authenticated can bypass RLS policies, exposing sensitive data.
+
+**Solution**: All sensitive operations must verify authentication before executing queries:
+
+```typescript
+// UNSAFE - Can bypass RLS if no session exists
+const { data } = await supabase
+  .from('users')
+  .select('discord_id')
+  .eq('id', userId)
+  .single()
+
+// SAFE - Verifies authentication first
+const { data: { session } } = await supabase.auth.getSession()
+if (!session) {
+  throw new Error('Authentication required')
+}
+// Now queries will be executed with proper RLS enforcement
+```
+
+**Implementation Example** (`updateUsernameSecure` in `src/lib/userSyncAuth.ts`):
+- Checks for authenticated session before any database operations
+- Rejects unauthenticated requests immediately (fail secure)
+- Only allows authenticated users to access RLS-protected RPC functions
+- Prevents RLS bypass by ensuring all queries have proper auth context
+
+**Security Guarantee**: No database queries execute without valid authentication, preventing unauthorized data access.
+
+#### 6. JWT Token Security
 
 - **HttpOnly cookies**: Not used (Supabase uses localStorage, acceptable for this use case)
 - **Short expiration**: Tokens expire after 1 hour
 - **Automatic refresh**: Supabase client refreshes before expiration
 - **Secure transmission**: HTTPS only in production
 
-#### 6. Edge Function Security
+#### 7. Edge Function Security
 
 The `discord-token` edge function is **intentionally public** (no JWT verification):
 
@@ -587,6 +619,7 @@ verify_jwt = false
 | **SQL Injection** | Parameterized queries via Supabase client |
 | **CSRF** | JWT tokens in headers (not cookies) |
 | **Session Hijacking** | Short-lived tokens with automatic refresh |
+| **RLS Bypass** | All queries require authenticated session; unauthenticated queries blocked |
 
 ---
 
