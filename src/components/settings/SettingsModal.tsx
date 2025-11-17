@@ -12,6 +12,9 @@ import {
 } from '../../data/levels';
 import { useAuth } from '../../contexts/AuthContext';
 import { updateUsernameSecure } from '../../lib/userSyncAuth';
+import { MusicCreditsModal } from './MusicCreditsModal';
+import lofiTracks from '../../data/lofi.json';
+import synthwaveTracks from '../../data/synthwave.json';
 
 export function SettingsModal() {
   const { appUser } = useAuth();
@@ -20,8 +23,12 @@ export function SettingsModal() {
   const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameLoading, setUsernameLoading] = useState(false);
+  const [showMusicCredits, setShowMusicCredits] = useState(false);
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // Calculate total track count
+  const totalTracks = lofiTracks.length + synthwaveTracks.length;
 
   // Auto-dismiss role change message
   useEffect(() => {
@@ -724,8 +731,11 @@ export function SettingsModal() {
                 <p className="text-gray-400 text-sm mb-4">
                   All music tracks are royalty-free and hosted locally for Discord Activity compatibility.
                 </p>
-                <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors">
-                  View All Music Credits (799 Tracks)
+                <button
+                  onClick={() => setShowMusicCredits(true)}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors"
+                >
+                  View All Music Credits ({totalTracks} Tracks)
                 </button>
               </div>
 
@@ -885,6 +895,14 @@ export function SettingsModal() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Music Credits Modal */}
+      {showMusicCredits && (
+        <MusicCreditsModal
+          tracks={[...lofiTracks, ...synthwaveTracks]}
+          onClose={() => setShowMusicCredits(false)}
+        />
       )}
     </div>
   );
