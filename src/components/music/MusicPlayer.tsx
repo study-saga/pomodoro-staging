@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 // @ts-ignore - No types available for react-howler
 import ReactHowler from 'react-howler';
+import { Howler } from 'howler';
 import { Play, Pause, SkipBack, SkipForward, Volume2, ImageIcon } from 'lucide-react';
 import type { Track } from '../../types';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -68,6 +69,37 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
       if (seekIntervalRef.current) {
         clearInterval(seekIntervalRef.current);
       }
+    };
+  }, [playing]);
+
+  // Handle audio context resumption on mobile lock/unlock
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        // Page became visible (user unlocked phone or switched back to tab)
+        try {
+          // Resume the Howler audio context if it's suspended
+          if (Howler.ctx && Howler.ctx.state === 'suspended') {
+            await Howler.ctx.resume();
+            console.log('[MusicPlayer] Audio context resumed');
+          }
+
+          // If music was playing before lock, ensure it continues
+          if (playing && playerRef.current) {
+            // Force a small seek to re-trigger playback
+            const currentSeek = playerRef.current.seek();
+            playerRef.current.seek(currentSeek);
+          }
+        } catch (error) {
+          console.error('[MusicPlayer] Failed to resume audio context:', error);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [playing]);
 
