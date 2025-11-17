@@ -49,7 +49,7 @@ export function MusicCreditsModal({ tracks, onClose }: MusicCreditsModalProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           onClick={onClose}
         />
 
@@ -58,7 +58,7 @@ export function MusicCreditsModal({ tracks, onClose }: MusicCreditsModalProps) {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className={`relative bg-gradient-to-br from-purple-900/95 to-blue-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-white/20 ${
+          className={`relative bg-gray-900 rounded-2xl shadow-2xl border border-white/10 ${
             isMobile
               ? 'w-full h-full rounded-none'
               : 'w-[90vw] max-w-4xl h-[80vh] max-h-[800px]'
