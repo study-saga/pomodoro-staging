@@ -10,12 +10,12 @@ interface BackgroundSelectorProps {
 
 export const BackgroundSelector = memo(function BackgroundSelector({ show, onClose }: BackgroundSelectorProps) {
   const { background, setBackground } = useSettingsStore();
-  const { isMobile } = useDeviceType();
+  const { isPortrait } = useDeviceType();
 
   if (!show) return null;
 
-  // Filter backgrounds based on device type
-  const targetOrientation = isMobile ? 'vertical' : 'horizontal';
+  // Filter backgrounds based on viewport orientation (portrait vs landscape)
+  const targetOrientation = isPortrait ? 'vertical' : 'horizontal';
   const filteredBackgrounds = BACKGROUNDS.filter(bg => bg.orientation === targetOrientation);
 
   const handleSelect = (bgId: string) => {

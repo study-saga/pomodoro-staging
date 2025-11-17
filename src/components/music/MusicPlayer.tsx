@@ -24,10 +24,10 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
   const [showBackgrounds, setShowBackgrounds] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
-  const { isMobile } = useDeviceType();
+  const { isMobile, isPortrait } = useDeviceType();
 
-  // Filter backgrounds based on device type
-  const targetOrientation = isMobile ? 'vertical' : 'horizontal';
+  // Filter backgrounds based on viewport orientation (portrait vs landscape)
+  const targetOrientation = isPortrait ? 'vertical' : 'horizontal';
   const filteredBackgrounds = BACKGROUNDS.filter(bg => bg.orientation === targetOrientation);
 
   const playerRef = useRef<any>(null);
