@@ -1,16 +1,8 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useDeviceType } from '../../hooks/useDeviceType';
-
-interface Track {
-  id: string;
-  title: string;
-  artist: string;
-  file: string;
-  credits: string;
-  genre: string;
-}
+import type { Track } from '../../types';
 
 interface MusicCreditsModalProps {
   tracks: Track[];
@@ -42,8 +34,7 @@ export function MusicCreditsModal({ tracks, onClose }: MusicCreditsModalProps) {
   }, []);
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -107,7 +98,7 @@ export function MusicCreditsModal({ tracks, onClose }: MusicCreditsModalProps) {
                       {track.artist}
                     </p>
                     <p className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'} mt-1`}>
-                      {track.credits}
+                      {track.credits ?? 'N/A'}
                     </p>
                   </div>
                 ))}
@@ -136,7 +127,7 @@ export function MusicCreditsModal({ tracks, onClose }: MusicCreditsModalProps) {
                       {track.artist}
                     </p>
                     <p className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'} mt-1`}>
-                      {track.credits}
+                      {track.credits ?? 'N/A'}
                     </p>
                   </div>
                 ))}
@@ -145,6 +136,5 @@ export function MusicCreditsModal({ tracks, onClose }: MusicCreditsModalProps) {
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
   );
 }

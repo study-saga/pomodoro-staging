@@ -874,12 +874,14 @@ export function SettingsModal() {
       )}
 
       {/* Music Credits Modal */}
-      {showMusicCredits && (
-        <MusicCreditsModal
-          tracks={[...lofiTracks, ...synthwaveTracks]}
-          onClose={() => setShowMusicCredits(false)}
-        />
-      )}
+      <AnimatePresence>
+        {showMusicCredits && (
+          <MusicCreditsModal
+            tracks={[...lofiTracks, ...synthwaveTracks]}
+            onClose={() => setShowMusicCredits(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
