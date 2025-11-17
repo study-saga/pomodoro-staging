@@ -282,7 +282,7 @@ export function SettingsModal() {
         ref={triggerButtonRef}
         onClick={() => setIsOpen(true)}
         aria-label="Open settings"
-        className="fixed top-4 right-4 p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors border border-white/10 z-40"
+        className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors border border-white/10"
       >
         <SettingsIcon size={24} />
       </button>
