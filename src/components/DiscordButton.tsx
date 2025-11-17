@@ -1,7 +1,12 @@
 /**
  * Discord Community Button
- * Opens Discord server invitation in a new tab
+ * Opens Discord server invitation
+ *
+ * Uses Discord SDK's openExternalLink in Discord Activity mode (avoids sandbox popup blocking)
+ * Falls back to window.open() for web browser mode
  */
+
+import { useAuth } from '../contexts/AuthContext'
 
 const DiscordIcon = () => (
   <svg
@@ -19,8 +24,25 @@ const DiscordIcon = () => (
 )
 
 export default function DiscordButton() {
-  const handleClick = () => {
-    window.open('https://discord.gg/8jbthVPmnb', '_blank', 'noopener,noreferrer')
+  const { discordSdk, isDiscordActivity } = useAuth()
+
+  const handleClick = async () => {
+    const url = 'https://discord.gg/8jbthVPmnb'
+
+    if (isDiscordActivity && discordSdk) {
+      // Discord Activity mode - use SDK to avoid sandbox popup blocking
+      console.log('[Discord Button] Opening external link via Discord SDK')
+      try {
+        await discordSdk.commands.openExternalLink({ url })
+      } catch (error) {
+        console.error('[Discord Button] Failed to open external link:', error)
+        alert('Failed to open Discord invite link. Please try again.')
+      }
+    } else {
+      // Web mode - use standard window.open
+      console.log('[Discord Button] Opening external link via window.open')
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
   }
 
   return (

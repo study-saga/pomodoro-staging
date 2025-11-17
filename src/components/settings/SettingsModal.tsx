@@ -117,7 +117,7 @@ export function SettingsModal() {
     resetProgress,
     username,
     setUsername,
-    canEditUsername,
+    // canEditUsername, // Removed - using server-first approach instead
     levelSystemEnabled,
     setLevelSystemEnabled,
     levelPath,
@@ -185,40 +185,54 @@ export function SettingsModal() {
     setUsernameLoading(true);
 
     try {
-      const canEditFree = canEditUsername();
+      // Try free update first (let server decide if cooldown passed)
+      const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, false);
 
-      if (canEditFree) {
-        // Free username change (cooldown has passed)
-        const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, false);
+      // Success - update local Zustand store with new username and timestamp
+      setUsername(usernameInput);
 
-        // Update local Zustand store with new username and timestamp
-        setUsername(usernameInput);
+      console.log('[Settings] Username updated successfully (free):', updatedUser.username);
+      alert('Username updated successfully!');
 
-        console.log('[Settings] Username updated successfully (free):', updatedUser.username);
-        alert('Username updated successfully!');
-      } else if (xp >= 50) {
-        // Ask user if they want to spend 50 XP
-        if (window.confirm('Changing username early costs 50 XP. Continue?')) {
-          const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, true);
-
-          // Update local Zustand store with new username, XP, and timestamp
-          setUsername(usernameInput, true);
-
-          console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
-          alert('Username updated! 50 XP deducted.');
-        }
-      } else {
-        setUsernameError('Insufficient XP. You need 50 XP to change username early.');
-      }
     } catch (error) {
       console.error('[Settings] Error updating username:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      // Parse error message for user-friendly display
-      if (errorMessage.includes('Insufficient XP')) {
-        setUsernameError('You do not have enough XP (need 50 XP)');
+      // Check if it's a cooldown error and user has enough XP
+      if (errorMessage.includes('cooldown') && xp >= 50) {
+        // Extract wait time from error message for better UX
+        const waitTimeMatch = errorMessage.match(/Wait ([\d.]+) more hours/);
+        const hours = waitTimeMatch ? waitTimeMatch[1] : 'several';
+
+        // Ask user if they want to pay 50 XP
+        const confirmed = window.confirm(
+          `Username change is on cooldown (${hours} hours remaining).\n\nPay 50 XP to change now?`
+        );
+
+        if (confirmed) {
+          try {
+            // Retry with XP payment
+            const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, true);
+
+            // Success - update local Zustand store with new username, XP, and timestamp
+            setUsername(usernameInput, true);
+
+            console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
+            alert('Username updated! 50 XP deducted.');
+
+          } catch (retryError) {
+            console.error('[Settings] Error updating username with XP:', retryError);
+            const retryMessage = retryError instanceof Error ? retryError.message : 'Unknown error';
+            setUsernameError(retryMessage);
+          }
+        }
       } else if (errorMessage.includes('cooldown')) {
-        setUsernameError('Username change is on cooldown. Wait or pay 50 XP.');
+        // Cooldown error but insufficient XP
+        const waitTimeMatch = errorMessage.match(/Wait ([\d.]+) more hours/);
+        const hours = waitTimeMatch ? waitTimeMatch[1] : 'several';
+        setUsernameError(`Username change is on cooldown (${hours} hours remaining). You need 50 XP to change early.`);
+      } else if (errorMessage.includes('Insufficient XP')) {
+        setUsernameError('You do not have enough XP (need 50 XP)');
       } else if (errorMessage.includes('empty')) {
         setUsernameError('Username cannot be empty');
       } else if (errorMessage.includes('20 characters')) {
