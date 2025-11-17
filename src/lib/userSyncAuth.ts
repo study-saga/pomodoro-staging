@@ -435,19 +435,57 @@ export async function updateUsernameSecure(
 ): Promise<AppUser> {
   console.log(`[User Sync] Updating username for user ${userId} to: ${newUsername} (forceWithXP: ${forceWithXP})`)
 
-  const { data, error } = await supabase.rpc('update_username', {
-    p_user_id: userId,
-    p_new_username: newUsername,
-    p_force_with_xp: forceWithXP
-  })
+  // Check if in Discord Activity mode (no Supabase session)
+  const { data: { session } } = await supabase.auth.getSession()
+  const isDiscordActivity = !session
 
-  if (error) {
-    console.error('[User Sync] Error updating username:', error)
-    throw new Error(`Failed to update username: ${error.message}`)
+  if (isDiscordActivity) {
+    // Discord Activity mode: Use discord_id for authorization
+    console.log('[User Sync] Using Discord Activity mode (no Supabase session)')
+
+    // First get the discord_id for this user
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('discord_id')
+      .eq('id', userId)
+      .single()
+
+    if (userError || !userData?.discord_id) {
+      console.error('[User Sync] Failed to get user Discord ID:', userError)
+      throw new Error('Failed to get user Discord ID')
+    }
+
+    const { data, error } = await supabase.rpc('update_username_discord', {
+      p_discord_id: userData.discord_id,
+      p_new_username: newUsername,
+      p_force_with_xp: forceWithXP
+    })
+
+    if (error) {
+      console.error('[User Sync] Error updating username:', error)
+      throw new Error(`Failed to update username: ${error.message}`)
+    }
+
+    console.log('[User Sync] Username updated successfully (Discord Activity mode)')
+    return data as AppUser
+  } else {
+    // Web mode: Use Supabase Auth with auth.uid()
+    console.log('[User Sync] Using web mode (Supabase Auth)')
+
+    const { data, error } = await supabase.rpc('update_username', {
+      p_user_id: userId,
+      p_new_username: newUsername,
+      p_force_with_xp: forceWithXP
+    })
+
+    if (error) {
+      console.error('[User Sync] Error updating username:', error)
+      throw new Error(`Failed to update username: ${error.message}`)
+    }
+
+    console.log('[User Sync] Username updated successfully (web mode)')
+    return data as AppUser
   }
-
-  console.log('[User Sync] Username updated successfully')
-  return data as AppUser
 }
 
 /**
