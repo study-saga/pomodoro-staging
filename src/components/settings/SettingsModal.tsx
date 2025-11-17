@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Settings as SettingsIcon } from 'lucide-react';
+import { toast } from 'sonner';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { BACKGROUNDS, AMBIENT_SOUNDS } from '../../data/constants';
 import { useDeviceType } from '../../hooks/useDeviceType';
@@ -192,7 +193,7 @@ export function SettingsModal() {
       setUsername(usernameInput);
 
       console.log('[Settings] Username updated successfully (free):', updatedUser.username);
-      alert('Username updated successfully!');
+      toast.success('Username updated successfully!');
 
     } catch (error) {
       console.error('[Settings] Error updating username:', error);
@@ -204,28 +205,39 @@ export function SettingsModal() {
         const waitTimeMatch = errorMessage.match(/Wait ([\d.]+) more hours/);
         const hours = waitTimeMatch ? waitTimeMatch[1] : 'several';
 
-        // Ask user if they want to pay 50 XP
-        const confirmed = window.confirm(
-          `Username change is on cooldown (${hours} hours remaining).\n\nPay 50 XP to change now?`
-        );
+        // Show toast with action button to pay 50 XP
+        toast('Username change is on cooldown', {
+          description: `${hours} hours remaining. You can pay 50 XP to change now.`,
+          duration: 10000,
+          action: {
+            label: 'Pay 50 XP',
+            onClick: async () => {
+              try {
+                setUsernameLoading(true);
+                // Retry with XP payment
+                const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, true);
 
-        if (confirmed) {
-          try {
-            // Retry with XP payment
-            const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, true);
+                // Success - update local Zustand store with new username, XP, and timestamp
+                setUsername(usernameInput, true);
 
-            // Success - update local Zustand store with new username, XP, and timestamp
-            setUsername(usernameInput, true);
+                console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
+                toast.success('Username updated! 50 XP deducted.');
 
-            console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
-            alert('Username updated! 50 XP deducted.');
-
-          } catch (retryError) {
-            console.error('[Settings] Error updating username with XP:', retryError);
-            const retryMessage = retryError instanceof Error ? retryError.message : 'Unknown error';
-            setUsernameError(retryMessage);
+              } catch (retryError) {
+                console.error('[Settings] Error updating username with XP:', retryError);
+                const retryMessage = retryError instanceof Error ? retryError.message : 'Unknown error';
+                setUsernameError(retryMessage);
+                toast.error(retryMessage);
+              } finally {
+                setUsernameLoading(false);
+              }
+            }
+          },
+          cancel: {
+            label: 'Cancel',
+            onClick: () => {}
           }
-        }
+        });
       } else if (errorMessage.includes('cooldown')) {
         // Cooldown error but insufficient XP
         const waitTimeMatch = errorMessage.match(/Wait ([\d.]+) more hours/);
@@ -844,9 +856,21 @@ export function SettingsModal() {
                 </p>
                 <button
                   onClick={() => {
-                    if (window.confirm('Are you sure you want to reset ALL progress? This cannot be undone!')) {
-                      resetProgress();
-                    }
+                    toast('Reset All Progress?', {
+                      description: 'This action cannot be undone. All your XP, levels, prestige, and stats will be lost permanently.',
+                      duration: 10000,
+                      action: {
+                        label: 'Reset Everything',
+                        onClick: () => {
+                          resetProgress();
+                          toast.success('All progress has been reset');
+                        }
+                      },
+                      cancel: {
+                        label: 'Cancel',
+                        onClick: () => {}
+                      }
+                    });
                   }}
                   className="w-full px-4 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors"
                 >

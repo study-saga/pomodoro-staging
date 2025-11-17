@@ -6,6 +6,7 @@
  * Falls back to window.open() for web browser mode
  */
 
+import { toast } from 'sonner'
 import { useAuth } from '../contexts/AuthContext'
 
 const DiscordIcon = () => (
@@ -36,7 +37,7 @@ export default function DiscordButton() {
         await discordSdk.commands.openExternalLink({ url })
       } catch (error) {
         console.error('[Discord Button] Failed to open external link:', error)
-        alert('Failed to open Discord invite link. Please try again.')
+        toast.error('Failed to open Discord invite link. Please try again.')
       }
     } else {
       // Web mode - use standard window.open
