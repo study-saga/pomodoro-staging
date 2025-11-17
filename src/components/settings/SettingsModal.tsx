@@ -296,11 +296,11 @@ export function SettingsModal() {
         aria-modal="true"
         aria-labelledby="settings-title"
         tabIndex={-1}
-        className={`bg-gray-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-white/10 shadow-2xl flex flex-col ${isMobile ? 'max-h-[95vh]' : ''}`}
+        className={`bg-gray-900 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-hidden border border-white/10 shadow-2xl flex flex-col ${isMobile ? 'max-h-[95vh]' : ''}`}
       >
         {/* Header */}
-        <div className={`flex items-center justify-between ${isMobile ? 'p-4' : 'p-6'} border-b border-white/10 shrink-0`}>
-          <h2 id="settings-title" className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-white`}>Settings</h2>
+        <div className={`flex items-center justify-between p-4 border-b border-white/10 shrink-0`}>
+          <h2 id="settings-title" className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-white`}>Settings</h2>
           <button
             onClick={() => setIsOpen(false)}
             className="p-2 hover:bg-white/10 rounded-full transition-colors"
@@ -339,7 +339,7 @@ export function SettingsModal() {
         </div>
 
         {/* Content - Scrollable */}
-        <div className={`flex-1 overflow-y-auto ${isMobile ? 'p-4' : 'p-6'}`}>
+        <div className="flex-1 overflow-y-auto p-4">
           <AnimatePresence mode="wait">
             {activeTab === 'timer' && (
               <motion.div
@@ -351,7 +351,7 @@ export function SettingsModal() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
-                className="space-y-6"
+                className="space-y-4"
               >
               <div>
                 <h3 className="text-white font-bold text-lg mb-4">Timer Durations (minutes)</h3>
@@ -362,7 +362,7 @@ export function SettingsModal() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setTempTimers(t => ({ ...t, pomodoro: Math.max(1, t.pomodoro - 1) }))}
-                      className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded text-white"
+                      className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
                     >
                       −
                     </button>
@@ -376,7 +376,7 @@ export function SettingsModal() {
                     />
                     <button
                       onClick={() => setTempTimers(t => ({ ...t, pomodoro: Math.min(60, t.pomodoro + 1) }))}
-                      className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded text-white"
+                      className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
                     >
                       +
                     </button>
@@ -389,7 +389,7 @@ export function SettingsModal() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setTempTimers(t => ({ ...t, shortBreak: Math.max(1, t.shortBreak - 1) }))}
-                      className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded text-white"
+                      className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
                     >
                       −
                     </button>
@@ -403,7 +403,7 @@ export function SettingsModal() {
                     />
                     <button
                       onClick={() => setTempTimers(t => ({ ...t, shortBreak: Math.min(60, t.shortBreak + 1) }))}
-                      className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded text-white"
+                      className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
                     >
                       +
                     </button>
@@ -416,7 +416,7 @@ export function SettingsModal() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setTempTimers(t => ({ ...t, longBreak: Math.max(1, t.longBreak - 1) }))}
-                      className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded text-white"
+                      className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
                     >
                       −
                     </button>
@@ -430,7 +430,7 @@ export function SettingsModal() {
                     />
                     <button
                       onClick={() => setTempTimers(t => ({ ...t, longBreak: Math.min(60, t.longBreak + 1) }))}
-                      className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded text-white"
+                      className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
                     >
                       +
                     </button>
@@ -612,7 +612,7 @@ export function SettingsModal() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
-                className="space-y-6"
+                className="space-y-4"
               >
               <div>
                 <h3 className="text-white font-bold text-lg mb-4">Volume Controls</h3>
@@ -661,55 +661,31 @@ export function SettingsModal() {
               </div>
 
               <div>
-                <h3 className="text-white font-bold text-sm mb-3">🌲 Sounds From In The Woods</h3>
-                {AMBIENT_SOUNDS.slice(0, 3).map((sound) => (
-                  <div key={sound.id} className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-white text-sm">{sound.name}</label>
-                      <span className="text-white text-sm">{tempAmbientVolumes[sound.id] || 0}%</span>
+                <h3 className="text-white font-bold text-sm mb-3">🔊 Ambient Sounds</h3>
+                <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-x-4 gap-y-3`}>
+                  {AMBIENT_SOUNDS.map((sound) => (
+                    <div key={sound.id}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-white text-sm">{sound.name}</label>
+                        <span className="text-white text-sm">{tempAmbientVolumes[sound.id] || 0}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={tempAmbientVolumes[sound.id] || 0}
+                        onChange={(e) => setTempAmbientVolumes(v => ({ ...v, [sound.id]: Number(e.target.value) }))}
+                        className="w-full h-2 bg-gray-700 rounded-full appearance-none cursor-pointer
+                          [&::-webkit-slider-thumb]:appearance-none
+                          [&::-webkit-slider-thumb]:w-4
+                          [&::-webkit-slider-thumb]:h-4
+                          [&::-webkit-slider-thumb]:rounded-full
+                          [&::-webkit-slider-thumb]:bg-white
+                          [&::-webkit-slider-thumb]:cursor-pointer"
+                      />
                     </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={tempAmbientVolumes[sound.id] || 0}
-                      onChange={(e) => setTempAmbientVolumes(v => ({ ...v, [sound.id]: Number(e.target.value) }))}
-                      className="w-full h-2 bg-gray-700 rounded-full appearance-none cursor-pointer
-                        [&::-webkit-slider-thumb]:appearance-none
-                        [&::-webkit-slider-thumb]:w-4
-                        [&::-webkit-slider-thumb]:h-4
-                        [&::-webkit-slider-thumb]:rounded-full
-                        [&::-webkit-slider-thumb]:bg-white
-                        [&::-webkit-slider-thumb]:cursor-pointer"
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <div>
-                <h3 className="text-white font-bold text-sm mb-3">🔊 All Sounds</h3>
-                {AMBIENT_SOUNDS.slice(3).map((sound) => (
-                  <div key={sound.id} className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-white text-sm">{sound.name}</label>
-                      <span className="text-white text-sm">{tempAmbientVolumes[sound.id] || 0}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={tempAmbientVolumes[sound.id] || 0}
-                      onChange={(e) => setTempAmbientVolumes(v => ({ ...v, [sound.id]: Number(e.target.value) }))}
-                      className="w-full h-2 bg-gray-700 rounded-full appearance-none cursor-pointer
-                        [&::-webkit-slider-thumb]:appearance-none
-                        [&::-webkit-slider-thumb]:w-4
-                        [&::-webkit-slider-thumb]:h-4
-                        [&::-webkit-slider-thumb]:rounded-full
-                        [&::-webkit-slider-thumb]:bg-white
-                        [&::-webkit-slider-thumb]:cursor-pointer"
-                    />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
               </motion.div>
             )}
@@ -724,7 +700,7 @@ export function SettingsModal() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
-                className="space-y-6"
+                className="space-y-4"
               >
               <div>
                 <h3 className="text-white font-bold text-lg mb-2">Music Credits</h3>
@@ -762,17 +738,17 @@ export function SettingsModal() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
-                className="space-y-6"
+                className="space-y-4"
               >
               <div>
                 <h3 className="text-white font-bold text-lg mb-4">Level Progress</h3>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/5 rounded-lg p-4 relative">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-white/5 rounded-lg p-3 relative">
                     <div className="flex items-start justify-between mb-1">
                       <p className="text-gray-400 text-xs">CURRENT LEVEL</p>
                       {/* Role Toggle Switch */}
-                      <label className="relative inline-block w-[75px] h-[37.5px] cursor-pointer shrink-0 ml-2">
+                      <label className="relative inline-block w-14 h-7 cursor-pointer shrink-0 ml-2">
                         <input
                           type="checkbox"
                           className="opacity-0 w-0 h-0 peer"
@@ -780,32 +756,32 @@ export function SettingsModal() {
                           onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
                         />
                         <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full transition-all duration-300 shadow-lg peer-checked:from-blue-600 peer-checked:to-blue-700"></span>
-                        <span className="absolute top-[3.75px] left-[3.75px] w-[30px] h-[30px] bg-white rounded-full transition-all duration-300 flex items-center justify-center text-lg shadow-md peer-checked:translate-x-[37.5px]">
+                        <span className="absolute top-[3px] left-[3px] w-[22px] h-[22px] bg-white rounded-full transition-all duration-300 flex items-center justify-center text-sm shadow-md peer-checked:translate-x-[28px]">
                           {levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}
                         </span>
                       </label>
                     </div>
-                    <p className="text-white text-2xl font-bold">{level} - {getLevelName(level, levelPath)}</p>
+                    <p className="text-white text-xl font-bold">{level} - {getLevelName(level, levelPath)}</p>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-4">
+                  <div className="bg-white/5 rounded-lg p-3">
                     <p className="text-gray-400 text-xs mb-1">CURRENT XP</p>
-                    <p className="text-white text-2xl font-bold">{xp} / {level * 100}</p>
+                    <p className="text-white text-xl font-bold">{xp} / {level * 100}</p>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-4">
+                  <div className="bg-white/5 rounded-lg p-3">
                     <p className="text-gray-400 text-xs mb-1">PRESTIGE LEVEL</p>
-                    <p className="text-white text-2xl font-bold">{prestigeLevel}</p>
+                    <p className="text-white text-xl font-bold">{prestigeLevel}</p>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-4">
+                  <div className="bg-white/5 rounded-lg p-3">
                     <p className="text-gray-400 text-xs mb-1">TOTAL POMODOROS</p>
-                    <p className="text-white text-2xl font-bold">{totalPomodoros}</p>
+                    <p className="text-white text-xl font-bold">{totalPomodoros}</p>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-4 col-span-2">
+                  <div className="bg-white/5 rounded-lg p-3 col-span-2">
                     <p className="text-gray-400 text-xs mb-1">TOTAL STUDY TIME</p>
-                    <p className="text-white text-2xl font-bold">
+                    <p className="text-white text-xl font-bold">
                       {Math.floor(totalStudyMinutes / 60)}h {totalStudyMinutes % 60}m
                     </p>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-4 col-span-2">
+                  <div className="bg-white/5 rounded-lg p-3 col-span-2">
                     <p className="text-gray-400 text-xs mb-1">CURRENT BADGE</p>
                     <p className="text-5xl">{getBadgeForLevel(level, prestigeLevel)}</p>
                   </div>
@@ -868,7 +844,7 @@ export function SettingsModal() {
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 p-6 border-t border-white/10 shrink-0">
+        <div className="flex gap-3 p-4 border-t border-white/10 shrink-0">
           <button
             onClick={handleReset}
             className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors"
