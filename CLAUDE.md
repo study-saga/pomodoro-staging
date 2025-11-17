@@ -1,1 +1,2 @@
 - always read @PROJECT.md to take context of our codebase so you can always build correctly
+- always update PROJECT.md if we fix or implement a new way for our projects
