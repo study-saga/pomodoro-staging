@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { updateUsernameSecure } from '../../lib/userSyncAuth';
 import { MusicCreditsModal } from './MusicCreditsModal';
+import type { Track } from '../../types';
 import lofiTracks from '../../data/lofi.json';
 import synthwaveTracks from '../../data/synthwave.json';
 
@@ -877,7 +878,7 @@ export function SettingsModal() {
       <AnimatePresence>
         {showMusicCredits && (
           <MusicCreditsModal
-            tracks={[...lofiTracks, ...synthwaveTracks]}
+            tracks={[...lofiTracks, ...synthwaveTracks] as Track[]}
             onClose={() => setShowMusicCredits(false)}
           />
         )}
