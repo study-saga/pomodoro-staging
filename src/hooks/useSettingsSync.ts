@@ -252,7 +252,8 @@ export function useSettingsSync() {
     settings.setAutoStartPomodoros(appUser.auto_start_pomodoros)
 
     // Load visual preferences
-    settings.setBackground(appUser.background_id)
+    // setBackground() validates and ensures device-appropriate background
+    settings.setBackground(appUser.background_id || 'room-video')
     settings.setPlaylist(appUser.playlist)
 
     // Load ambient volumes

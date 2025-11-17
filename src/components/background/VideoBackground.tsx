@@ -12,16 +12,22 @@ export function VideoBackground() {
 
   // Validate background compatibility and fallback if needed
   useEffect(() => {
-    if (currentBg) {
-      const requiredOrientation = isMobile ? 'vertical' : 'horizontal';
-      if (currentBg.orientation !== requiredOrientation) {
-        // Background doesn't match device - switch to appropriate default
-        const defaultBg = getDefaultBackground(isMobile);
-        console.warn(`Background ${currentBg.name} (${currentBg.orientation}) incompatible with ${isMobile ? 'mobile' : 'desktop'} device. Switching to default.`);
-        setBackground(defaultBg);
-      }
+    if (!currentBg) {
+      // Background not found - set device-appropriate default
+      const defaultBg = getDefaultBackground(isMobile);
+      console.warn(`Background "${background}" not found. Falling back to default: ${defaultBg}`);
+      setBackground(defaultBg);
+      return;
     }
-  }, [currentBg, isMobile, setBackground]);
+
+    const requiredOrientation = isMobile ? 'vertical' : 'horizontal';
+    if (currentBg.orientation !== requiredOrientation) {
+      // Background doesn't match device - switch to appropriate default
+      const defaultBg = getDefaultBackground(isMobile);
+      console.warn(`Background ${currentBg.name} (${currentBg.orientation}) incompatible with ${isMobile ? 'mobile' : 'desktop'} device. Switching to default.`);
+      setBackground(defaultBg);
+    }
+  }, [currentBg, isMobile, setBackground, background]);
 
   useEffect(() => {
     if (videoRef.current) {
