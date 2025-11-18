@@ -26,6 +26,11 @@ This document describes all features, components, and practical code examples fo
   - **R**: Reset current timer
 - **Task Tracking**: Optional task name and notes for each session
 - **Sound Effects**: Customizable completion sounds (toggle + volume control)
+- **Browser Notifications**: Web-only notifications when timer hits 00:00
+  - Permission requested via Settings → Sounds tab
+  - Shows title, body, icon when pomodoro/breaks complete
+  - Blocked on Discord Activity (web only)
+  - Custom event system syncs permission state across components
 - **Auto-Start**: Optional automatic start of breaks/pomodoros
 
 **XP Calculation**:
@@ -158,6 +163,11 @@ Users can mix ambient sounds with music, each with individual volume control:
 #### Sounds Tab
 - **Sound Effects**: Enable/disable completion sounds
 - **Sound Volume**: 0-100% for completion effects
+- **Browser Notifications**: Permission request for timer completion alerts
+  - Shows status: Enabled (green), Blocked (red), Not enabled (yellow)
+  - Button to request permission (only shown if not granted/denied)
+  - Web only - disabled on Discord Activity
+  - Notifications fire when pomodoro/breaks complete at 00:00
 
 #### Music Tab
 - **Playlist**: Lofi or Synthwave selection
