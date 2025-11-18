@@ -96,14 +96,10 @@ export function useSettingsSync() {
 
     console.log(`[Settings Sync] Syncing synchronously (reason: ${reason})`)
 
-    // Get auth session for JWT token
+    // Get auth session for JWT token (if available)
     const getSessionAndSync = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.access_token) {
-          console.warn('[Settings Sync] No session token - cannot sync')
-          return
-        }
 
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
         const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -111,10 +107,17 @@ export function useSettingsSync() {
         // Get fresh settings state (avoid stale closure)
         const currentSettings = getCurrentSettings()
 
-        // SECURITY: Only send settings (14 fields), NOT stats/XP/levels
-        const payload = {
-          p_user_id: appUser.id,
+        // Determine auth mode based on session existence
+        const hasSupabaseSession = !!session?.access_token
 
+        // Discord Activity: must have discord_id if no session
+        if (!hasSupabaseSession && !appUser.discord_id) {
+          console.warn('[Settings Sync] No session and no discord_id - cannot sync')
+          return
+        }
+
+        // SECURITY: Only send settings (14 fields), NOT stats/XP/levels
+        const settingsPayload = {
           // Timer preferences (6 fields)
           p_timer_pomodoro_minutes: currentSettings.timers.pomodoro,
           p_timer_short_break_minutes: currentSettings.timers.shortBreak,
@@ -138,14 +141,23 @@ export function useSettingsSync() {
           p_level_path: currentSettings.levelPath
         }
 
-        const endpoint = `${supabaseUrl}/rest/v1/rpc/update_user_settings`
+        // Build payload based on auth mode
+        const payload = hasSupabaseSession
+          ? { p_user_id: appUser.id, ...settingsPayload }
+          : { p_discord_id: appUser.discord_id, ...settingsPayload }
 
-        // Prepare headers for Beacon API (as URL parameters since Beacon doesn't support custom headers)
-        // We'll use fetch with keepalive as Beacon doesn't support custom headers
+        // Choose endpoint based on auth mode
+        const endpoint = hasSupabaseSession
+          ? `${supabaseUrl}/rest/v1/rpc/update_user_settings`
+          : `${supabaseUrl}/rest/v1/rpc/update_user_settings_discord`
+
+        // Prepare headers - use JWT for web, anon key for Discord Activity
         const headers = {
           'Content-Type': 'application/json',
           'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': hasSupabaseSession
+            ? `Bearer ${session.access_token}`
+            : `Bearer ${supabaseAnonKey}`
         }
 
         // Try Beacon API first (most reliable for page unload)
@@ -192,7 +204,7 @@ export function useSettingsSync() {
       const currentSettings = getCurrentSettings()
 
       // SECURITY: Only sync settings (14 fields), NOT stats/XP/levels
-      await updateUserPreferences(appUser.id, {
+      await updateUserPreferences(appUser.id, appUser.discord_id, {
         // Timer preferences (6 fields)
         timer_pomodoro_minutes: currentSettings.timers.pomodoro,
         timer_short_break_minutes: currentSettings.timers.shortBreak,
