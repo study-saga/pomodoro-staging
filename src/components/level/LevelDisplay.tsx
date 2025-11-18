@@ -55,14 +55,14 @@ export const LevelDisplay = memo(function LevelDisplay() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>{username}</h2>
-            <p className={isMobile ? 'text-[10px] text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
+            <p className={isMobile ? 'text-xs text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
           </div>
           <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
         </div>
 
         {/* XP Progress Bar */}
         <div>
-          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-[10px] mb-0.5' : 'text-xs mb-1'}`}>
+          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-0.5' : 'text-xs mb-1'}`}>
             <span>{roleEmoji} Level {level}</span>
             <span>
               {xp} / {xpNeeded} XP
@@ -87,16 +87,16 @@ export const LevelDisplay = memo(function LevelDisplay() {
 
         {/* Milestone Progress */}
         <div className={`border-t border-white/10 ${isMobile ? 'pt-1.5' : 'pt-2'}`}>
-          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-[10px] mb-0.5' : 'text-xs mb-1'}`}>
+          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-0.5' : 'text-xs mb-1'}`}>
             <span>📅 Active Days</span>
             <span>{totalUniqueDays} days</span>
           </div>
           {nextMilestone ? (
-            <div className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
+            <div className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-xs'}`}>
               Next: {nextMilestone.title} at {nextMilestone.days} days
             </div>
           ) : (
-            <div className={`text-green-400 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
+            <div className={`text-green-400 ${isMobile ? 'text-xs' : 'text-xs'}`}>
               All milestones completed! 🎉
             </div>
           )}
@@ -123,7 +123,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
         {/* Login Streak Display */}
         {consecutiveLoginDays > 0 && (
           <div className={`border-t border-white/10 ${isMobile ? 'pt-1.5' : 'pt-2'}`}>
-            <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
+            <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs' : 'text-xs'}`}>
               <span>🎁 Login Streak</span>
               <span>{consecutiveLoginDays} days</span>
             </div>
