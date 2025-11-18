@@ -1,2 +1,3 @@
-- always read @PROJECT.md to take context of our codebase so you can always build correctly
-- always update PROJECT.md if we fix or implement a new way for our projects
+- In all interactions and commit messages, be extremly concise and sacifice grammar for the sake of concision.
+- always update PROJECT.md if we fix or implement a new implementation way for our projects
+- At the end of each plan, give me a list of unresolved questions to answer, if any. Make the questions extremely concise. Sacrifice grammar for the sake of concision.
