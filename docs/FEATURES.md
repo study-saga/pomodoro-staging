@@ -248,6 +248,50 @@ Users can mix ambient sounds with music, each with individual volume control:
 
 ---
 
+### 8. What's New / Changelog
+
+**Overview**:
+- Dropdown button showing recent updates and features
+- Professional design with color-coded tags
+- Lazy loading for performance (older entries load on scroll)
+
+**Features**:
+- **Update Cards**: Each update shows title, description, date, and tags
+- **Tag System**: `feature` (blue), `improvement` (green), `fix` (orange)
+- **Lazy Loading**: Initially loads 5 entries, loads 3 more on scroll
+- **Smooth Animations**: Fade-in/zoom animations using Radix UI primitives
+- **Scrollable Container**: ScrollArea with custom scrollbar styling
+
+**Adding New Updates**:
+1. Open `src/data/changelog.ts`
+2. Add new entry at the **top** of the array
+3. Format:
+```typescript
+{
+  date: '2025-MM-DD',
+  title: 'Feature Name',
+  description: 'Brief description (1-2 sentences)',
+  tags: ['feature', 'improvement', 'fix']
+}
+```
+
+**UI Components**:
+- **Popover**: Radix UI popover with custom styling
+- **ScrollArea**: Radix UI scroll area with lazy loading sentinel
+- **Badge**: Custom badge component with variant styles
+
+**Implementation**:
+- Button: `src/components/WhatsNewButton.tsx`
+- Data: `src/data/changelog.ts`
+- UI: `src/components/ui/popover.tsx`, `scroll-area.tsx`, `badge.tsx`
+
+**Performance**:
+- Intersection Observer for lazy loading
+- Only renders visible entries
+- Auto-cleanup on unmount
+
+---
+
 ## Complete Component Reference
 
 This section provides detailed documentation of all major components. Understanding these components is essential for adding features or fixing bugs.
