@@ -4,11 +4,14 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
 import { changelog, type ChangelogEntry } from '../data/changelog';
+import { useDeviceType } from '../hooks/useDeviceType';
 
-const INITIAL_LOAD_COUNT = 5;
 const LOAD_MORE_COUNT = 3;
 
 export default function WhatsNewButton() {
+  const { isMobile } = useDeviceType();
+  const INITIAL_LOAD_COUNT = isMobile ? 4 : 5;
+
   const [isOpen, setIsOpen] = useState(false);
   const [displayedCount, setDisplayedCount] = useState(INITIAL_LOAD_COUNT);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -52,15 +55,17 @@ export default function WhatsNewButton() {
       <PopoverTrigger asChild>
         <button
           aria-label="View what's new"
-          className="p-3 bg-purple-600 hover:bg-purple-700 backdrop-blur-md rounded-full text-white transition-colors border border-purple-600 z-40 flex items-center gap-2"
+          className={`backdrop-blur-md rounded-full text-white transition-colors bg-white/10 hover:bg-white/20 border border-white/20 z-40 flex items-center gap-2 ${
+            isMobile ? 'p-2' : 'p-3'
+          }`}
           title="View what's new"
         >
-          <Sparkles size={24} />
-          <span className="text-sm font-medium pr-1">What's New</span>
+          <Sparkles className="w-[18px] h-[18px]" />
+          {!isMobile && <span className="text-sm font-medium pr-1">What's New</span>}
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[380px] p-0 bg-gray-900/95 backdrop-blur-xl border-gray-700"
+        className="w-[calc(100vw-2rem)] sm:w-[380px] p-0 bg-gray-900/95 backdrop-blur-xl border-gray-700"
         align="end"
         sideOffset={8}
       >
@@ -72,21 +77,27 @@ export default function WhatsNewButton() {
           <p className="text-sm text-gray-400 mt-1">Latest updates and features</p>
         </div>
 
-        <ScrollArea className="h-[400px]" ref={scrollRef}>
+        <ScrollArea className="h-[60vh] sm:h-[400px]" ref={scrollRef}>
           <div className="p-4 space-y-4">
             {displayedEntries.map((entry, index) => (
               <ChangelogItem key={`${entry.date}-${index}`} entry={entry} formatDate={formatDate} />
             ))}
 
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="flex justify-center py-4">
+                <button
+                  onClick={() => setDisplayedCount((prev) => Math.min(prev + LOAD_MORE_COUNT, changelog.length))}
+                  className="px-4 py-2 text-sm bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-colors text-gray-300"
+                >
+                  Load {Math.min(LOAD_MORE_COUNT, changelog.length - displayedCount)} More Updates
+                </button>
+              </div>
+            )}
+
             {/* Sentinel for lazy loading */}
             {hasMore && (
-              <div ref={sentinelRef} className="py-4 text-center">
-                <div className="inline-flex items-center gap-2 text-sm text-gray-500">
-                  <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-pulse" />
-                  <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-pulse delay-75" />
-                  <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-pulse delay-150" />
-                </div>
-              </div>
+              <div ref={sentinelRef} className="h-px" />
             )}
 
             {!hasMore && changelog.length > INITIAL_LOAD_COUNT && (
