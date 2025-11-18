@@ -11,6 +11,7 @@ import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCount
 import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
 import { LoginScreen } from './components/auth/LoginScreen';
 import DiscordButton from './components/DiscordButton';
+import WhatsNewButton from './components/WhatsNewButton';
 import { useLevelNotifications } from './hooks/useLevelNotifications';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useSettingsStore } from './store/useSettingsStore';
@@ -130,8 +131,9 @@ function AppContent() {
         currentDay={consecutiveLoginDays}
       />
 
-      {/* Top Right Buttons - Discord & Settings */}
+      {/* Top Right Buttons - What's New, Discord & Settings */}
       <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
+        <WhatsNewButton />
         <DiscordButton />
         <SettingsModal />
       </div>
