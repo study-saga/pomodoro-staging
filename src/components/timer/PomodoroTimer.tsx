@@ -235,8 +235,8 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
       const notification = new Notification(titles[type], {
         body: bodies[type],
-        icon: '/vite.svg',
-        badge: '/vite.svg',
+        icon: '/pomodoro.svg',
+        badge: '/pomodoro.svg',
         tag: 'pomodoro-timer',
         requireInteraction: false
       });
