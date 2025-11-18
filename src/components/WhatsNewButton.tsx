@@ -28,7 +28,7 @@ export default function WhatsNewButton() {
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[calc(100vw-2rem)] sm:w-[380px] p-0 bg-black/40 backdrop-blur-xl border border-white/10"
+        className="w-[calc(100vw-2rem)] sm:w-[380px] p-0 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl"
         align="end"
         sideOffset={8}
       >
