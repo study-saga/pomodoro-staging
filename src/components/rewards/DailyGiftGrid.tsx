@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import { claimDailyGift } from '../../lib/userSyncAuth';
+import { supabase } from '../../lib/supabase';
 
 interface DailyGiftGridProps {
   show: boolean;
@@ -15,12 +17,12 @@ interface GiftBox {
   type: GiftType;
   value: string;
   xpAmount?: number; // Actual XP to award
+  description?: string; // Description text for special gifts
   isRevealed: boolean;
   isSelected: boolean;
 }
 
 export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps) {
-  const addDailyGiftXP = useSettingsStore((state) => state.addDailyGiftXP);
   const markDailyGiftClaimed = useSettingsStore((state) => state.markDailyGiftClaimed);
 
   // Generate randomized gifts based on the day (seeded randomness for consistency)
@@ -42,7 +44,8 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
           id: i,
           type: 'special',
           value: '🍅',
-          xpAmount: 50 // 5x bonus
+          xpAmount: 50, // 5x bonus
+          description: '+25% For all Pomodoros [24hrs]'
         });
       } else if (i === 12) {
         // Day 12 is always a mystery gift with huge XP
@@ -99,29 +102,73 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
     }
   }, [show, currentDay]);
 
-  // Auto-reveal current day's gift, award XP, and auto-close
+  // Auto-reveal current day's gift, award XP via server, and auto-close
   useEffect(() => {
     if (!show || currentDay < 1 || currentDay > 12) {
       return;
     }
 
     // Wait 0.5s for entrance animation, then reveal current day's gift
-    const revealTimer = setTimeout(() => {
+    const revealTimer = setTimeout(async () => {
       setGifts(prev => prev.map(g => ({
         ...g,
         isRevealed: g.id <= currentDay,
       })));
 
-      // Award XP for the current day's gift
+      // Award XP for the current day's gift (SERVER-SIDE)
       if (!xpAwarded) {
         const currentGift = gifts.find(g => g.id === currentDay);
         if (currentGift?.xpAmount) {
-          // Award XP directly (no pomodoro creation)
-          addDailyGiftXP(currentGift.xpAmount);
-          // Mark gift as claimed for today
-          markDailyGiftClaimed();
-          setXpAwarded(true);
-          console.log(`[DailyGift] Awarded ${currentGift.xpAmount} XP for day ${currentDay}`);
+          try {
+            // Get current auth user and app user
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) {
+              console.warn('[DailyGift] No authenticated user - gift not claimed');
+              return;
+            }
+
+            const { data: appUser } = await supabase
+              .from('users')
+              .select('id')
+              .eq('auth_user_id', session.user.id)
+              .maybeSingle();
+
+            if (!appUser) {
+              console.warn('[DailyGift] No app user found - gift not claimed');
+              return;
+            }
+
+            // Check if this is the special tomato gift (day 10) that activates boost
+            const isBoostGift = currentGift.type === 'special';
+
+            // Claim gift via server-side validation
+            const result = await claimDailyGift(
+              appUser.id,
+              currentGift.xpAmount,
+              isBoostGift
+            );
+
+            if (result.success) {
+              console.log(`[DailyGift] ✓ Claimed ${result.xpAwarded} XP from server`);
+
+              // Mark gift as claimed locally for UI consistency
+              markDailyGiftClaimed();
+              setXpAwarded(true);
+
+              // If boost was activated, store the expiration time
+              if (result.boostActivated && result.boostExpiresAt) {
+                console.log(`[DailyGift] ✓ Pomodoro boost activated until ${new Date(result.boostExpiresAt)}`);
+                // Note: The server already updated the database, local state will sync on next refresh
+              }
+            } else if (result.alreadyClaimed) {
+              console.log('[DailyGift] Gift already claimed today (verified by server)');
+              markDailyGiftClaimed();
+              setXpAwarded(true);
+            }
+          } catch (error) {
+            console.error('[DailyGift] Failed to claim gift:', error);
+            // Don't mark as claimed if server request failed
+          }
         }
       }
     }, 500);
@@ -194,6 +241,7 @@ interface GiftCardProps {
 
 function GiftCard({ gift, index }: GiftCardProps) {
   const isSpecialRevealed = gift.type === 'special' && gift.isRevealed;
+  const isAlreadyClaimed = gift.isRevealed && !gift.isSelected;
 
   return (
     <motion.div
@@ -215,15 +263,20 @@ function GiftCard({ gift, index }: GiftCardProps) {
           absolute inset-0 rounded-2xl
           transition-all duration-300
           ${isSpecialRevealed
-            ? 'bg-gradient-to-br from-red-400 via-red-500 to-rose-600'
-            : 'bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900'
+            ? 'bg-gradient-to-br from-red-400 via-red-500 to-rose-500'
+            : 'bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800'
           }
           ${gift.isSelected && !isSpecialRevealed
-            ? 'bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800'
+            ? 'bg-gradient-to-br from-slate-500 via-slate-600 to-slate-700'
             : ''
           }
         `}
       />
+
+      {/* Gray overlay for already claimed rewards */}
+      {isAlreadyClaimed && (
+        <div className="absolute inset-0 rounded-2xl bg-gray-800/50 backdrop-blur-[1px]" />
+      )}
 
       {/* Glow effect for special gift */}
       {isSpecialRevealed && (
@@ -261,8 +314,13 @@ function GiftCard({ gift, index }: GiftCardProps) {
           <span className="text-5xl opacity-80">🍅</span>
         )}
 
-        {/* Revealed XP gifts show the value */}
-        {gift.type === 'xp' && gift.isRevealed && (
+        {/* Already claimed gifts show red tick */}
+        {isAlreadyClaimed && (
+          <img src="/tick.png" alt="claimed" className="w-12 h-12 opacity-60" />
+        )}
+
+        {/* Current day XP gifts show the value */}
+        {gift.type === 'xp' && gift.isRevealed && gift.isSelected && (
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -272,26 +330,38 @@ function GiftCard({ gift, index }: GiftCardProps) {
           </motion.span>
         )}
 
-        {/* Special tomato gift with animation when revealed */}
-        {gift.type === 'special' && gift.isRevealed && (
-          <motion.span
-            animate={{
-              scale: [1, 1.2, 1],
-              rotate: [0, 10, -10, 0],
-            }}
-            transition={{
-              duration: 0.5,
-              repeat: Infinity,
-              repeatDelay: 1
-            }}
-            className="text-5xl"
-          >
-            {gift.value}
-          </motion.span>
+        {/* Current day special tomato gift with animation */}
+        {gift.type === 'special' && gift.isRevealed && gift.isSelected && (
+          <div className="flex flex-col items-center justify-center gap-2">
+            <motion.span
+              animate={{
+                scale: [1, 1.2, 1],
+                rotate: [0, 10, -10, 0],
+              }}
+              transition={{
+                duration: 0.5,
+                repeat: Infinity,
+                repeatDelay: 1
+              }}
+              className="text-5xl"
+            >
+              {gift.value}
+            </motion.span>
+            {gift.description && (
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-white text-xs font-semibold text-center px-2"
+              >
+                {gift.description}
+              </motion.p>
+            )}
+          </div>
         )}
 
-        {/* Revealed gift boxes show gift emoji */}
-        {gift.type === 'gift' && gift.isRevealed && (
+        {/* Current day gift boxes show gift emoji */}
+        {gift.type === 'gift' && gift.isRevealed && gift.isSelected && (
           <motion.span
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}

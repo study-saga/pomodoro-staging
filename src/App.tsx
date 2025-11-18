@@ -28,17 +28,11 @@ function AppContent() {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [showDailyGift, setShowDailyGift] = useState(false);
 
-  // Check if user visited today and show daily gift (only on mount)
+  // Track login on mount (but don't auto-show gift)
   useEffect(() => {
-    const { isNewDay, giftAlreadyClaimed } = trackLogin();
-
-    // Only show gift if it's a new day OR if user hasn't claimed today's gift yet
-    if ((isNewDay || !giftAlreadyClaimed) && consecutiveLoginDays > 0) {
-      console.log('[App] Showing daily gift - New day:', isNewDay, 'Already claimed:', giftAlreadyClaimed);
-      setShowDailyGift(true);
-    } else {
-      console.log('[App] Not showing daily gift - New day:', isNewDay, 'Already claimed:', giftAlreadyClaimed);
-    }
+    const { isNewDay, currentDay, giftAlreadyClaimed } = trackLogin();
+    console.log('[App] trackLogin result:', { isNewDay, currentDay, giftAlreadyClaimed });
+    // Don't auto-show gift - user will click the button to open it
     // Only run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -102,7 +96,7 @@ function AppContent() {
       <VideoBackground />
 
       {/* Level Display (Top Left) */}
-      <LevelDisplay />
+      <LevelDisplay onOpenDailyGift={() => setShowDailyGift(true)} />
 
       {/* Online Presence Counter (Top Right, below settings button) */}
       <div className="fixed top-20 right-4 z-10">

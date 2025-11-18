@@ -218,6 +218,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
     authInitializedRef.current = true
 
+    // Development mode bypass (skip authentication entirely)
+    const devMode = import.meta.env.VITE_DEV_MODE === 'true'
+    if (devMode) {
+      console.log('[Auth] DEV MODE: Skipping authentication')
+      setAuthenticated(true)
+      setLoading(false)
+      // Create a mock app user for development
+      setAppUser({
+        id: 'dev-user-id',
+        discord_id: 'dev-discord-id',
+        username: 'Dev User',
+        avatar: null,
+        level: 1,
+        xp: 0,
+        prestige_level: 0,
+        level_path: 'elf',
+        consecutive_login_days: 0,
+        total_unique_days: 0,
+        total_pomodoros: 0,
+        total_study_minutes: 0,
+        sound_enabled: true,
+        volume: 80,
+        music_volume: 50,
+        level_system_enabled: true,
+        last_login: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as AppUser)
+      return
+    }
+
     if (isDiscordActivity) {
       console.log('[Auth] Environment: Discord Activity')
       authenticateDiscordActivity()

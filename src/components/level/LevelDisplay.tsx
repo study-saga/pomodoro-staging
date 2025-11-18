@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import {
@@ -11,7 +11,11 @@ import {
 import { getNextMilestone } from '../../data/milestones';
 import { Gift } from 'lucide-react';
 
-export const LevelDisplay = memo(function LevelDisplay() {
+interface LevelDisplayProps {
+  onOpenDailyGift?: () => void;
+}
+
+export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: LevelDisplayProps) {
   const {
     level,
     xp,
@@ -24,6 +28,8 @@ export const LevelDisplay = memo(function LevelDisplay() {
     consecutiveLoginDays,
   } = useSettingsStore();
 
+  const [selectedDay, setSelectedDay] = useState(1);
+
   const { isMobile } = useDeviceType();
 
   if (!levelSystemEnabled) return null;
@@ -35,7 +41,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
   const progress = (xp / xpNeeded) * 100;
   const nextMilestone = getNextMilestone(totalUniqueDays);
 
-  // Simulate next day (for testing)
+  // Simulate selected day (for testing)
   const simulateNextDay = () => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -43,9 +49,14 @@ export const LevelDisplay = memo(function LevelDisplay() {
 
     useSettingsStore.setState({
       lastLoginDate: yesterdayStr,
+      consecutiveLoginDays: selectedDay, // Set to the selected day directly
+      lastDailyGiftDate: null, // Reset to allow claiming gift
     });
 
-    window.location.reload();
+    // Open the daily gift modal
+    if (onOpenDailyGift) {
+      onOpenDailyGift();
+    }
   };
 
   return (
@@ -110,13 +121,26 @@ export const LevelDisplay = memo(function LevelDisplay() {
             >
               Add 50 XP (Dev)
             </button>
-            <button
-              onClick={simulateNextDay}
-              className="w-full px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
-            >
-              <Gift className="w-3 h-3" />
-              Daily Gift
-            </button>
+            <div className="flex gap-1">
+              <select
+                value={selectedDay}
+                onChange={(e) => setSelectedDay(Number(e.target.value))}
+                className="px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:outline-none focus:border-pink-500"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((day) => (
+                  <option key={day} value={day}>
+                    Day {day}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={simulateNextDay}
+                className="flex-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
+              >
+                <Gift className="w-3 h-3" />
+                Daily Gift
+              </button>
+            </div>
           </div>
         )}
 

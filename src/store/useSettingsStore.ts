@@ -114,7 +114,25 @@ export const useSettingsStore = create<SettingsStore>()(
       // Level system actions
       addXP: (minutes) => {
         const state = get();
-        const xpGained = minutes * XP_PER_MINUTE;
+
+        // Check if pomodoro boost is active and not expired
+        let boostMultiplier = 1;
+        let boostStillActive = state.pomodoroBoostActive;
+
+        if (state.pomodoroBoostActive && state.pomodoroBoostExpiresAt) {
+          if (Date.now() > state.pomodoroBoostExpiresAt) {
+            // Boost has expired
+            boostStillActive = false;
+            console.log('[XP] Pomodoro boost expired');
+          } else {
+            // Boost is still active
+            boostMultiplier = 1.25; // +25% XP
+            console.log('[XP] Applying +25% XP boost!');
+          }
+        }
+
+        const baseXP = minutes * XP_PER_MINUTE;
+        const xpGained = Math.floor(baseXP * boostMultiplier);
         let newXP = state.xp + xpGained;
         let newLevel = state.level;
         let newPrestigeLevel = state.prestigeLevel;
@@ -157,6 +175,8 @@ export const useSettingsStore = create<SettingsStore>()(
           totalStudyMinutes: state.totalStudyMinutes + minutes,
           totalUniqueDays: newTotalUniqueDays,
           lastPomodoroDate: today,
+          pomodoroBoostActive: boostStillActive, // Update boost status
+          pomodoroBoostExpiresAt: boostStillActive ? state.pomodoroBoostExpiresAt : null,
         });
 
         // Sync to database in background (fire and forget)
@@ -345,6 +365,21 @@ export const useSettingsStore = create<SettingsStore>()(
       trackLogin: () => {
         const state = get();
         const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+        // First time user (no last login date)
+        if (!state.lastLoginDate) {
+          console.log('[trackLogin] First time user - setting day 1');
+          set({
+            lastLoginDate: today,
+            consecutiveLoginDays: 1,
+            totalLoginDays: 1,
+          });
+          return {
+            isNewDay: true,
+            currentDay: 1,
+            giftAlreadyClaimed: false,
+          };
+        }
 
         // Check if this is a new day
         if (state.lastLoginDate === today) {

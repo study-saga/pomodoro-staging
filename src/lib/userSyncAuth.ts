@@ -485,3 +485,83 @@ export async function updateUsername(
     user: result.user_data as AppUser
   }
 }
+
+/**
+ * Claim daily gift with server-side validation
+ *
+ * SECURITY: Uses server-side validation to:
+ * - Prevent claiming multiple times per day
+ * - Atomically award XP and update last claim date
+ * - Optionally activate pomodoro boost
+ * - Sync claim status across all devices
+ *
+ * @param userId - User's UUID
+ * @param xpAmount - XP to award for this gift
+ * @param activateBoost - If true, activate +25% XP boost for 24 hours
+ * @returns Result with success status and new XP value
+ */
+export async function claimDailyGift(
+  userId: string,
+  xpAmount: number,
+  activateBoost: boolean = false
+): Promise<{
+  success: boolean
+  message: string
+  xpAwarded?: number
+  newXp?: number
+  boostActivated?: boolean
+  boostExpiresAt?: number
+  alreadyClaimed?: boolean
+}> {
+  console.log(`[User Sync] Claiming daily gift for user ${userId} (XP: ${xpAmount}, Boost: ${activateBoost})`)
+
+  const { data, error } = await supabase.rpc('claim_daily_gift', {
+    p_user_id: userId,
+    p_xp_amount: xpAmount,
+    p_activate_boost: activateBoost
+  })
+
+  if (error) {
+    console.error('[User Sync] Error claiming daily gift:', error)
+    throw new Error(`Failed to claim daily gift: ${error.message}`)
+  }
+
+  const result = data as any
+
+  if (!result.success) {
+    console.log('[User Sync] Daily gift already claimed today')
+  } else {
+    console.log(`[User Sync] Daily gift claimed successfully - ${result.xp_awarded} XP awarded`)
+  }
+
+  return {
+    success: result.success,
+    message: result.message,
+    xpAwarded: result.xp_awarded,
+    newXp: result.new_xp,
+    boostActivated: result.boost_activated,
+    boostExpiresAt: result.boost_expires_at,
+    alreadyClaimed: result.already_claimed || false
+  }
+}
+
+/**
+ * Check if user can claim daily gift today
+ *
+ * @param userId - User's UUID
+ * @returns true if gift can be claimed, false if already claimed today
+ */
+export async function canClaimDailyGift(userId: string): Promise<boolean> {
+  console.log(`[User Sync] Checking if user ${userId} can claim daily gift`)
+
+  const { data, error } = await supabase.rpc('can_claim_daily_gift', {
+    p_user_id: userId
+  })
+
+  if (error) {
+    console.error('[User Sync] Error checking gift eligibility:', error)
+    return false // Fail safe - don't allow claim if we can't verify
+  }
+
+  return data as boolean
+}
