@@ -87,7 +87,7 @@ export const changelog: ChangelogEntry[] = [
   {
     date: '2025-11-13',
     title: 'Custom Timer Durations',
-    description: 'Set any duration from 1-120 minutes for pomodoros, short breaks, and long breaks.',
+    description: 'Set any duration in minutes for pomodoros, short breaks, and long breaks.',
     tags: ['feature'],
   },
   // ⬆️ ADD NEW UPDATES ABOVE THIS LINE ⬆️

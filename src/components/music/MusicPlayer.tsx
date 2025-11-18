@@ -157,27 +157,39 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
     <div className="fixed bottom-0 left-0 right-0 bg-black/60 backdrop-blur-xl border-t border-white/10">
       <div className={`max-w-7xl mx-auto ${isMobile ? 'px-2 py-2' : 'px-4 py-3'}`}>
         <div className={`flex ${isMobile ? 'flex-col gap-2' : 'items-center gap-4'}`}>
-          {/* Track Info */}
-          <div className={`${isMobile ? 'w-full' : 'flex-1'} min-w-0`}>
-            <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-3'}`}>
-              {/* Genre Badge */}
-              <button
-                onClick={() => setPlaylist(playlist === 'lofi' ? 'synthwave' : 'lofi')}
-                className={`px-3 py-1 bg-purple-600 text-white ${isMobile ? 'text-xs' : 'text-sm'} font-medium rounded-full hover:bg-purple-700 transition-colors`}
-              >
-                {playlist === 'lofi' ? 'Lofi' : 'Synthwave'}
-              </button>
+          {/* Track Info - Desktop: with genre badge, Mobile: song info only */}
+          {!isMobile && (
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                {/* Genre Badge - Desktop */}
+                <button
+                  onClick={() => setPlaylist(playlist === 'lofi' ? 'synthwave' : 'lofi')}
+                  className="px-3 py-1 bg-purple-600 text-white text-sm font-medium rounded-full hover:bg-purple-700 transition-colors"
+                >
+                  {playlist === 'lofi' ? 'Lofi' : 'Synthwave'}
+                </button>
 
-              {currentTrack && (
-                <div className="min-w-0">
-                  <p className={`text-white ${isMobile ? 'text-xs' : 'text-sm'} font-medium truncate`}>
-                    {currentTrack.title}
-                  </p>
-                  <p className="text-gray-400 text-xs truncate">{currentTrack.artist}</p>
-                </div>
-              )}
+                {currentTrack && (
+                  <div className="min-w-0">
+                    <p className="text-white text-sm font-medium truncate">
+                      {currentTrack.title}
+                    </p>
+                    <p className="text-gray-400 text-xs truncate">{currentTrack.artist}</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Mobile: Song Info at top */}
+          {isMobile && currentTrack && (
+            <div className="w-full">
+              <p className="text-white text-sm font-medium truncate">
+                {currentTrack.title}
+              </p>
+              <p className="text-gray-400 text-xs truncate">{currentTrack.artist}</p>
+            </div>
+          )}
 
           {/* Controls */}
           <div className={`flex items-center gap-2 ${isMobile ? 'justify-center w-full' : ''}`}>
@@ -218,21 +230,96 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
             <span className="text-xs text-gray-400 w-10">{formatTime(duration)}</span>
           </div>
 
-          {/* Volume & Background Selector */}
-          <div className={`flex items-center gap-2 ${isMobile ? 'justify-end w-full' : ''}`}>
-            {/* Volume Control */}
-            <div className="relative group">
+          {/* Mobile: Genre Badge + Volume/Background on same row */}
+          {isMobile && (
+            <div className="w-full flex items-center justify-between">
+              {/* Genre Badge */}
               <button
-                onClick={() => setShowVolumeSlider(!showVolumeSlider)}
-                className="p-2 text-white hover:bg-white/10 rounded-full transition-colors flex items-center gap-2"
+                onClick={() => setPlaylist(playlist === 'lofi' ? 'synthwave' : 'lofi')}
+                className="px-3 py-1 bg-purple-600 text-white text-xs font-medium rounded-full hover:bg-purple-700 transition-colors"
               >
-                <Volume2 size={20} />
-                <span className={`text-xs w-8 ${isMobile ? 'hidden' : ''}`}>{musicVolume}%</span>
+                {playlist === 'lofi' ? 'Lofi' : 'Synthwave'}
               </button>
 
-              {/* Volume Slider Popup */}
-              {showVolumeSlider && (
-                <div className={`absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-xl rounded-lg p-4 border border-white/10 ${isMobile ? 'w-48' : 'w-48'}`}>
+              {/* Volume & Background */}
+              <div className="flex items-center gap-2">
+                {/* Volume Control */}
+                <div className="relative group">
+                  <button
+                    onClick={() => setShowVolumeSlider(!showVolumeSlider)}
+                    className="p-2 text-white hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <Volume2 size={20} />
+                  </button>
+
+                  {/* Volume Slider Popup */}
+                  {showVolumeSlider && (
+                    <div className="absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-xl rounded-lg p-4 border border-white/10 w-48">
+                      <div className="flex items-center gap-3">
+                        <Volume2 size={16} className="text-gray-400" />
+                        <div className="flex-1 relative">
+                          <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-white transition-all"
+                              style={{ width: `${musicVolume}%` }}
+                            />
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={musicVolume}
+                            onChange={(e) => setMusicVolume(Number(e.target.value))}
+                            className="absolute inset-0 w-full h-2 appearance-none cursor-pointer bg-transparent
+                              [&::-webkit-slider-thumb]:appearance-none
+                              [&::-webkit-slider-thumb]:w-4
+                              [&::-webkit-slider-thumb]:h-4
+                              [&::-webkit-slider-thumb]:rounded-full
+                              [&::-webkit-slider-thumb]:bg-white
+                              [&::-webkit-slider-thumb]:cursor-pointer
+                              [&::-webkit-slider-thumb]:shadow-md
+                              [&::-moz-range-thumb]:w-4
+                              [&::-moz-range-thumb]:h-4
+                              [&::-moz-range-thumb]:rounded-full
+                              [&::-moz-range-thumb]:bg-white
+                              [&::-moz-range-thumb]:border-0
+                              [&::-moz-range-thumb]:cursor-pointer
+                              [&::-moz-range-thumb]:shadow-md"
+                          />
+                        </div>
+                        <span className="text-xs text-white w-8 text-right">{musicVolume}%</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Background Selector */}
+                <button
+                  onClick={() => setShowBackgrounds(!showBackgrounds)}
+                  className="p-2 text-white hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <ImageIcon size={20} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Desktop: Volume & Background Selector */}
+          {!isMobile && (
+            <div className="flex items-center gap-2">
+              {/* Volume Control */}
+              <div className="relative group">
+                <button
+                  onClick={() => setShowVolumeSlider(!showVolumeSlider)}
+                  className="p-2 text-white hover:bg-white/10 rounded-full transition-colors flex items-center gap-2"
+                >
+                  <Volume2 size={20} />
+                  <span className="text-xs w-8">{musicVolume}%</span>
+                </button>
+
+                {/* Volume Slider Popup */}
+                {showVolumeSlider && (
+                  <div className="absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-xl rounded-lg p-4 border border-white/10 w-48">
                   <div className="flex items-center gap-3">
                     <Volume2 size={16} className="text-gray-400" />
                     <div className="flex-1 relative">
@@ -279,6 +366,7 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
               <ImageIcon size={20} />
             </button>
           </div>
+          )}
         </div>
       </div>
 
