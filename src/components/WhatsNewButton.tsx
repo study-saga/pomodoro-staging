@@ -23,7 +23,7 @@ export default function WhatsNewButton() {
           className="backdrop-blur-md rounded-full text-white transition-colors bg-black/40 hover:bg-black/60 border border-white/10 z-40 flex items-center gap-2 p-3"
           title="View what's new"
         >
-          <Sparkles className="w-[18px] h-[18px]" />
+          <Sparkles className="w-6 h-6" />
           {!isMobile && <span className="text-sm font-medium pr-1">What's New</span>}
         </button>
       </PopoverTrigger>

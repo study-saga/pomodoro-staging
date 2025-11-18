@@ -183,11 +183,13 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
 
           {/* Mobile: Song Info at top */}
           {isMobile && currentTrack && (
-            <div className="w-full">
-              <p className="text-white text-sm font-medium truncate">
+            <div className="w-full text-center">
+              <p className="text-white text-sm font-semibold truncate">
                 {currentTrack.title}
               </p>
-              <p className="text-gray-400 text-xs truncate">{currentTrack.artist}</p>
+              <p className="text-gray-400 text-xs truncate mt-0.5">
+                {currentTrack.artist}
+              </p>
             </div>
           )}
 
