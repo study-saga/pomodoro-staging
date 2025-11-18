@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
@@ -33,10 +33,18 @@ export default function WhatsNewButton() {
         sideOffset={8}
       >
         <div className="p-4 border-b border-gray-700">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Sparkles size={20} className="text-purple-400" />
-            What's New
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Sparkles size={20} className="text-purple-400" />
+              What's New
+            </h2>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
           <p className="text-sm text-gray-400 mt-1">Latest updates and features</p>
         </div>
 
