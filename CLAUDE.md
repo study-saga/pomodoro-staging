@@ -1,3 +1,3 @@
-- In all interactions and commit messages, be extremly concise and sacifice grammar for the sake of concision.
+- In all interactions and commit messages, be extremely concise and sacrifice grammar for the sake of concision.
 - always update PROJECT.md if we fix or implement a new implementation way for our projects
 - At the end of each plan, give me a list of unresolved questions to answer, if any. Make the questions extremely concise. Sacrifice grammar for the sake of concision.
