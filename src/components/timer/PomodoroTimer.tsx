@@ -16,7 +16,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const [isFlashing, setIsFlashing] = useState(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const { appUser } = useAuth();
+  const { appUser, isDiscordActivity } = useAuth();
 
   const {
     timers,
@@ -135,10 +135,17 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     }, 100);
   }, [isRunning, hasBeenStarted, minutes, seconds, pausedTimeSeconds, pause, start, restart, getExpiryTimestamp]);
 
-  // Read notification permission (don't request automatically)
+  // Read notification permission and listen for changes
   useEffect(() => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
+
+      const handlePermissionChange = () => {
+        setNotificationPermission(Notification.permission);
+      };
+
+      window.addEventListener('notificationPermissionChange', handlePermissionChange);
+      return () => window.removeEventListener('notificationPermissionChange', handlePermissionChange);
     }
   }, []);
 
@@ -184,6 +191,11 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   }, []);
 
   const showNotification = (type: TimerType) => {
+    // Only show browser notifications on web (not Discord Activity)
+    if (isDiscordActivity) {
+      return;
+    }
+
     if ('Notification' in window && notificationPermission === 'granted') {
       const titles = {
         pomodoro: '🍅 Pomodoro Complete!',
