@@ -108,7 +108,11 @@ export const useSettingsStore = create<SettingsStore>()(
         })),
 
       // Visual actions
-      setBackground: (background) => set({ background }),
+      setBackground: (background) => {
+        const isMobile = getIsMobile();
+        const validBackground = getValidBackgroundForDevice(background, isMobile);
+        set({ background: validBackground });
+      },
       setPlaylist: (playlist) => set({ playlist }),
 
       // Level system actions

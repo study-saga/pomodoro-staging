@@ -55,10 +55,23 @@ export async function syncDiscordUserToSupabase(
       totalUniqueDays += 1
     }
 
+    // CRITICAL: Only update username if user hasn't customized it
+    // Check if last_username_change is NULL (user is using Discord username)
+    const hasCustomUsername = existingUser.last_username_change !== null
+
+    console.log('[User Sync] Username preservation check:', {
+      discordUsername: discordUser.username,
+      currentUsername: existingUser.username,
+      hasCustomUsername,
+      lastUsernameChange: existingUser.last_username_change,
+      willPreserve: hasCustomUsername
+    })
+
     const { data: updatedUser, error: updateError } = await supabase
       .from('users')
       .update({
-        username: discordUser.username,
+        // Only update username if last_username_change IS NULL (using Discord username)
+        ...(hasCustomUsername ? {} : { username: discordUser.username }),
         avatar: discordUser.avatar,
         last_login: new Date().toISOString(),
         last_login_date: today,
@@ -74,7 +87,12 @@ export async function syncDiscordUserToSupabase(
       throw new Error('Failed to update user in database')
     }
 
-    console.log('[User Sync] User updated successfully')
+    if (hasCustomUsername) {
+      console.log('[User Sync] User updated successfully (custom username preserved)')
+    } else {
+      console.log('[User Sync] User updated successfully (Discord username synced)')
+    }
+
     return updatedUser as AppUser
   } else {
     // New user - create account

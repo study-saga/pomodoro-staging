@@ -5,7 +5,7 @@ import { useDeviceType } from '../../hooks/useDeviceType';
 
 export function VideoBackground() {
   const { background, setBackground } = useSettingsStore();
-  const { isMobile } = useDeviceType();
+  const { isMobile, isPortrait } = useDeviceType();
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const currentBg = BACKGROUNDS.find((bg) => bg.id === background);
@@ -13,15 +13,15 @@ export function VideoBackground() {
   // Validate background compatibility and fallback if needed
   useEffect(() => {
     if (currentBg) {
-      const requiredOrientation = isMobile ? 'vertical' : 'horizontal';
+      const requiredOrientation = isPortrait ? 'vertical' : 'horizontal';
       if (currentBg.orientation !== requiredOrientation) {
-        // Background doesn't match device - switch to appropriate default
+        // Background doesn't match viewport orientation - switch to appropriate default
         const defaultBg = getDefaultBackground(isMobile);
-        console.warn(`Background ${currentBg.name} (${currentBg.orientation}) incompatible with ${isMobile ? 'mobile' : 'desktop'} device. Switching to default.`);
+        console.warn(`Background ${currentBg.name} (${currentBg.orientation}) incompatible with ${isPortrait ? 'portrait' : 'landscape'} orientation. Switching to default.`);
         setBackground(defaultBg);
       }
     }
-  }, [currentBg, isMobile, setBackground]);
+  }, [currentBg, isMobile, isPortrait, setBackground]);
 
   useEffect(() => {
     if (videoRef.current) {

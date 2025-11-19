@@ -68,11 +68,9 @@ export function getTotalXPForLevel(level: number): number {
 }
 
 export function getBadgeForLevel(level: number, prestigeLevel: number): string {
-  const stars = "⭐".repeat(Math.min(prestigeLevel, 5));
-
-  if (level <= 5) return "🌱" + stars;
-  if (level <= 10) return "🌿" + stars;
-  if (level <= 15) return "🌺" + stars;
-  if (level <= 19) return "🍀" + stars;
-  return "🍅" + stars;
+  if (level <= 5) return "🌱";
+  if (level <= 10) return "🌿";
+  if (level <= 15) return "🌺";
+  if (level <= 19) return "🍀";
+  return "🍅";
 }

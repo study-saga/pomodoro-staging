@@ -218,7 +218,7 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
             </motion.h2>
 
             {/* Grid of gifts */}
-            <div className="grid grid-cols-6 gap-3 max-w-3xl">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4 max-w-3xl">
               {gifts.map((gift, index) => (
                 <GiftCard
                   key={gift.id}

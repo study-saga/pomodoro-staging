@@ -252,7 +252,8 @@ export function useSettingsSync() {
     settings.setAutoStartPomodoros(appUser.auto_start_pomodoros)
 
     // Load visual preferences
-    settings.setBackground(appUser.background_id)
+    // setBackground() validates and ensures device-appropriate background
+    settings.setBackground(appUser.background_id || 'room-video')
     settings.setPlaylist(appUser.playlist)
 
     // Load ambient volumes
@@ -270,11 +271,27 @@ export function useSettingsSync() {
     // Load system preferences
     settings.setLevelSystemEnabled(appUser.level_system_enabled)
 
-    // Load level system data (directly set state to avoid re-calculating XP/levels)
+    // Load level system data
+    // Server stores total XP, client calculates level/prestige/remaining
+    const totalXP = appUser.xp
+    const XP_PER_CYCLE = 19000 // Sum(100+200+...+1900) = XP for 1 prestige
+    const maxLevel = 20
+
+    // Auto-calculate prestige from total XP
+    const calculatedPrestige = Math.floor(totalXP / XP_PER_CYCLE)
+    let remainingXP = totalXP % XP_PER_CYCLE
+
+    // Calculate level from remaining XP after prestige
+    let calculatedLevel = 1
+    while (calculatedLevel < maxLevel && remainingXP >= calculatedLevel * 100) {
+      remainingXP -= calculatedLevel * 100
+      calculatedLevel++
+    }
+
     useSettingsStore.setState({
-      xp: appUser.xp,
-      level: appUser.level,
-      prestigeLevel: appUser.prestige_level,
+      xp: remainingXP,  // Remaining XP towards next level
+      level: calculatedLevel,  // Auto-calculated level
+      prestigeLevel: calculatedPrestige,  // Auto-calculated prestige
       totalPomodoros: appUser.total_pomodoros,
       totalStudyMinutes: appUser.total_study_minutes,
       username: appUser.username,

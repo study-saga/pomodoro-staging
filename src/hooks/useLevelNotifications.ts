@@ -35,11 +35,16 @@ export function useLevelNotifications() {
     const prevXP = prevXPRef.current;
     const prevLevel = prevLevelRef.current;
 
-    // XP changed - show toast
-    if (xp !== prevXP && xp > 0) {
-      const gained = xp > prevXP ? xp - prevXP : 50; // Approximate if wrapped
-      showGameToast(`+${gained} XP Collected! 🎉`);
-      console.log('[LevelNotifications] XP gained:', gained, 'Total XP:', xp);
+    if (xp !== prevXP) {
+      if (xp > prevXP) {
+        // XP gained - show positive toast
+        const gained = xp - prevXP;
+        showGameToast(`+${gained} XP Collected! 🎉`);
+      } else if (prevXP - xp === 50) {
+        // Name change cost (50 XP)
+        showGameToast(`-50 XP Spent`);
+      }
+      // No toast for reset (large decrease)
 
       prevXPRef.current = xp;
     }
