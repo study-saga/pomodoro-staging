@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { getLevelName } from '../data/levels';
 import { showGameToast } from '../components/ui/GameToast';
@@ -11,30 +11,57 @@ export function useLevelNotifications() {
   const levelPath = useSettingsStore((state) => state.levelPath);
   const xp = useSettingsStore((state) => state.xp);
 
-  // Watch for XP changes
-  useEffect(() => {
-    const prevXP = parseInt(localStorage.getItem('prevXP') || '0');
-    const prevLevel = parseInt(localStorage.getItem('prevLevel') || '1');
+  // Use refs to track previous values (more reliable than localStorage)
+  const prevXPRef = useRef<number | null>(null);
+  const prevLevelRef = useRef<number | null>(null);
+  const isInitializedRef = useRef(false);
 
-    if (xp !== prevXP) {
-      // XP changed - show toast
+  // Initialize previous values on first render with actual state values
+  useEffect(() => {
+    if (!isInitializedRef.current && xp > 0) {
+      // Only initialize once we have real data (xp > 0 means data is loaded)
+      prevXPRef.current = xp;
+      prevLevelRef.current = level;
+      isInitializedRef.current = true;
+      console.log('[LevelNotifications] Initialized with level:', level, 'XP:', xp);
+    }
+  }, [xp, level]);
+
+  // Watch for XP and level changes
+  useEffect(() => {
+    // Skip if not initialized yet (prevents false triggers on mount)
+    if (!isInitializedRef.current || prevXPRef.current === null || prevLevelRef.current === null) return;
+
+    const prevXP = prevXPRef.current;
+    const prevLevel = prevLevelRef.current;
+
+    // XP changed - show toast
+    if (xp !== prevXP && xp > 0) {
       const gained = xp > prevXP ? xp - prevXP : 50; // Approximate if wrapped
       showGameToast(`+${gained} XP Collected! 🎉`);
+      console.log('[LevelNotifications] XP gained:', gained, 'Total XP:', xp);
 
-      localStorage.setItem('prevXP', xp.toString());
+      prevXPRef.current = xp;
     }
 
+    // Level up detected!
     if (level !== prevLevel && level > prevLevel) {
-      // Level up!
+      console.log('[LevelNotifications] 🎉 LEVEL UP DETECTED! From', prevLevel, 'to', level);
+
       setLevelUpData({
         level,
         levelName: getLevelName(level, levelPath)
       });
       setShowLevelUp(true);
 
+      // Hide celebration after 3 seconds
       setTimeout(() => setShowLevelUp(false), 3000);
 
-      localStorage.setItem('prevLevel', level.toString());
+      prevLevelRef.current = level;
+    } else if (level !== prevLevel) {
+      // Level changed but didn't increase (e.g., prestige or manual change)
+      console.log('[LevelNotifications] Level changed but not increased:', prevLevel, '→', level);
+      prevLevelRef.current = level;
     }
   }, [xp, level, levelPath]);
 

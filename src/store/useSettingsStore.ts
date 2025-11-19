@@ -115,6 +115,8 @@ export const useSettingsStore = create<SettingsStore>()(
       addXP: (minutes) => {
         const state = get();
 
+        console.log('[XP] addXP called with minutes:', minutes, 'Current level:', state.level, 'Current XP:', state.xp);
+
         // Check if pomodoro boost is active and not expired
         let boostMultiplier = 1;
         let boostStillActive = state.pomodoroBoostActive;
@@ -137,16 +139,20 @@ export const useSettingsStore = create<SettingsStore>()(
         let newLevel = state.level;
         let newPrestigeLevel = state.prestigeLevel;
 
+        console.log('[XP] XP gained:', xpGained, 'New XP total:', newXP, 'XP needed for next level:', getXPNeeded(newLevel));
+
         // Check for level ups
         while (newLevel < MAX_LEVEL && newXP >= getXPNeeded(newLevel)) {
           newXP -= getXPNeeded(newLevel);
           newLevel++;
+          console.log('[XP] 🎉 LEVEL UP! New level:', newLevel, 'Remaining XP:', newXP);
         }
 
         // Check for prestige
         if (newLevel >= MAX_LEVEL && newXP > 0) {
           newPrestigeLevel++;
           newLevel = 1;
+          console.log('[XP] ⭐ PRESTIGE! New prestige level:', newPrestigeLevel);
           // XP continues to accumulate
         }
 
@@ -167,6 +173,7 @@ export const useSettingsStore = create<SettingsStore>()(
         }
 
         // Update local store first (optimistic update for instant UI feedback)
+        console.log('[XP] Updating state - Old level:', state.level, '→ New level:', newLevel, '| Old XP:', state.xp, '→ New XP:', newXP);
         set({
           xp: newXP,
           level: newLevel,
@@ -178,6 +185,7 @@ export const useSettingsStore = create<SettingsStore>()(
           pomodoroBoostActive: boostStillActive, // Update boost status
           pomodoroBoostExpiresAt: boostStillActive ? state.pomodoroBoostExpiresAt : null,
         });
+        console.log('[XP] State updated successfully');
 
         // Sync to database in background (fire and forget)
         // This ensures XP persists across page refreshes
