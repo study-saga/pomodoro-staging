@@ -58,6 +58,10 @@ interface SettingsStore extends Settings {
   // Login tracking
   trackLogin: () => { isNewDay: boolean; currentDay: number };
 
+  // Sync state
+  settingsSyncComplete: boolean;
+  setSettingsSyncComplete: (complete: boolean) => void;
+
   // Computed
   canEditUsername: () => boolean;
   getXPCost: () => number;
@@ -69,6 +73,10 @@ export const useSettingsStore = create<SettingsStore>()(
       // Initial state from defaults with device-aware background
       ...DEFAULT_SETTINGS,
       background: getValidBackgroundForDevice(DEFAULT_SETTINGS.background, getIsMobile()),
+
+      // Sync state (not persisted - always starts false)
+      settingsSyncComplete: false,
+      setSettingsSyncComplete: (complete) => set({ settingsSyncComplete: complete }),
 
       // Timer actions
       setPomodoroDuration: (minutes) =>
