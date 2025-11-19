@@ -108,8 +108,26 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
       return;
     }
 
-    // Wait 0.5s for entrance animation, then reveal current day's gift
-    const revealTimer = setTimeout(async () => {
+    // Check if gift was already claimed before attempting to claim
+    const checkAndClaimGift = async () => {
+      // Check localStorage first for quick UI feedback
+      const today = new Date().toISOString().split('T')[0];
+      const lastGiftDate = useSettingsStore.getState().lastDailyGiftDate;
+
+      if (lastGiftDate === today) {
+        console.log('[DailyGift] Gift already claimed today (localStorage check)');
+        setXpAwarded(true);
+        // Reveal the gift immediately since it was already claimed
+        setGifts(prev => prev.map(g => ({
+          ...g,
+          isRevealed: g.id <= currentDay,
+        })));
+        return;
+      }
+
+      // Wait 0.5s for entrance animation, then reveal current day's gift
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       setGifts(prev => prev.map(g => ({
         ...g,
         isRevealed: g.id <= currentDay,
@@ -124,6 +142,8 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.user) {
               console.warn('[DailyGift] No authenticated user - gift not claimed');
+              markDailyGiftClaimed(); // Mark locally to prevent re-showing
+              setXpAwarded(true);
               return;
             }
 
@@ -135,6 +155,8 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
 
             if (!appUser) {
               console.warn('[DailyGift] No app user found - gift not claimed');
+              markDailyGiftClaimed(); // Mark locally to prevent re-showing
+              setXpAwarded(true);
               return;
             }
 
@@ -167,11 +189,15 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
             }
           } catch (error) {
             console.error('[DailyGift] Failed to claim gift:', error);
-            // Don't mark as claimed if server request failed
+            // Mark as claimed locally to prevent repeated attempts
+            markDailyGiftClaimed();
+            setXpAwarded(true);
           }
         }
       }
-    }, 500);
+    };
+
+    checkAndClaimGift();
 
     // Auto-close after 3 seconds total (give user time to see the reward)
     const closeTimer = setTimeout(() => {
@@ -180,7 +206,6 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
     }, 3000);
 
     return () => {
-      clearTimeout(revealTimer);
       clearTimeout(closeTimer);
     };
     // Only re-run when show or currentDay changes, not when gifts/xpAwarded changes

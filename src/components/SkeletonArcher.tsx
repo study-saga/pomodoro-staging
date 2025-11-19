@@ -97,13 +97,6 @@ export default function SkeletonArcher({
     return () => clearTimeout(timer);
   }, [arrows.length]);
 
-  const handlePlay = () => {
-    setCurrentFrame(0);
-    setArrows([]);
-    setIsAnimating(true);
-    lastFrameTimeRef.current = 0;
-  };
-
   const backgroundPositionX = -(currentFrame * FRAME_WIDTH);
 
   return (
