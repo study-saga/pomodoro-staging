@@ -18,10 +18,16 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   // ⬇️ ADD NEW UPDATES HERE (most recent first) ⬇️
+    {
+    date: '2025-11-18',
+    title: 'Music Player',
+    description: 'Improved the music player for better design on PC and Mobiles.',
+    tags: ['improvement'],
+  },
   {
     date: '2025-11-18',
     title: 'Browser Notifications',
-    description: 'Get notified when your timer completes, even when the tab is not in focus. Enable in Settings → Sounds.',
+    description: 'Get notified when your timer completes, even when the tab is not in focus. Enable in Settings → General tab.',
     tags: ['feature'],
   },
   {
@@ -32,7 +38,7 @@ export const changelog: ChangelogEntry[] = [
   },
   {
     date: '2025-11-17',
-    title: 'Discord OAuth Integration',
+    title: 'Discord Authentication Integration',
     description: 'Sign in with Discord to save your progress and access your account from anywhere.',
     tags: ['feature'],
   },
@@ -45,7 +51,7 @@ export const changelog: ChangelogEntry[] = [
   {
     date: '2025-11-16',
     title: 'Multiple Background Options',
-    description: 'Choose from 6 beautiful video backgrounds to customize your study environment.',
+    description: 'Choose from 6 beautiful video backgrounds to customize your study environment (3 for PC 3 for Mobiles).',
     tags: ['feature'],
   },
   {
@@ -57,7 +63,7 @@ export const changelog: ChangelogEntry[] = [
   {
     date: '2025-11-15',
     title: 'Music Playlist Selection',
-    description: 'Switch between Lofi and Synthwave playlists to match your study mood.',
+    description: 'Switch between Lofi and Synthwave playlists to match your study mood by clicking the (Lofi or Synthwave) text in the music player.',
     tags: ['feature'],
   },
   {
@@ -80,15 +86,9 @@ export const changelog: ChangelogEntry[] = [
   },
   {
     date: '2025-11-13',
-    title: 'Statistics Dashboard',
-    description: 'Track your total pomodoros, study time, login streak, and more.',
-    tags: ['feature'],
-  },
-  {
-    date: '2025-11-13',
     title: 'Custom Timer Durations',
     description: 'Set any duration in minutes for pomodoros, short breaks, and long breaks.',
     tags: ['feature'],
-  },
+  }
   // ⬆️ ADD NEW UPDATES ABOVE THIS LINE ⬆️
 ];

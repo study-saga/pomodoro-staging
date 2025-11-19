@@ -40,11 +40,8 @@ export function useLevelNotifications() {
         // XP gained - show positive toast
         const gained = xp - prevXP;
         showGameToast(`+${gained} XP Collected! 🎉`);
-      } else if (prevXP - xp === 50) {
-        // Name change cost (50 XP)
-        showGameToast(`-50 XP Spent`);
       }
-      // No toast for reset (large decrease)
+      // Silent for XP decreases (name change toast shown from SettingsModal)
 
       prevXPRef.current = xp;
     }
