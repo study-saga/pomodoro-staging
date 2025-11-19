@@ -646,3 +646,49 @@ export async function canClaimDailyGift(userId: string): Promise<boolean> {
 
   return data as boolean
 }
+
+/**
+ * Reset user progress (XP, level, prestige, stats)
+ * Supports dual authentication modes (web + Discord Activity)
+ */
+export async function resetUserProgress(
+  userId: string,
+  discordId: string
+): Promise<AppUser> {
+  console.log(`[User Sync] Resetting progress for user ${userId}`)
+
+  // Determine authentication mode
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (session) {
+    // Web Mode: Use Supabase Auth
+    console.log('[User Sync] Using web mode for reset')
+
+    const { data, error } = await supabase.rpc('reset_user_progress', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('[User Sync] Error resetting progress:', error)
+      throw new Error(`Failed to reset progress: ${error.message}`)
+    }
+
+    console.log('[User Sync] Progress reset successfully (web mode)')
+    return data as AppUser
+  } else {
+    // Discord Activity Mode
+    console.log('[User Sync] Using Discord Activity mode for reset')
+
+    const { data, error } = await supabase.rpc('reset_user_progress_discord', {
+      p_discord_id: discordId
+    })
+
+    if (error) {
+      console.error('[User Sync] Error resetting progress:', error)
+      throw new Error(`Failed to reset progress: ${error.message}`)
+    }
+
+    console.log('[User Sync] Progress reset successfully (Discord Activity mode)')
+    return data as AppUser
+  }
+}

@@ -17,6 +17,7 @@ import { useSettingsSync } from './hooks/useSettingsSync';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { getEnvironment } from './lib/environment';
+
 function AppContent() {
   const { authenticated, loading, error } = useAuth();
   const { showLevelUp, levelUpData } = useLevelNotifications();
