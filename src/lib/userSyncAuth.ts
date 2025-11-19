@@ -94,9 +94,14 @@ export async function updateUserSettings(
  * - increment_pomodoro_totals() - Server-controlled stat updates
  *
  * This prevents users from cheating by setting arbitrary XP/levels.
+ *
+ * Supports dual authentication modes:
+ * - Web Mode: Uses Supabase Auth session (auth.uid()) via update_user_settings RPC
+ * - Discord Activity Mode: Uses Discord SDK identity (discord_id) via update_user_settings_discord RPC
  */
 export async function updateUserPreferences(
   userId: string,
+  discordId: string,
   preferences: {
     // Timer preferences (6 fields) - SAFE to sync from client
     timer_pomodoro_minutes?: number
@@ -123,39 +128,84 @@ export async function updateUserPreferences(
 ): Promise<AppUser> {
   console.log(`[User Sync] Updating user settings for user ${userId}`)
 
-  const { data, error } = await supabase.rpc('update_user_settings', {
-    p_user_id: userId,
+  // Determine authentication mode by checking for Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
 
-    // Timer preferences
-    p_timer_pomodoro_minutes: preferences.timer_pomodoro_minutes ?? null,
-    p_timer_short_break_minutes: preferences.timer_short_break_minutes ?? null,
-    p_timer_long_break_minutes: preferences.timer_long_break_minutes ?? null,
-    p_pomodoros_before_long_break: preferences.pomodoros_before_long_break ?? null,
-    p_auto_start_breaks: preferences.auto_start_breaks ?? null,
-    p_auto_start_pomodoros: preferences.auto_start_pomodoros ?? null,
+  if (session) {
+    // Web Mode: Use Supabase Auth with auth.uid()
+    console.log('[User Sync] Using web mode (Supabase Auth)')
 
-    // Visual preferences
-    p_background_id: preferences.background_id ?? null,
-    p_playlist: preferences.playlist ?? null,
-    p_ambient_volumes: preferences.ambient_volumes ?? null,
+    const { data, error } = await supabase.rpc('update_user_settings', {
+      p_user_id: userId,
 
-    // Audio preferences
-    p_sound_enabled: preferences.sound_enabled ?? null,
-    p_volume: preferences.volume ?? null,
-    p_music_volume: preferences.music_volume ?? null,
+      // Timer preferences
+      p_timer_pomodoro_minutes: preferences.timer_pomodoro_minutes ?? null,
+      p_timer_short_break_minutes: preferences.timer_short_break_minutes ?? null,
+      p_timer_long_break_minutes: preferences.timer_long_break_minutes ?? null,
+      p_pomodoros_before_long_break: preferences.pomodoros_before_long_break ?? null,
+      p_auto_start_breaks: preferences.auto_start_breaks ?? null,
+      p_auto_start_pomodoros: preferences.auto_start_pomodoros ?? null,
 
-    // System preferences
-    p_level_system_enabled: preferences.level_system_enabled ?? null,
-    p_level_path: preferences.level_path ?? null
-  })
+      // Visual preferences
+      p_background_id: preferences.background_id ?? null,
+      p_playlist: preferences.playlist ?? null,
+      p_ambient_volumes: preferences.ambient_volumes ?? null,
 
-  if (error) {
-    console.error('[User Sync] Error updating settings:', error)
-    throw new Error(`Failed to update settings: ${error.message}`)
+      // Audio preferences
+      p_sound_enabled: preferences.sound_enabled ?? null,
+      p_volume: preferences.volume ?? null,
+      p_music_volume: preferences.music_volume ?? null,
+
+      // System preferences
+      p_level_system_enabled: preferences.level_system_enabled ?? null,
+      p_level_path: preferences.level_path ?? null
+    })
+
+    if (error) {
+      console.error('[User Sync] Error updating settings:', error)
+      throw new Error(`Failed to update settings: ${error.message}`)
+    }
+
+    console.log('[User Sync] Settings updated successfully (web mode)')
+    return data as AppUser
+  } else {
+    // Discord Activity Mode: Use Discord ID from Discord SDK
+    console.log('[User Sync] Using Discord Activity mode (Discord SDK)')
+
+    const { data, error } = await supabase.rpc('update_user_settings_discord', {
+      p_discord_id: discordId,
+
+      // Timer preferences
+      p_timer_pomodoro_minutes: preferences.timer_pomodoro_minutes ?? null,
+      p_timer_short_break_minutes: preferences.timer_short_break_minutes ?? null,
+      p_timer_long_break_minutes: preferences.timer_long_break_minutes ?? null,
+      p_pomodoros_before_long_break: preferences.pomodoros_before_long_break ?? null,
+      p_auto_start_breaks: preferences.auto_start_breaks ?? null,
+      p_auto_start_pomodoros: preferences.auto_start_pomodoros ?? null,
+
+      // Visual preferences
+      p_background_id: preferences.background_id ?? null,
+      p_playlist: preferences.playlist ?? null,
+      p_ambient_volumes: preferences.ambient_volumes ?? null,
+
+      // Audio preferences
+      p_sound_enabled: preferences.sound_enabled ?? null,
+      p_volume: preferences.volume ?? null,
+      p_music_volume: preferences.music_volume ?? null,
+
+      // System preferences
+      p_level_system_enabled: preferences.level_system_enabled ?? null,
+      p_level_path: preferences.level_path ?? null
+    })
+
+    if (error) {
+      console.error('[User Sync] Error updating settings:', error)
+      throw new Error(`Failed to update settings: ${error.message}`)
+    }
+
+    console.log('[User Sync] Settings updated successfully (Discord Activity mode)')
+    return data as AppUser
   }
-
-  console.log('[User Sync] Settings updated successfully')
-  return data as AppUser
 }
 
 /**
@@ -423,31 +473,62 @@ export async function isRewardUnlocked(
  * - Validate username length and content
  * - Prevent bypassing XP cost via direct database updates
  *
+ * Supports dual authentication modes:
+ * - Web Mode: Uses Supabase Auth session (auth.uid()) via update_username RPC
+ * - Discord Activity Mode: Uses Discord SDK identity (discord_id) via update_username_discord RPC
+ *
  * @param userId - User's UUID
+ * @param discordId - User's Discord ID (from AuthContext.appUser.discord_id)
  * @param newUsername - New username (max 20 characters)
  * @param forceWithXP - If true, spend 50 XP to bypass cooldown
  * @returns Updated user object
  */
 export async function updateUsernameSecure(
   userId: string,
+  discordId: string,
   newUsername: string,
   forceWithXP: boolean = false
 ): Promise<AppUser> {
   console.log(`[User Sync] Updating username for user ${userId} to: ${newUsername} (forceWithXP: ${forceWithXP})`)
 
-  const { data, error } = await supabase.rpc('update_username', {
-    p_user_id: userId,
-    p_new_username: newUsername,
-    p_force_with_xp: forceWithXP
-  })
+  // Determine authentication mode by checking for Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
 
-  if (error) {
-    console.error('[User Sync] Error updating username:', error)
-    throw new Error(`Failed to update username: ${error.message}`)
+  if (session) {
+    // Web Mode: Use Supabase Auth with auth.uid()
+    console.log('[User Sync] Using web mode (Supabase Auth)')
+
+    const { data, error } = await supabase.rpc('update_username', {
+      p_user_id: userId,
+      p_new_username: newUsername,
+      p_force_with_xp: forceWithXP
+    })
+
+    if (error) {
+      console.error('[User Sync] Error updating username:', error)
+      throw new Error(`Failed to update username: ${error.message}`)
+    }
+
+    console.log('[User Sync] Username updated successfully (web mode)')
+    return data as AppUser
+  } else {
+    // Discord Activity Mode: Use Discord ID from Discord SDK
+    console.log('[User Sync] Using Discord Activity mode (Discord SDK)')
+
+    const { data, error } = await supabase.rpc('update_username_discord', {
+      p_discord_id: discordId,
+      p_new_username: newUsername,
+      p_force_with_xp: forceWithXP
+    })
+
+    if (error) {
+      console.error('[User Sync] Error updating username:', error)
+      throw new Error(`Failed to update username: ${error.message}`)
+    }
+
+    console.log('[User Sync] Username updated successfully (Discord Activity mode)')
+    return data as AppUser
   }
-
-  console.log('[User Sync] Username updated successfully')
-  return data as AppUser
 }
 
 /**
@@ -483,5 +564,51 @@ export async function updateUsername(
     success: result.success,
     message: result.message,
     user: result.user_data as AppUser
+  }
+}
+
+/**
+ * Reset user progress (XP, level, prestige, stats)
+ * Supports dual authentication modes (web + Discord Activity)
+ */
+export async function resetUserProgress(
+  userId: string,
+  discordId: string
+): Promise<AppUser> {
+  console.log(`[User Sync] Resetting progress for user ${userId}`)
+
+  // Determine authentication mode
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (session) {
+    // Web Mode: Use Supabase Auth
+    console.log('[User Sync] Using web mode for reset')
+
+    const { data, error } = await supabase.rpc('reset_user_progress', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('[User Sync] Error resetting progress:', error)
+      throw new Error(`Failed to reset progress: ${error.message}`)
+    }
+
+    console.log('[User Sync] Progress reset successfully (web mode)')
+    return data as AppUser
+  } else {
+    // Discord Activity Mode
+    console.log('[User Sync] Using Discord Activity mode for reset')
+
+    const { data, error } = await supabase.rpc('reset_user_progress_discord', {
+      p_discord_id: discordId
+    })
+
+    if (error) {
+      console.error('[User Sync] Error resetting progress:', error)
+      throw new Error(`Failed to reset progress: ${error.message}`)
+    }
+
+    console.log('[User Sync] Progress reset successfully (Discord Activity mode)')
+    return data as AppUser
   }
 }

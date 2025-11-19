@@ -24,60 +24,20 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
 
   // Generate randomized gifts based on the day (seeded randomness for consistency)
   const initializeGifts = (day: number): GiftBox[] => {
-    // Seed the random number generator with the day for consistent results
-    const seededRandom = (seed: number) => {
-      const x = Math.sin(seed) * 10000;
-      return x - Math.floor(x);
-    };
-
-    const baseGifts: Omit<GiftBox, 'isRevealed' | 'isSelected'>[] = [];
-
-    for (let i = 1; i <= 12; i++) {
-      const random = seededRandom(i * 137); // Use prime number for better distribution
-
-      if (i === 10) {
-        // Day 10 is always the special tomato with bonus XP
-        baseGifts.push({
-          id: i,
-          type: 'special',
-          value: '🍅',
-          xpAmount: 50 // 5x bonus
-        });
-      } else if (i === 12) {
-        // Day 12 is always a mystery gift with huge XP
-        baseGifts.push({
-          id: i,
-          type: 'gift',
-          value: '🎁',
-          xpAmount: 100 // 10x bonus
-        });
-      } else {
-        // Days 1-9, 11: Randomized XP rewards
-        let xpAmount: number;
-        let displayValue: string;
-
-        if (random < 0.5) {
-          // 50% chance: Small reward (10 XP = 1 minute)
-          xpAmount = 10;
-          displayValue = '+10xp';
-        } else if (random < 0.8) {
-          // 30% chance: Medium reward (20 XP = 2 minutes)
-          xpAmount = 20;
-          displayValue = '+20xp';
-        } else {
-          // 20% chance: Large reward (30 XP = 3 minutes)
-          xpAmount = 30;
-          displayValue = '+30xp';
-        }
-
-        baseGifts.push({
-          id: i,
-          type: 'xp',
-          value: displayValue,
-          xpAmount
-        });
-      }
-    }
+    const baseGifts: Omit<GiftBox, 'isRevealed' | 'isSelected'>[] = [
+      { id: 1, type: 'xp', value: '+50xp' },
+      { id: 2, type: 'xp', value: '+50xp' },
+      { id: 3, type: 'xp', value: '+50xp' },
+      { id: 4, type: 'xp', value: '+50xp' },
+      { id: 5, type: 'xp', value: '+50xp' },
+      { id: 6, type: 'xp', value: '+50xp' },
+      { id: 7, type: 'xp', value: '+50xp' },
+      { id: 8, type: 'xp', value: '+50xp' },
+      { id: 9, type: 'xp', value: '+50xp' },
+      { id: 10, type: 'special', value: '🍅+100xp' },
+      { id: 11, type: 'xp', value: '+50xp' },
+      { id: 12, type: 'xp', value: '+50xp' },
+    ];
 
     return baseGifts.map(gift => ({
       ...gift,
@@ -164,7 +124,7 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
             </motion.h2>
 
             {/* Grid of gifts */}
-            <div className="grid grid-cols-6 gap-3 max-w-3xl">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4 max-w-3xl">
               {gifts.map((gift, index) => (
                 <GiftCard
                   key={gift.id}

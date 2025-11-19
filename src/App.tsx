@@ -10,16 +10,20 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCounter';
 import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
 import { LoginScreen } from './components/auth/LoginScreen';
+import DiscordButton from './components/DiscordButton';
+import WhatsNewButton from './components/WhatsNewButton';
 import { useLevelNotifications } from './hooks/useLevelNotifications';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { getEnvironment } from './lib/environment';
+import { incrementUserXP } from './lib/userSyncAuth';
 
 function AppContent() {
-  const { authenticated, loading, error } = useAuth();
+  const { authenticated, loading, error, appUser } = useAuth();
   const { showLevelUp, levelUpData } = useLevelNotifications();
   const trackLogin = useSettingsStore((state) => state.trackLogin);
+  const addXP = useSettingsStore((state) => state.addXP);
   const consecutiveLoginDays = useSettingsStore((state) => state.consecutiveLoginDays);
 
   // Enable cross-device settings sync
@@ -30,13 +34,26 @@ function AppContent() {
 
   // Check if user visited today and show daily gift
   useEffect(() => {
-    const { isNewDay } = trackLogin();
+    const { isNewDay, currentDay } = trackLogin();
 
     if (isNewDay) {
       // Show the daily gift for the current day
       setShowDailyGift(true);
+
+      // Award XP based on day (day 10 = 100 XP bonus, others = 50 XP)
+      const xpAmount = currentDay === 10 ? 100 : 50;
+      const minutes = xpAmount / 2; // Convert to minutes for addXP
+
+      addXP(minutes);
+
+      // Persist to database
+      if (appUser?.id) {
+        incrementUserXP(appUser.id, xpAmount).catch((error) => {
+          console.error('[Daily Gift] Failed to save XP to database:', error);
+        });
+      }
     }
-  }, [trackLogin]);
+  }, [trackLogin, addXP, appUser?.id]);
 
   // Loading state
   if (loading) {
@@ -129,8 +146,12 @@ function AppContent() {
         currentDay={consecutiveLoginDays}
       />
 
-      {/* Settings Modal */}
-      <SettingsModal />
+      {/* Top Right Buttons - What's New, Discord & Settings */}
+      <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
+        <WhatsNewButton />
+        <DiscordButton />
+        <SettingsModal />
+      </div>
 
       {/* Toaster for notifications */}
       <Toaster position="top-center" />

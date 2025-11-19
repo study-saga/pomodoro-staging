@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { patchUrlMappings } from '@discord/embedded-app-sdk'
+import { Analytics } from '@vercel/analytics/react'
 import './index.css'
 import App from './App.tsx'
 
@@ -22,15 +23,15 @@ if (isDiscordActivity()) {
     },
     {
       prefix: '/r2-audio',
-      target: 'pub-7e068d8c526a459ea67ff46fe3762059.r2.dev/music'
+      target: 'cdn.study-saga.com/music'
     },
     {
       prefix: '/r2-effects',
-      target: 'pub-7e068d8c526a459ea67ff46fe3762059.r2.dev/effects'
+      target: 'cdn.study-saga.com/effects'
     },
     {
       prefix: '/r2-backgrounds',
-      target: 'pub-7e068d8c526a459ea67ff46fe3762059.r2.dev/backgrounds'
+      target: 'cdn.study-saga.com/backgrounds'
     }
   ])
 } else {
@@ -40,5 +41,6 @@ if (isDiscordActivity()) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
+    <Analytics />
   </StrictMode>,
 )
