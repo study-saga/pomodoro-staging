@@ -332,6 +332,9 @@ export function useSettingsSync() {
       lastSyncedStateRef.current = serializeSettings()
       isDirtyRef.current = false
       loadGracePeriodRef.current = false
+
+      // Mark settings sync as complete - safe to attempt daily gift claim
+      useSettingsStore.getState().setSettingsSyncComplete(true)
       console.log('[Settings Sync] ✓ Loaded from database and captured store state')
     }, 100)
 
