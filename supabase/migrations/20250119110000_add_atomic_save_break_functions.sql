@@ -1,6 +1,8 @@
 -- Create atomic functions to save break and update user stats in one transaction
 -- Dual authentication support: Web (Supabase Auth) + Discord Activity
 
+
+
 -- ============================================================================
 -- 1. WEB MODE: atomic_save_completed_break (uses auth.uid())
 -- ============================================================================
