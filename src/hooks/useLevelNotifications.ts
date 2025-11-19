@@ -17,9 +17,12 @@ export function useLevelNotifications() {
     const prevLevel = parseInt(localStorage.getItem('prevLevel') || '1');
 
     if (xp !== prevXP) {
-      // XP changed - show toast
-      const gained = xp > prevXP ? xp - prevXP : 50; // Approximate if wrapped
-      showGameToast(`+${gained} XP Collected! 🎉`);
+      if (xp > prevXP) {
+        // XP gained - show positive toast
+        const gained = xp - prevXP;
+        showGameToast(`+${gained} XP Collected! 🎉`);
+      }
+      // Silent for XP decreases (name change toast shown from SettingsModal)
 
       localStorage.setItem('prevXP', xp.toString());
     }

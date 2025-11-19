@@ -16,7 +16,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const [isFlashing, setIsFlashing] = useState(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const { appUser } = useAuth();
+  const { appUser, isDiscordActivity } = useAuth();
 
   const {
     timers,
@@ -135,10 +135,17 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     }, 100);
   }, [isRunning, hasBeenStarted, minutes, seconds, pausedTimeSeconds, pause, start, restart, getExpiryTimestamp]);
 
-  // Read notification permission (don't request automatically)
+  // Read notification permission and listen for changes
   useEffect(() => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
+
+      const handlePermissionChange = () => {
+        setNotificationPermission(Notification.permission);
+      };
+
+      window.addEventListener('notificationPermissionChange', handlePermissionChange);
+      return () => window.removeEventListener('notificationPermissionChange', handlePermissionChange);
     }
   }, []);
 
@@ -184,7 +191,31 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   }, []);
 
   const showNotification = (type: TimerType) => {
-    if ('Notification' in window && notificationPermission === 'granted') {
+    console.log('[Notification] showNotification called', {
+      type,
+      isDiscordActivity,
+      notificationInWindow: 'Notification' in window,
+      notificationPermission,
+      timestamp: new Date().toISOString()
+    });
+
+    // Only show browser notifications on web (not Discord Activity)
+    if (isDiscordActivity) {
+      console.log('[Notification] Blocked: running in Discord Activity');
+      return;
+    }
+
+    if (!('Notification' in window)) {
+      console.log('[Notification] Blocked: Notification API not available');
+      return;
+    }
+
+    if (notificationPermission !== 'granted') {
+      console.log('[Notification] Blocked: permission not granted', { notificationPermission });
+      return;
+    }
+
+    try {
       const titles = {
         pomodoro: '🍅 Pomodoro Complete!',
         shortBreak: '☕ Short Break Over!',
@@ -197,12 +228,25 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
         longBreak: 'Feeling refreshed? Let\'s get back to work!'
       };
 
-      new Notification(titles[type], {
-        body: bodies[type],
-        icon: '/vite.svg',
-        badge: '/vite.svg',
-        tag: 'pomodoro-timer'
+      console.log('[Notification] Creating notification', {
+        title: titles[type],
+        body: bodies[type]
       });
+
+      const notification = new Notification(titles[type], {
+        body: bodies[type],
+        icon: '/pomodoro.svg',
+        badge: '/pomodoro.svg',
+        tag: 'pomodoro-timer',
+        requireInteraction: false
+      });
+
+      console.log('[Notification] ✓ Notification created successfully', notification);
+
+      // Auto-close after 10 seconds
+      setTimeout(() => notification.close(), 10000);
+    } catch (err) {
+      console.error('[Notification] ✗ Failed to create notification:', err);
     }
   };
 

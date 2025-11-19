@@ -26,6 +26,11 @@ This document describes all features, components, and practical code examples fo
   - **R**: Reset current timer
 - **Task Tracking**: Optional task name and notes for each session
 - **Sound Effects**: Customizable completion sounds (toggle + volume control)
+- **Browser Notifications**: Web-only notifications when timer hits 00:00
+  - Permission requested via Settings → Sounds tab
+  - Shows title, body, icon when pomodoro/breaks complete
+  - Blocked on Discord Activity (web only)
+  - Custom event system syncs permission state across components
 - **Auto-Start**: Optional automatic start of breaks/pomodoros
 
 **XP Calculation**:
@@ -158,6 +163,11 @@ Users can mix ambient sounds with music, each with individual volume control:
 #### Sounds Tab
 - **Sound Effects**: Enable/disable completion sounds
 - **Sound Volume**: 0-100% for completion effects
+- **Browser Notifications**: Permission request for timer completion alerts
+  - Shows status: Enabled (green), Blocked (red), Not enabled (yellow)
+  - Button to request permission (only shown if not granted/denied)
+  - Web only - disabled on Discord Activity
+  - Notifications fire when pomodoro/breaks complete at 00:00
 
 #### Music Tab
 - **Playlist**: Lofi or Synthwave selection
@@ -235,6 +245,50 @@ Users can mix ambient sounds with music, each with individual volume control:
 - **Conflict resolution**: Database is source of truth on login
 
 **Implementation**: `src/hooks/useSettingsSync.ts`
+
+---
+
+### 8. What's New / Changelog
+
+**Overview**:
+- Dropdown button showing recent updates and features
+- Professional design with color-coded tags
+- Lazy loading for performance (older entries load on scroll)
+
+**Features**:
+- **Update Cards**: Each update shows title, description, date, and tags
+- **Tag System**: `feature` (blue), `improvement` (green), `fix` (orange)
+- **Lazy Loading**: Initially loads 5 entries, loads 3 more on scroll
+- **Smooth Animations**: Fade-in/zoom animations using Radix UI primitives
+- **Scrollable Container**: ScrollArea with custom scrollbar styling
+
+**Adding New Updates**:
+1. Open `src/data/changelog.ts`
+2. Add new entry at the **top** of the array
+3. Format:
+```typescript
+{
+  date: '2025-MM-DD',
+  title: 'Feature Name',
+  description: 'Brief description (1-2 sentences)',
+  tags: ['feature', 'improvement', 'fix']
+}
+```
+
+**UI Components**:
+- **Popover**: Radix UI popover with custom styling
+- **ScrollArea**: Radix UI scroll area with lazy loading sentinel
+- **Badge**: Custom badge component with variant styles
+
+**Implementation**:
+- Button: `src/components/WhatsNewButton.tsx`
+- Data: `src/data/changelog.ts`
+- UI: `src/components/ui/popover.tsx`, `scroll-area.tsx`, `badge.tsx`
+
+**Performance**:
+- Intersection Observer for lazy loading
+- Only renders visible entries
+- Auto-cleanup on unmount
 
 ---
 

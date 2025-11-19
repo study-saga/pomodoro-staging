@@ -12,7 +12,8 @@ import {
   getBadgeForLevel,
 } from '../../data/levels';
 import { useAuth } from '../../contexts/AuthContext';
-import { updateUsernameSecure } from '../../lib/userSyncAuth';
+import { updateUsernameSecure, resetUserProgress } from '../../lib/userSyncAuth';
+import { showGameToast } from '../ui/GameToast';
 import { MusicCreditsModal } from './MusicCreditsModal';
 import type { Track } from '../../types';
 import lofiTracks from '../../data/lofi.json';
@@ -26,11 +27,25 @@ export function SettingsModal() {
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameLoading, setUsernameLoading] = useState(false);
   const [showMusicCredits, setShowMusicCredits] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
+    'Notification' in window ? Notification.permission : 'default'
+  );
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Calculate total track count
   const totalTracks = lofiTracks.length + synthwaveTracks.length;
+
+  // Listen for notification permission changes
+  useEffect(() => {
+    const handlePermissionChange = () => {
+      if ('Notification' in window) {
+        setNotificationPermission(Notification.permission);
+      }
+    };
+    window.addEventListener('notificationPermissionChange', handlePermissionChange);
+    return () => window.removeEventListener('notificationPermissionChange', handlePermissionChange);
+  }, []);
 
   // Auto-dismiss role change message
   useEffect(() => {
@@ -222,6 +237,7 @@ export function SettingsModal() {
 
                 console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
                 toast.success('Username updated! 50 XP deducted.');
+                showGameToast('-50 XP Spent');
 
               } catch (retryError) {
                 console.error('[Settings] Error updating username with XP:', retryError);
@@ -556,26 +572,30 @@ export function SettingsModal() {
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-white text-sm">Status:</span>
                       <span className={`text-sm font-medium ${
-                        Notification.permission === 'granted' ? 'text-green-400' :
-                        Notification.permission === 'denied' ? 'text-red-400' :
+                        notificationPermission === 'granted' ? 'text-green-400' :
+                        notificationPermission === 'denied' ? 'text-red-400' :
                         'text-yellow-400'
                       }`}>
-                        {Notification.permission === 'granted' ? '✓ Enabled' :
-                         Notification.permission === 'denied' ? '✗ Blocked' :
+                        {notificationPermission === 'granted' ? '✓ Enabled' :
+                         notificationPermission === 'denied' ? '✗ Blocked' :
                          '⚠ Not enabled'}
                       </span>
                     </div>
-                    {Notification.permission === 'default' && (
+                    {notificationPermission === 'default' && (
                       <button
-                        onClick={() => {
-                          Notification.requestPermission();
+                        onClick={async () => {
+                          const permission = await Notification.requestPermission();
+                          if (permission === 'granted') {
+                            // Trigger re-render to show updated status
+                            window.dispatchEvent(new Event('notificationPermissionChange'));
+                          }
                         }}
                         className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
                         Enable Notifications
                       </button>
                     )}
-                    {Notification.permission === 'denied' && (
+                    {notificationPermission === 'denied' && (
                       <p className="text-red-400 text-xs">
                         Notifications are blocked. Please enable them in your browser settings.
                       </p>
@@ -861,9 +881,21 @@ export function SettingsModal() {
                       duration: 10000,
                       action: {
                         label: 'Reset Everything',
-                        onClick: () => {
-                          resetProgress();
-                          toast.success('All progress has been reset');
+                        onClick: async () => {
+                          try {
+                            // Reset local state
+                            resetProgress();
+
+                            // Reset in database
+                            if (appUser?.id && appUser?.discord_id) {
+                              await resetUserProgress(appUser.id, appUser.discord_id);
+                            }
+
+                            toast.success('All progress has been reset');
+                          } catch (error) {
+                            console.error('Failed to reset progress:', error);
+                            toast.error('Failed to reset progress in database');
+                          }
                         }
                       },
                       cancel: {

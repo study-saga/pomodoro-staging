@@ -55,6 +55,46 @@ Before submitting changes:
 - [ ] XSS prevention (React handles automatically, but verify)
 - [ ] CSRF prevention (JWT in headers, not cookies)
 
+### Updating the Changelog
+
+When adding new features or improvements, update the "What's New" changelog:
+
+**File**: `src/data/changelog.ts`
+
+**Instructions**:
+1. Open `/src/data/changelog.ts`
+2. Add new entry at the **TOP** of the `changelog` array (line 18)
+3. Follow this format:
+```typescript
+{
+  date: '2025-MM-DD',  // ISO date format
+  title: 'Short Feature Title',
+  description: 'Brief description of the update (1-2 sentences)',
+  tags: ['feature'],  // Options: 'feature', 'improvement', 'fix'
+}
+```
+
+**Tag Guidelines**:
+- `feature`: New functionality or capability
+- `improvement`: Enhancement to existing feature
+- `fix`: Bug fix or correction
+
+**Example**:
+```typescript
+export const changelog: ChangelogEntry[] = [
+  // ⬇️ ADD NEW UPDATES HERE ⬇️
+  {
+    date: '2025-11-20',
+    title: 'Dark Mode',
+    description: 'Toggle between light and dark themes in Settings.',
+    tags: ['feature'],
+  },
+  // ... existing entries below
+];
+```
+
+The What's New button automatically displays new entries with lazy loading.
+
 ---
 
 ## Support & Resources
