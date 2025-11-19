@@ -17,13 +17,10 @@ import { useSettingsSync } from './hooks/useSettingsSync';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { getEnvironment } from './lib/environment';
-import { incrementUserXP } from './lib/userSyncAuth';
-
 function AppContent() {
-  const { authenticated, loading, error, appUser } = useAuth();
+  const { authenticated, loading, error } = useAuth();
   const { showLevelUp, levelUpData } = useLevelNotifications();
   const trackLogin = useSettingsStore((state) => state.trackLogin);
-  const addXP = useSettingsStore((state) => state.addXP);
   const consecutiveLoginDays = useSettingsStore((state) => state.consecutiveLoginDays);
 
   // Enable cross-device settings sync
