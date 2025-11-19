@@ -583,6 +583,7 @@ export async function updateUsername(
  */
 export async function claimDailyGift(
   userId: string,
+  discordId: string,
   xpAmount: number,
   activateBoost: boolean = false
 ): Promise<{
@@ -596,11 +597,37 @@ export async function claimDailyGift(
 }> {
   console.log(`[User Sync] Claiming daily gift for user ${userId} (XP: ${xpAmount}, Boost: ${activateBoost})`)
 
-  const { data, error } = await supabase.rpc('claim_daily_gift', {
-    p_user_id: userId,
-    p_xp_amount: xpAmount,
-    p_activate_boost: activateBoost
-  })
+  // Determine authentication mode by checking for Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  let data, error
+
+  if (session) {
+    // Web Mode: Use Supabase Auth with auth.uid()
+    console.log('[User Sync] Using web mode (Supabase Auth)')
+
+    const result = await supabase.rpc('claim_daily_gift', {
+      p_user_id: userId,
+      p_xp_amount: xpAmount,
+      p_activate_boost: activateBoost
+    })
+
+    data = result.data
+    error = result.error
+  } else {
+    // Discord Activity Mode: Use discord_id
+    console.log('[User Sync] Using Discord Activity mode (discord_id)')
+
+    const result = await supabase.rpc('claim_daily_gift_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId,
+      p_xp_amount: xpAmount,
+      p_activate_boost: activateBoost
+    })
+
+    data = result.data
+    error = result.error
+  }
 
   if (error) {
     console.error('[User Sync] Error claiming daily gift:', error)
@@ -630,14 +657,35 @@ export async function claimDailyGift(
  * Check if user can claim daily gift today
  *
  * @param userId - User's UUID
+ * @param discordId - User's Discord ID (for Discord Activity mode)
  * @returns true if gift can be claimed, false if already claimed today
  */
-export async function canClaimDailyGift(userId: string): Promise<boolean> {
+export async function canClaimDailyGift(userId: string, discordId: string): Promise<boolean> {
   console.log(`[User Sync] Checking if user ${userId} can claim daily gift`)
 
-  const { data, error } = await supabase.rpc('can_claim_daily_gift', {
-    p_user_id: userId
-  })
+  // Determine authentication mode by checking for Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  let data, error
+
+  if (session) {
+    // Web Mode: Use Supabase Auth with auth.uid()
+    const result = await supabase.rpc('can_claim_daily_gift', {
+      p_user_id: userId
+    })
+
+    data = result.data
+    error = result.error
+  } else {
+    // Discord Activity Mode: Use discord_id
+    const result = await supabase.rpc('can_claim_daily_gift_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId
+    })
+
+    data = result.data
+    error = result.error
+  }
 
   if (error) {
     console.error('[User Sync] Error checking gift eligibility:', error)

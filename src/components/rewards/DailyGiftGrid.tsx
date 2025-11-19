@@ -149,7 +149,7 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
 
             const { data: appUser } = await supabase
               .from('users')
-              .select('id')
+              .select('id, discord_id')
               .eq('auth_user_id', session.user.id)
               .maybeSingle();
 
@@ -166,6 +166,7 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
             // Claim gift via server-side validation
             const result = await claimDailyGift(
               appUser.id,
+              appUser.discord_id,
               currentGift.xpAmount,
               isBoostGift
             );
