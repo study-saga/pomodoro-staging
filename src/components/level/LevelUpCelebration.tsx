@@ -52,13 +52,13 @@ export function LevelUpCelebration({ show, level, levelName }: LevelUpCelebratio
               damping: 20,
               duration: 0.6
             }}
-            className="relative rounded-3xl shadow-2xl border-[6px] border-[#8B4513] overflow-hidden"
+            className="relative rounded-2xl shadow-2xl border-4 border-[#8B4513] overflow-hidden"
             style={{
               backgroundImage: `url(${backgroundImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              minWidth: '800px',
-              minHeight: '500px',
+              minWidth: '500px',
+              minHeight: '320px',
               imageRendering: 'pixelated'
             }}
           >
@@ -70,13 +70,13 @@ export function LevelUpCelebration({ show, level, levelName }: LevelUpCelebratio
               initial={{ y: -50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="relative z-10 text-center pt-12 px-12"
+              className="relative z-10 text-center pt-6 px-8"
             >
               <motion.h2
                 initial={{ scale: 0.5 }}
                 animate={{ scale: [0.5, 1.2, 1] }}
                 transition={{ delay: 0.4, duration: 0.5 }}
-                className="text-7xl font-black text-[#FFD700] mb-6"
+                className="text-5xl font-black text-[#FFD700] mb-4"
                 style={{
                   textShadow: '0 0 20px rgba(255, 215, 0, 0.8), 0 4px 10px rgba(0,0,0,0.8), 0 0 40px rgba(255, 215, 0, 0.5)'
                 }}
@@ -88,10 +88,10 @@ export function LevelUpCelebration({ show, level, levelName }: LevelUpCelebratio
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
-                className="space-y-2"
+                className="space-y-1"
               >
                 <p
-                  className="text-4xl font-bold text-white"
+                  className="text-3xl font-bold text-white"
                   style={{
                     textShadow: '0 0 10px rgba(255, 255, 255, 0.8), 0 2px 8px rgba(0,0,0,0.8)'
                   }}
@@ -99,7 +99,7 @@ export function LevelUpCelebration({ show, level, levelName }: LevelUpCelebratio
                   Level {level}
                 </p>
                 <p
-                  className="text-2xl text-[#FFD700]"
+                  className="text-xl text-[#FFD700]"
                   style={{
                     textShadow: '0 0 10px rgba(255, 215, 0, 0.6), 0 2px 8px rgba(0,0,0,0.8)'
                   }}
@@ -114,8 +114,8 @@ export function LevelUpCelebration({ show, level, levelName }: LevelUpCelebratio
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.8 }}
-              className="absolute bottom-12 left-12 z-20"
-              style={{ transform: 'scale(1.5)' }}
+              className="absolute bottom-6 left-6 z-20"
+              style={{ transform: 'scale(1.1)' }}
             >
               <SkeletonArcher autoPlay={true} loop={false} />
             </motion.div>

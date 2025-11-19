@@ -17,43 +17,59 @@ import { useSettingsSync } from './hooks/useSettingsSync';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { getEnvironment } from './lib/environment';
-import { incrementUserXP } from './lib/userSyncAuth';
+import { claimDailyGiftXP } from './lib/userSyncAuth';
+import { showGameToast } from './components/ui/GameToast';
 
 function AppContent() {
   const { authenticated, loading, error, appUser } = useAuth();
   const { showLevelUp, levelUpData } = useLevelNotifications();
-  const trackLogin = useSettingsStore((state) => state.trackLogin);
   const addXP = useSettingsStore((state) => state.addXP);
   const consecutiveLoginDays = useSettingsStore((state) => state.consecutiveLoginDays);
+  const settingsSyncComplete = useSettingsStore((state) => state.settingsSyncComplete);
 
   // Enable cross-device settings sync
   useSettingsSync();
 
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [showDailyGift, setShowDailyGift] = useState(false);
+  const [dailyGiftClaimed, setDailyGiftClaimed] = useState(false);
 
-  // Check if user visited today and show daily gift
+  // Claim daily gift with server-side validation (prevents XP exploit)
   useEffect(() => {
-    const { isNewDay, currentDay } = trackLogin();
+    // Wait for settings sync to complete (has DB state)
+    if (!settingsSyncComplete || !appUser?.id || dailyGiftClaimed) return;
 
-    if (isNewDay) {
-      // Show the daily gift for the current day
-      setShowDailyGift(true);
+    // Attempt to claim daily gift from server
+    claimDailyGiftXP(appUser.id, appUser.discord_id)
+      .then((result) => {
+        setDailyGiftClaimed(true);
 
-      // Award XP based on day (day 10 = 100 XP bonus, others = 50 XP)
-      const xpAmount = currentDay === 10 ? 100 : 50;
-      const minutes = xpAmount / 2; // Convert to minutes for addXP
+        if (result.success) {
+          // Server validated and awarded XP - update local state
+          const minutes = result.xpAwarded / 2;
+          addXP(minutes);
 
-      addXP(minutes);
+          // Update consecutive days in store
+          useSettingsStore.setState({
+            consecutiveLoginDays: result.consecutiveDays
+          });
 
-      // Persist to database
-      if (appUser?.id) {
-        incrementUserXP(appUser.id, xpAmount).catch((error) => {
-          console.error('[Daily Gift] Failed to save XP to database:', error);
-        });
-      }
-    }
-  }, [trackLogin, addXP, appUser?.id]);
+          // Show daily gift modal
+          setShowDailyGift(true);
+
+          // Show XP toast
+          showGameToast(`+${result.xpAwarded} XP Collected! 🎉`);
+          console.log('[Daily Gift] Claimed successfully:', result);
+        } else {
+          // Already claimed today - server rejected
+          console.log('[Daily Gift] Already claimed today');
+        }
+      })
+      .catch((error) => {
+        console.error('[Daily Gift] Failed to claim:', error);
+        setDailyGiftClaimed(true); // Prevent retry loop
+      });
+  }, [settingsSyncComplete, appUser?.id, appUser?.discord_id, dailyGiftClaimed, addXP]);
 
   // Loading state
   if (loading) {
@@ -114,7 +130,7 @@ function AppContent() {
       <VideoBackground />
 
       {/* Level Display (Top Left) */}
-      <LevelDisplay />
+      <LevelDisplay onOpenDailyGift={() => setShowDailyGift(true)} />
 
       {/* Online Presence Counter (Top Right, below settings button) */}
       <div className="fixed top-20 right-4 z-10">

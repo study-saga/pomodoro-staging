@@ -568,47 +568,191 @@ export async function updateUsername(
 }
 
 /**
- * Reset user progress (XP, level, prestige, stats)
+ * Claim daily gift with server-side validation
+ *
+ * SECURITY: Uses server-side validation to:
+ * - Prevent claiming multiple times per day
+ * - Atomically award XP and update last claim date
+ * - Optionally activate pomodoro boost
+ * - Sync claim status across all devices
+ *
+ * @param userId - User's UUID
+ * @param xpAmount - XP to award for this gift
+ * @param activateBoost - If true, activate +25% XP boost for 24 hours
+ * @returns Result with success status and new XP value
+ */
+export async function claimDailyGift(
+  userId: string,
+  discordId: string,
+  xpAmount: number,
+  activateBoost: boolean = false
+): Promise<{
+  success: boolean
+  message: string
+  xpAwarded?: number
+  newXp?: number
+  boostActivated?: boolean
+  boostExpiresAt?: number
+  alreadyClaimed?: boolean
+}> {
+  console.log(`[User Sync] Claiming daily gift for user ${userId} (XP: ${xpAmount}, Boost: ${activateBoost})`)
+
+  // Determine authentication mode by checking for Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  let data, error
+
+  if (session) {
+    // Web Mode: Use Supabase Auth with auth.uid()
+    console.log('[User Sync] Using web mode (Supabase Auth)')
+
+    const result = await supabase.rpc('claim_daily_gift', {
+      p_user_id: userId,
+      p_xp_amount: xpAmount,
+      p_activate_boost: activateBoost
+    })
+
+    data = result.data
+    error = result.error
+  } else {
+    // Discord Activity Mode: Use discord_id
+    console.log('[User Sync] Using Discord Activity mode (discord_id)')
+
+    const result = await supabase.rpc('claim_daily_gift_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId,
+      p_xp_amount: xpAmount,
+      p_activate_boost: activateBoost
+    })
+
+    data = result.data
+    error = result.error
+  }
+
+  if (error) {
+    console.error('[User Sync] Error claiming daily gift:', error)
+    throw new Error(`Failed to claim daily gift: ${error.message}`)
+  }
+
+  const result = data as any
+
+  if (!result.success) {
+    console.log('[User Sync] Daily gift already claimed today')
+  } else {
+    console.log(`[User Sync] Daily gift claimed successfully - ${result.xp_awarded} XP awarded`)
+  }
+
+  return {
+    success: result.success,
+    message: result.message,
+    xpAwarded: result.xp_awarded,
+    newXp: result.new_xp,
+    boostActivated: result.boost_activated,
+    boostExpiresAt: result.boost_expires_at,
+    alreadyClaimed: result.already_claimed || false
+  }
+}
+
+/**
+ * Check if user can claim daily gift today
+ *
+ * @param userId - User's UUID
+ * @param discordId - User's Discord ID (for Discord Activity mode)
+ * @returns true if gift can be claimed, false if already claimed today
+ */
+export async function canClaimDailyGift(userId: string, discordId: string): Promise<boolean> {
+  console.log(`[User Sync] Checking if user ${userId} can claim daily gift`)
+
+  // Determine authentication mode by checking for Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  let data, error
+
+  if (session) {
+    // Web Mode: Use Supabase Auth with auth.uid()
+    const result = await supabase.rpc('can_claim_daily_gift', {
+      p_user_id: userId
+    })
+
+    data = result.data
+    error = result.error
+  } else {
+    // Discord Activity Mode: Use discord_id
+    const result = await supabase.rpc('can_claim_daily_gift_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId
+    })
+
+    data = result.data
+    error = result.error
+  }
+
+  if (error) {
+    console.error('[User Sync] Error checking gift eligibility:', error)
+    return false // Fail safe - don't allow claim if we can't verify
+  }
+
+  return data as boolean
+}
+
+/**
+ * Claim daily gift XP with server-side validation
+ * Prevents XP exploit from repeated page reloads
+ *
+ * SECURITY: Server validates:
+ * - User hasn't already claimed today (checks last_login_date in DB)
+ * - Atomically updates XP + login date + streak
+ *
  * Supports dual authentication modes (web + Discord Activity)
  */
-export async function resetUserProgress(
+export async function claimDailyGiftXP(
   userId: string,
   discordId: string
-): Promise<AppUser> {
-  console.log(`[User Sync] Resetting progress for user ${userId}`)
+): Promise<{ success: boolean; xpAwarded: number; consecutiveDays: number }> {
+  console.log(`[User Sync] Claiming daily gift XP for user ${userId}`)
 
   // Determine authentication mode
   const { data: { session } } = await supabase.auth.getSession()
 
   if (session) {
     // Web Mode: Use Supabase Auth
-    console.log('[User Sync] Using web mode for reset')
+    console.log('[User Sync] Using web mode for daily gift claim')
 
-    const { data, error } = await supabase.rpc('reset_user_progress', {
+    const { data, error } = await supabase.rpc('claim_daily_gift_xp', {
       p_user_id: userId
     })
 
     if (error) {
-      console.error('[User Sync] Error resetting progress:', error)
-      throw new Error(`Failed to reset progress: ${error.message}`)
+      console.error('[User Sync] Error claiming daily gift:', error)
+      throw new Error(`Failed to claim daily gift: ${error.message}`)
     }
 
-    console.log('[User Sync] Progress reset successfully (web mode)')
-    return data as AppUser
+    const result = Array.isArray(data) ? data[0] : data
+    console.log('[User Sync] Daily gift claim result (web mode):', result)
+    return {
+      success: result.success,
+      xpAwarded: result.xp_awarded,
+      consecutiveDays: result.consecutive_days
+    }
   } else {
     // Discord Activity Mode
-    console.log('[User Sync] Using Discord Activity mode for reset')
+    console.log('[User Sync] Using Discord Activity mode for daily gift claim')
 
-    const { data, error } = await supabase.rpc('reset_user_progress_discord', {
+    const { data, error } = await supabase.rpc('claim_daily_gift_xp_discord', {
       p_discord_id: discordId
     })
 
     if (error) {
-      console.error('[User Sync] Error resetting progress:', error)
-      throw new Error(`Failed to reset progress: ${error.message}`)
+      console.error('[User Sync] Error claiming daily gift:', error)
+      throw new Error(`Failed to claim daily gift: ${error.message}`)
     }
 
-    console.log('[User Sync] Progress reset successfully (Discord Activity mode)')
-    return data as AppUser
+    const result = Array.isArray(data) ? data[0] : data
+    console.log('[User Sync] Daily gift claim result (Discord Activity mode):', result)
+    return {
+      success: result.success,
+      xpAwarded: result.xp_awarded,
+      consecutiveDays: result.consecutive_days
+    }
   }
 }

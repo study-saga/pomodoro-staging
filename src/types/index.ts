@@ -47,6 +47,11 @@ export interface Settings {
   totalLoginDays: number; // Total unique days user visited
   consecutiveLoginDays: number; // Current login streak (max 12)
   lastLoginDate: string | null; // Last login date (YYYY-MM-DD)
+  lastDailyGiftDate: string | null; // Last date daily gift was claimed (YYYY-MM-DD)
+
+  // Active bonuses
+  pomodoroBoostActive: boolean; // Whether ANY boost is active
+  pomodoroBoostExpiresAt: number | null; // Timestamp when boost expires
 }
 
 export interface LevelData {

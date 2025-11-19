@@ -97,13 +97,6 @@ export default function SkeletonArcher({
     return () => clearTimeout(timer);
   }, [arrows.length]);
 
-  const handlePlay = () => {
-    setCurrentFrame(0);
-    setArrows([]);
-    setIsAnimating(true);
-    lastFrameTimeRef.current = 0;
-  };
-
   const backgroundPositionX = -(currentFrame * FRAME_WIDTH);
 
   return (
@@ -140,16 +133,6 @@ export default function SkeletonArcher({
           />
         ))}
       </div>
-
-      {/* Control Button */}
-      {!isAnimating && (
-        <button
-          onClick={handlePlay}
-          className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-        >
-          {currentFrame >= TOTAL_FRAMES - 1 ? 'Replay' : 'Play'}
-        </button>
-      )}
 
       {/* CSS Animation for Arrow */}
       <style>{`

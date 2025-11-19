@@ -120,16 +120,20 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
 
 ## Version History
 
-**Last Updated**: 2025-11-18
-**Version**: 2.3.0 (Modular Documentation)
+**Last Updated**: 2025-11-19
+**Version**: 2.3.2 (Discord Daily Gift Fix)
 
-**Major Changes in 2.3.0**:
-- Split PROJECT.md into 6 modular docs for better navigation
-- Each doc < 25k tokens (fits in LLM context)
-- Improved organization by topic area
-- Added quick links and clear doc structure
+**Major Changes in 2.3.2**:
+- **Fixed**: Daily gifts trigger on every refresh for Discord Activity users
+  - Root cause: `claim_daily_gift()` RPC only validated web users via `auth.uid()`
+  - Discord users authenticate via `discord_id`, causing auth errors → frontend marked as claimed locally → server never recorded
+  - Solution: Added dual-auth RPC functions (`claim_daily_gift_discord`, `can_claim_daily_gift_discord`)
+  - Updated `claimDailyGift()` to detect auth mode and call correct RPC
+  - Files: `20250119000000_add_discord_daily_gift_claim.sql`, `userSyncAuth.ts`, `DailyGiftGrid.tsx`
 
 **Previous Versions**:
+- **2.3.1** (2025-11-19): localStorage check before server claim (partial fix for web users)
+- **2.3.0** (2025-11-18): Split PROJECT.md into 6 modular docs for better navigation
 - **2.2.0** (2025-11-18): Added missing sections (Utility Functions, RPC Functions, Migration History)
 - **2.1.0** (2025-01-18): Comprehensive documentation update (3,200 → 4,350 lines)
 - **2.0.0** (2025-01-10): Initial comprehensive documentation
