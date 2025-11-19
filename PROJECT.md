@@ -18,9 +18,11 @@ A Pomodoro timer application built as a Discord Activity, featuring study tracki
 This is a feature-rich Pomodoro timer that runs as a Discord Activity, allowing friends to study together in voice channels. The app includes:
 
 - **Pomodoro Timer**: Custom durations (1-120 min), auto-start options
-- **XP & Leveling**: 2 XP/min (pomodoro), 1 XP/min (breaks), max level 50
+- **XP & Leveling**: 2 XP/min (pomodoro), 1 XP/min (breaks), max level 20
+- **Daily Gifts**: Random XP rewards (10-100) for logging in, day 10 = +25% boost (24hrs)
+- **Break XP Sync**: Breaks award 1 XP/min synced to DB with +25% boost support
 - **Music & Sounds**: 2 playlists (Lofi, Synthwave), 9 ambient sounds
-- **Cross-Device Sync**: Settings and progress sync across all devices
+- **Cross-Device Sync**: Settings and progress sync across all devices with 500ms debounce
 - **Discord Integration**: Runs natively in Discord voice channels as an Activity
 - **Web Version**: Also accessible via browser at study-saga.com
 

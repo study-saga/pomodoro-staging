@@ -696,6 +696,75 @@ export async function canClaimDailyGift(userId: string, discordId: string): Prom
 }
 
 /**
+ * Save completed break atomically with dual authentication support
+ * Uses atomic database function to prevent inconsistent state
+ *
+ * Supports dual authentication modes:
+ * - Web Mode: Uses Supabase Auth session (auth.uid()) via atomic_save_completed_break RPC
+ * - Discord Activity Mode: Uses Discord SDK identity (discord_id) via atomic_save_completed_break_discord RPC
+ */
+export async function saveCompletedBreak(
+  userId: string,
+  discordId: string,
+  data: {
+    break_type: 'short' | 'long'
+    duration_minutes: number
+    xp_earned: number
+  }
+): Promise<string> {
+  console.log(`[User Sync] Saving break for user ${userId}`)
+
+  // Determine authentication mode by checking for Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (session) {
+    // Web Mode: Use Supabase Auth with auth.uid()
+    console.log('[User Sync] Using web mode (Supabase Auth)')
+
+    const { data: breakId, error } = await supabase.rpc(
+      'atomic_save_completed_break',
+      {
+        p_user_id: userId,
+        p_discord_id: discordId,
+        p_break_type: data.break_type,
+        p_duration_minutes: data.duration_minutes,
+        p_xp_earned: data.xp_earned
+      }
+    )
+
+    if (error) {
+      console.error('[User Sync] Error saving break:', error)
+      throw new Error(`Failed to save break: ${error.message}`)
+    }
+
+    console.log('[User Sync] Break saved successfully (web mode):', breakId)
+    return breakId as string
+  } else {
+    // Discord Activity Mode: Use Discord ID from Discord SDK
+    console.log('[User Sync] Using Discord Activity mode (Discord SDK)')
+
+    const { data: breakId, error } = await supabase.rpc(
+      'atomic_save_completed_break_discord',
+      {
+        p_user_id: userId,
+        p_discord_id: discordId,
+        p_break_type: data.break_type,
+        p_duration_minutes: data.duration_minutes,
+        p_xp_earned: data.xp_earned
+      }
+    )
+
+    if (error) {
+      console.error('[User Sync] Error saving break:', error)
+      throw new Error(`Failed to save break: ${error.message}`)
+    }
+
+    console.log('[User Sync] Break saved successfully (Discord Activity mode):', breakId)
+    return breakId as string
+  }
+}
+
+/**
  * Claim daily gift XP with server-side validation
  * Prevents XP exploit from repeated page reloads
  *

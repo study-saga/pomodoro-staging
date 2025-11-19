@@ -357,15 +357,15 @@ export function useSettingsSync() {
       isDirtyRef.current = true
       console.log('[Settings Sync] Settings changed - marked dirty (will sync on trigger)')
 
-      // Discord Activity: sync immediately with debounce (don't rely on unload events)
-      if (isDiscordActivity) {
-        if (debounceSyncRef.current) {
-          clearTimeout(debounceSyncRef.current)
-        }
-        debounceSyncRef.current = setTimeout(() => {
-          syncToDatabase('discord-debounced')
-        }, 500)
+      // Sync with 500ms debounce (both web + Discord)
+      // Discord: don't rely on unload events in iframe
+      // Web: batch rapid changes (e.g. volume slider spam)
+      if (debounceSyncRef.current) {
+        clearTimeout(debounceSyncRef.current)
       }
+      debounceSyncRef.current = setTimeout(() => {
+        syncToDatabase(isDiscordActivity ? 'discord-debounced' : 'web-debounced')
+      }, 500)
 
       // Debug: show what changed (only in development)
       if (import.meta.env.DEV) {
