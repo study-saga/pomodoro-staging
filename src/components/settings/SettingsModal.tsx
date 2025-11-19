@@ -13,6 +13,7 @@ import {
 } from '../../data/levels';
 import { useAuth } from '../../contexts/AuthContext';
 import { updateUsernameSecure, resetUserProgress } from '../../lib/userSyncAuth';
+import { showGameToast } from '../ui/GameToast';
 import { MusicCreditsModal } from './MusicCreditsModal';
 import type { Track } from '../../types';
 import lofiTracks from '../../data/lofi.json';
@@ -236,6 +237,7 @@ export function SettingsModal() {
 
                 console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
                 toast.success('Username updated! 50 XP deducted.');
+                showGameToast('-50 XP Spent');
 
               } catch (retryError) {
                 console.error('[Settings] Error updating username with XP:', retryError);
