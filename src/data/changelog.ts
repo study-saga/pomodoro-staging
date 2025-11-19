@@ -18,6 +18,12 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   // ⬇️ ADD NEW UPDATES HERE (most recent first) ⬇️
+    {
+    date: '2025-11-18',
+    title: 'Music Player',
+    description: 'Improved the music player for better design on PC and Mobiles.',
+    tags: ['improvement'],
+  },
   {
     date: '2025-11-18',
     title: 'Browser Notifications',
@@ -32,7 +38,7 @@ export const changelog: ChangelogEntry[] = [
   },
   {
     date: '2025-11-17',
-    title: 'Discord OAuth Integration',
+    title: 'Discord Authentication Integration',
     description: 'Sign in with Discord to save your progress and access your account from anywhere.',
     tags: ['feature'],
   },
@@ -83,12 +89,6 @@ export const changelog: ChangelogEntry[] = [
     title: 'Custom Timer Durations',
     description: 'Set any duration in minutes for pomodoros, short breaks, and long breaks.',
     tags: ['feature'],
-  },
-  {
-    date: '2025-11-18',
-    title: 'Music Player',
-    description: 'Improved the music player for better design on PC and Mobiles.',
-    tags: ['improvement'],
   }
   // ⬆️ ADD NEW UPDATES ABOVE THIS LINE ⬆️
 ];
