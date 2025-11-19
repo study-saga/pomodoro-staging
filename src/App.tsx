@@ -17,13 +17,11 @@ import { useSettingsSync } from './hooks/useSettingsSync';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { getEnvironment } from './lib/environment';
-import { incrementUserXP } from './lib/userSyncAuth';
 
 function AppContent() {
-  const { authenticated, loading, error, appUser } = useAuth();
+  const { authenticated, loading, error } = useAuth();
   const { showLevelUp, levelUpData } = useLevelNotifications();
   const trackLogin = useSettingsStore((state) => state.trackLogin);
-  const addXP = useSettingsStore((state) => state.addXP);
   const consecutiveLoginDays = useSettingsStore((state) => state.consecutiveLoginDays);
 
   // Enable cross-device settings sync
@@ -40,26 +38,6 @@ function AppContent() {
     // Only run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-    const { isNewDay, currentDay } = trackLogin();
-
-    if (isNewDay) {
-      // Show the daily gift for the current day
-      setShowDailyGift(true);
-
-      // Award XP based on day (day 10 = 100 XP bonus, others = 50 XP)
-      const xpAmount = currentDay === 10 ? 100 : 50;
-      const minutes = xpAmount / 2; // Convert to minutes for addXP
-
-      addXP(minutes);
-
-      // Persist to database
-      if (appUser?.id) {
-        incrementUserXP(appUser.id, xpAmount).catch((error) => {
-          console.error('[Daily Gift] Failed to save XP to database:', error);
-        });
-      }
-    }
-  }, [trackLogin, addXP, appUser?.id]);
 
   // Loading state
   if (loading) {
