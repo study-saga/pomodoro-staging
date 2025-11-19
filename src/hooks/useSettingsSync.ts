@@ -284,11 +284,17 @@ export function useSettingsSync() {
     settings.setLevelSystemEnabled(appUser.level_system_enabled)
 
     // Load level system data
-    // Server stores total XP, client needs remaining XP for progress bar
-    // Calculate remaining XP from total (same formula as server trigger)
-    let remainingXP = appUser.xp
-    let calculatedLevel = 1
+    // Server stores total XP, client calculates level/prestige/remaining
+    const totalXP = appUser.xp
+    const XP_PER_CYCLE = 19000 // Sum(100+200+...+1900) = XP for 1 prestige
     const maxLevel = 20
+
+    // Auto-calculate prestige from total XP
+    const calculatedPrestige = Math.floor(totalXP / XP_PER_CYCLE)
+    let remainingXP = totalXP % XP_PER_CYCLE
+
+    // Calculate level from remaining XP after prestige
+    let calculatedLevel = 1
     while (calculatedLevel < maxLevel && remainingXP >= calculatedLevel * 100) {
       remainingXP -= calculatedLevel * 100
       calculatedLevel++
@@ -296,8 +302,8 @@ export function useSettingsSync() {
 
     useSettingsStore.setState({
       xp: remainingXP,  // Remaining XP towards next level
-      level: appUser.level,  // Use server-calculated level (from trigger)
-      prestigeLevel: appUser.prestige_level,
+      level: calculatedLevel,  // Auto-calculated level
+      prestigeLevel: calculatedPrestige,  // Auto-calculated prestige
       totalPomodoros: appUser.total_pomodoros,
       totalStudyMinutes: appUser.total_study_minutes,
       username: appUser.username,

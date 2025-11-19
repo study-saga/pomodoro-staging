@@ -12,7 +12,7 @@ import {
   getBadgeForLevel,
 } from '../../data/levels';
 import { useAuth } from '../../contexts/AuthContext';
-import { updateUsernameSecure } from '../../lib/userSyncAuth';
+import { updateUsernameSecure, resetUserProgress } from '../../lib/userSyncAuth';
 import { MusicCreditsModal } from './MusicCreditsModal';
 import type { Track } from '../../types';
 import lofiTracks from '../../data/lofi.json';
@@ -879,9 +879,21 @@ export function SettingsModal() {
                       duration: 10000,
                       action: {
                         label: 'Reset Everything',
-                        onClick: () => {
-                          resetProgress();
-                          toast.success('All progress has been reset');
+                        onClick: async () => {
+                          try {
+                            // Reset local state
+                            resetProgress();
+
+                            // Reset in database
+                            if (appUser?.id && appUser?.discord_id) {
+                              await resetUserProgress(appUser.id, appUser.discord_id);
+                            }
+
+                            toast.success('All progress has been reset');
+                          } catch (error) {
+                            console.error('Failed to reset progress:', error);
+                            toast.error('Failed to reset progress in database');
+                          }
                         }
                       },
                       cancel: {

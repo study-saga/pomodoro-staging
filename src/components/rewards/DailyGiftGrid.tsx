@@ -23,18 +23,18 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
   // Days 1-9 are regular XP, day 10 is special tomato, days 11-12 are gifts
   const initializeGifts = (day: number): GiftBox[] => {
     const baseGifts: Omit<GiftBox, 'isRevealed' | 'isSelected'>[] = [
-      { id: 1, type: 'xp', value: '+10xp' },
-      { id: 2, type: 'xp', value: '+10xp' },
-      { id: 3, type: 'xp', value: '+10xp' },
-      { id: 4, type: 'xp', value: '+10xp' },
-      { id: 5, type: 'xp', value: '+10xp' },
-      { id: 6, type: 'xp', value: '+10xp' },
-      { id: 7, type: 'xp', value: '+10xp' },
-      { id: 8, type: 'xp', value: '+10xp' },
-      { id: 9, type: 'xp', value: '+10xp' },
-      { id: 10, type: 'special', value: '🍅' },
-      { id: 11, type: 'gift', value: '' },
-      { id: 12, type: 'gift', value: '' },
+      { id: 1, type: 'xp', value: '+50xp' },
+      { id: 2, type: 'xp', value: '+50xp' },
+      { id: 3, type: 'xp', value: '+50xp' },
+      { id: 4, type: 'xp', value: '+50xp' },
+      { id: 5, type: 'xp', value: '+50xp' },
+      { id: 6, type: 'xp', value: '+50xp' },
+      { id: 7, type: 'xp', value: '+50xp' },
+      { id: 8, type: 'xp', value: '+50xp' },
+      { id: 9, type: 'xp', value: '+50xp' },
+      { id: 10, type: 'special', value: '🍅+100xp' },
+      { id: 11, type: 'xp', value: '+50xp' },
+      { id: 12, type: 'xp', value: '+50xp' },
     ];
 
     return baseGifts.map(gift => ({
