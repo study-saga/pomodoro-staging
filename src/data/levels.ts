@@ -67,7 +67,7 @@ export function getTotalXPForLevel(level: number): number {
   return total;
 }
 
-export function getBadgeForLevel(level: number, prestigeLevel: number): string {
+export function getBadgeForLevel(level: number, _prestigeLevel: number): string {
   if (level <= 5) return "🌱";
   if (level <= 10) return "🌿";
   if (level <= 15) return "🌺";
