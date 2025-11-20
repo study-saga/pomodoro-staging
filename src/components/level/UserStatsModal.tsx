@@ -1,7 +1,9 @@
+
 import { memo, useState } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { X, Target, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface UserStatsModalProps {
   onClose: () => void;
@@ -69,8 +71,8 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
         </div>
       </div>
 
-      {/* Stats Grid with scrolling */}
-      <div className="max-h-[60vh] sm:max-h-[400px] overflow-y-auto overscroll-contain">
+      {/* Stats Grid with ScrollArea */}
+      <ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
         <div className="p-4">
           <div className={`grid gap-2 ${
             isMobile ? 'grid-cols-1' : 'grid-cols-2'
@@ -164,7 +166,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
             )}
           </div>
         </div>
-      </div>
+      </ScrollArea>
     </>
   );
 });

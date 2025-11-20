@@ -788,7 +788,7 @@ export function SettingsModal() {
                 className="space-y-4"
               >
               <div>
-                <h3 className="text-white font-bold text-lg mb-4">Level Progress</h3>
+                <h3 className="text-white font-bold text-lg mb-4">Hero Progress</h3>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-white/5 rounded-lg p-3 relative overflow-hidden">
