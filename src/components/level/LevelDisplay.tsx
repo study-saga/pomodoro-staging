@@ -63,30 +63,53 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
         {/* Header */}
         <div className="flex items-center justify-between">
-          <Popover open={showStatsModal} onOpenChange={setShowStatsModal}>
-            <div>
-              <PopoverTrigger asChild>
-                <h2
-                  className={`font-bold text-white cursor-pointer hover:text-blue-400 transition-colors ${isMobile ? 'text-base' : 'text-lg'}`}
-                  title="Click to view stats"
-                >
-                  {username}
-                </h2>
-              </PopoverTrigger>
-              <p className={isMobile ? 'text-xs text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
-            </div>
-            <PopoverContent
-              className="w-[calc(100vw-2rem)] sm:w-[300px] p-0 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl"
-              side={isMobile ? 'bottom' : 'right'}
-              align="start"
-              alignOffset={isMobile ? 0 : -48}
-              sideOffset={isMobile ? 8 : 175}
+          <div>
+            <h2
+              onClick={() => setShowStatsModal(true)}
+              className={`font-bold text-white cursor-pointer hover:text-blue-400 transition-colors ${isMobile ? 'text-base' : 'text-lg'}`}
+              title="Click to view stats"
             >
-              <UserStatsModal onClose={() => setShowStatsModal(false)} />
-            </PopoverContent>
-          </Popover>
+              {username}
+            </h2>
+            <p className={isMobile ? 'text-xs text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
+          </div>
           <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
         </div>
+
+        {/* User Stats Modal - Conditional Rendering */}
+        {showStatsModal && (
+          isMobile ? (
+            // Mobile: Viewport-centered modal
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setShowStatsModal(false);
+                }
+              }}
+            >
+              <div className="bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden">
+                <UserStatsModal onClose={() => setShowStatsModal(false)} />
+              </div>
+            </div>
+          ) : (
+            // Desktop: Positioned popover
+            <Popover open={true} onOpenChange={setShowStatsModal}>
+              <PopoverTrigger asChild>
+                <div className="absolute left-0 top-0 w-1 h-1 opacity-0 pointer-events-none" />
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-[300px] p-0 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl"
+                side="right"
+                align="start"
+                alignOffset={-48}
+                sideOffset={175}
+              >
+                <UserStatsModal onClose={() => setShowStatsModal(false)} />
+              </PopoverContent>
+            </Popover>
+          )
+        )}
 
         {/* XP Progress Bar */}
         <div>
