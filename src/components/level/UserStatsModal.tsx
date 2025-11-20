@@ -57,23 +57,24 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
   }
 
   return (
-    <div className={`fixed z-50 pointer-events-none ${
-      isMobile
-        ? 'inset-4'
-        : 'top-4 left-[304px]'
-    }`}>
+    <div className="fixed inset-0 z-50">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 pointer-events-auto"
+        className="absolute inset-0 bg-black/60"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className={`relative bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl pointer-events-auto ${
-        isMobile
-          ? 'p-6 w-full h-full flex flex-col'
-          : 'p-4 w-[300px]'
-      }`}>
+      {/* Modal Container */}
+      <div
+        className={`relative ${isMobile ? 'w-full h-full' : 'w-[300px]'}`}
+        style={!isMobile ? { position: 'absolute', top: '1rem', left: '304px' } : undefined}
+      >
+        {/* Modal Content */}
+        <div className={`bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl ${
+          isMobile
+            ? 'h-full p-6 flex flex-col'
+            : 'p-4'
+        }`}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -183,6 +184,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
             </div>
           )}
           </div>
+        </div>
         </div>
       </div>
     </div>
