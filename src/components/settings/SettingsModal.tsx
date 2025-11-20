@@ -791,7 +791,7 @@ export function SettingsModal() {
                 <h3 className="text-white font-bold text-lg mb-4">Level Progress</h3>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-white/5 rounded-lg p-3 relative">
+                  <div className="bg-white/5 rounded-lg p-3 relative overflow-hidden">
                     <div className="flex items-start justify-between mb-1">
                       <p className="text-gray-400 text-xs">CURRENT LEVEL</p>
                       {/* Role Toggle Switch */}
@@ -808,7 +808,14 @@ export function SettingsModal() {
                         </span>
                       </label>
                     </div>
-                    <p className="text-white text-xl font-bold">{level} - {getLevelName(level, levelPath)}</p>
+                    <p
+                      className="text-white font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full"
+                      style={{
+                        fontSize: getLevelName(level, levelPath).length > 18 ? '0.85rem' : getLevelName(level, levelPath).length > 14 ? '0.95rem' : getLevelName(level, levelPath).length > 11 ? '1.1rem' : '1.25rem'
+                      }}
+                    >
+                      {level} - {getLevelName(level, levelPath)}
+                    </p>
                   </div>
                   <div className="bg-white/5 rounded-lg p-3">
                     <p className="text-gray-400 text-xs mb-1">CURRENT XP</p>
