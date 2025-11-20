@@ -45,6 +45,7 @@ interface SettingsStore extends Settings {
 
   // Level system actions
   addXP: (minutes: number) => void;
+  addDailyGiftXP: (xpAmount: number) => void;
   setUsername: (username: string, forceWithXP?: boolean) => void;
   setLevelPath: (path: 'elf' | 'human') => void;
   setLevelSystemEnabled: (enabled: boolean) => void;
@@ -56,7 +57,8 @@ interface SettingsStore extends Settings {
   simulateUniqueDay: () => void; // Dev-only function to test milestones
 
   // Login tracking
-  trackLogin: () => { isNewDay: boolean; currentDay: number };
+  trackLogin: () => { isNewDay: boolean; currentDay: number; giftAlreadyClaimed: boolean };
+  markDailyGiftClaimed: () => void;
 
   // Sync state
   settingsSyncComplete: boolean;
@@ -124,21 +126,45 @@ export const useSettingsStore = create<SettingsStore>()(
       // Level system actions
       addXP: (minutes) => {
         const state = get();
-        const xpGained = minutes * XP_PER_MINUTE;
+
+        console.log('[XP] addXP called with minutes:', minutes, 'Current level:', state.level, 'Current XP:', state.xp);
+
+        // Check if pomodoro boost is active and not expired
+        let boostMultiplier = 1;
+        let boostStillActive = state.pomodoroBoostActive;
+
+        if (state.pomodoroBoostActive && state.pomodoroBoostExpiresAt) {
+          if (Date.now() > state.pomodoroBoostExpiresAt) {
+            // Boost has expired
+            boostStillActive = false;
+            console.log('[XP] Pomodoro boost expired');
+          } else {
+            // Boost is still active
+            boostMultiplier = 1.25; // +25% XP
+            console.log('[XP] Applying +25% XP boost!');
+          }
+        }
+
+        const baseXP = minutes * XP_PER_MINUTE;
+        const xpGained = Math.floor(baseXP * boostMultiplier);
         let newXP = state.xp + xpGained;
         let newLevel = state.level;
         let newPrestigeLevel = state.prestigeLevel;
+
+        console.log('[XP] XP gained:', xpGained, 'New XP total:', newXP, 'XP needed for next level:', getXPNeeded(newLevel));
 
         // Check for level ups
         while (newLevel < MAX_LEVEL && newXP >= getXPNeeded(newLevel)) {
           newXP -= getXPNeeded(newLevel);
           newLevel++;
+          console.log('[XP] 🎉 LEVEL UP! New level:', newLevel, 'Remaining XP:', newXP);
         }
 
         // Check for prestige
         if (newLevel >= MAX_LEVEL && newXP > 0) {
           newPrestigeLevel++;
           newLevel = 1;
+          console.log('[XP] ⭐ PRESTIGE! New prestige level:', newPrestigeLevel);
           // XP continues to accumulate
         }
 
@@ -158,6 +184,8 @@ export const useSettingsStore = create<SettingsStore>()(
           }
         }
 
+        // Update local store first (optimistic update for instant UI feedback)
+        console.log('[XP] Updating state - Old level:', state.level, '→ New level:', newLevel, '| Old XP:', state.xp, '→ New XP:', newXP);
         set({
           xp: newXP,
           level: newLevel,
@@ -166,7 +194,113 @@ export const useSettingsStore = create<SettingsStore>()(
           totalStudyMinutes: state.totalStudyMinutes + minutes,
           totalUniqueDays: newTotalUniqueDays,
           lastPomodoroDate: today,
+          pomodoroBoostActive: boostStillActive, // Update boost status
+          pomodoroBoostExpiresAt: boostStillActive ? state.pomodoroBoostExpiresAt : null,
         });
+        console.log('[XP] State updated successfully');
+
+        // Sync to database in background (fire and forget)
+        // This ensures XP persists across page refreshes
+        (async () => {
+          try {
+            const { saveCompletedPomodoro } = await import('../lib/userSyncAuth');
+            const { supabase } = await import('../lib/supabase');
+
+            // Get current auth user
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) {
+              console.warn('[addXP] No authenticated user - XP saved locally only');
+              return;
+            }
+            const user = session.user;
+
+            // Get appUser to find user_id and discord_id
+            const { data: appUser } = await supabase
+              .from('users')
+              .select('id, discord_id')
+              .eq('auth_user_id', user.id)
+              .maybeSingle();
+
+            if (!appUser) {
+              console.warn('[addXP] No app user found - XP saved locally only');
+              return;
+            }
+
+            // Save pomodoro to database (this atomically updates XP and stats)
+            await saveCompletedPomodoro(appUser.id, appUser.discord_id, {
+              duration_minutes: minutes,
+              xp_earned: xpGained,
+            });
+
+            console.log('[addXP] ✓ XP synced to database');
+          } catch (error) {
+            console.error('[addXP] Failed to sync XP to database:', error);
+            // Non-fatal - local XP is already saved
+          }
+        })();
+      },
+
+      addDailyGiftXP: (xpAmount) => {
+        const state = get();
+        let newXP = state.xp + xpAmount;
+        let newLevel = state.level;
+        let newPrestigeLevel = state.prestigeLevel;
+
+        // Check for level ups
+        while (newLevel < MAX_LEVEL && newXP >= getXPNeeded(newLevel)) {
+          newXP -= getXPNeeded(newLevel);
+          newLevel++;
+        }
+
+        // Check for prestige
+        if (newLevel >= MAX_LEVEL && newXP > 0) {
+          newPrestigeLevel++;
+          newLevel = 1;
+          // XP continues to accumulate
+        }
+
+        // Update local store first (optimistic update for instant UI feedback)
+        set({
+          xp: newXP,
+          level: newLevel,
+          prestigeLevel: newPrestigeLevel,
+        });
+
+        // Sync to database in background (fire and forget)
+        (async () => {
+          try {
+            const { incrementUserXP } = await import('../lib/userSyncAuth');
+            const { supabase } = await import('../lib/supabase');
+
+            // Get current auth user
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) {
+              console.warn('[addDailyGiftXP] No authenticated user - XP saved locally only');
+              return;
+            }
+            const user = session.user;
+
+            // Get appUser to find user_id
+            const { data: appUser } = await supabase
+              .from('users')
+              .select('id')
+              .eq('auth_user_id', user.id)
+              .maybeSingle();
+
+            if (!appUser) {
+              console.warn('[addDailyGiftXP] No app user found - XP saved locally only');
+              return;
+            }
+
+            // Increment XP in database using the dedicated RPC function
+            await incrementUserXP(appUser.id, xpAmount);
+
+            console.log(`[addDailyGiftXP] ✓ ${xpAmount} XP synced to database`);
+          } catch (error) {
+            console.error('[addDailyGiftXP] Failed to sync XP to database:', error);
+            // Non-fatal - local XP is already saved
+          }
+        })();
       },
 
       setUsername: (username, forceWithXP = false) => {
@@ -252,12 +386,31 @@ export const useSettingsStore = create<SettingsStore>()(
         const state = get();
         const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
 
+        // First time user (no last login date)
+        if (!state.lastLoginDate) {
+          console.log('[trackLogin] First time user - setting day 1');
+          set({
+            lastLoginDate: today,
+            consecutiveLoginDays: 1,
+            totalLoginDays: 1,
+            firstLoginDate: today,
+          });
+          return {
+            isNewDay: true,
+            currentDay: 1,
+            giftAlreadyClaimed: false,
+          };
+        }
+
         // Check if this is a new day
         if (state.lastLoginDate === today) {
-          // Same day, no updates needed
+          // Same day, check if gift was already claimed today
+          const giftAlreadyClaimed = state.lastDailyGiftDate === today;
+          console.log('[trackLogin] Same day - lastDailyGiftDate:', state.lastDailyGiftDate, 'today:', today, 'claimed:', giftAlreadyClaimed);
           return {
             isNewDay: false,
             currentDay: state.consecutiveLoginDays,
+            giftAlreadyClaimed,
           };
         }
 
@@ -279,10 +432,19 @@ export const useSettingsStore = create<SettingsStore>()(
           totalLoginDays: newTotalLoginDays,
         });
 
+        // Gift hasn't been claimed today (it's a new day)
+        console.log('[trackLogin] New day - consecutiveLoginDays:', newConsecutiveDays, 'giftAlreadyClaimed: false');
         return {
           isNewDay: true,
           currentDay: newConsecutiveDays,
+          giftAlreadyClaimed: false,
         };
+      },
+
+      markDailyGiftClaimed: () => {
+        const today = new Date().toISOString().split('T')[0];
+        set({ lastDailyGiftDate: today });
+        console.log('[DailyGift] Marked daily gift as claimed for', today);
       },
 
       // Computed

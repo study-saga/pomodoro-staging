@@ -21,7 +21,7 @@ import { claimDailyGiftXP } from './lib/userSyncAuth';
 import { showGameToast } from './components/ui/GameToast';
 
 function AppContent() {
-  const { authenticated, loading, error, appUser } = useAuth();
+  const { authenticated, loading, error } = useAuth();
   const { showLevelUp, levelUpData } = useLevelNotifications();
   const addXP = useSettingsStore((state) => state.addXP);
   const consecutiveLoginDays = useSettingsStore((state) => state.consecutiveLoginDays);
@@ -130,7 +130,7 @@ function AppContent() {
       <VideoBackground />
 
       {/* Level Display (Top Left) */}
-      <LevelDisplay />
+      <LevelDisplay onOpenDailyGift={() => setShowDailyGift(true)} />
 
       {/* Online Presence Counter (Top Right, below settings button) */}
       <div className="fixed top-20 right-4 z-10">

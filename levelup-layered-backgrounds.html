@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Level Up - Layered Forest Backgrounds</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .controls-panel {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      padding: 20px 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      z-index: 1000;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+      max-width: 90%;
+    }
+
+    .trigger-btn {
+      padding: 12px 30px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .trigger-btn:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-group label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .control-group select {
+      padding: 8px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Overlay */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    .overlay.active {
+      display: flex;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Main celebration box */
+    .celebration-box {
+      position: relative;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+      border: 6px solid #8B4513;
+      animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      min-width: 800px;
+      min-height: 500px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    /* Layered background system */
+    .background-layers {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    .bg-layer {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      image-rendering: pixelated;
+    }
+
+    .celebration-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.35));
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: scale(0) rotate(-180deg);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+    }
+
+    .content {
+      position: relative;
+      z-index: 10;
+      padding-top: 48px;
+      animation: slideDown 0.5s ease-out 0.3s both;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-size: 72px;
+      font-weight: 900;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 4px 10px rgba(0,0,0,0.8), 0 0 40px rgba(255, 215, 0, 0.5);
+      margin-bottom: 20px;
+      animation: bounce 0.5s ease-out 0.4s both;
+      position: relative;
+      z-index: 2;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: scale(1); }
+      25% { transform: scale(0.5); }
+      50% { transform: scale(1.2); }
+      75% { transform: scale(1); }
+    }
+
+    .level-info {
+      opacity: 0;
+      animation: fadeInUp 0.5s ease-out 0.6s both;
+      margin-bottom: 24px;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .level-number {
+      font-size: 40px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 8px;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 2px 8px rgba(0,0,0,0.8);
+      position: relative;
+      z-index: 2;
+    }
+
+    .level-name {
+      font-size: 28px;
+      color: #FFD700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.6), 0 2px 8px rgba(0,0,0,0.8);
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Skeleton Archer Container */
+    .archer-container {
+      opacity: 0;
+      animation: fadeInLeft 0.5s ease-out 0.8s both;
+      position: absolute;
+      bottom: 60px;
+      left: 40px;
+      z-index: 20;
+      transform: scale(1.5);
+    }
+
+    @keyframes fadeInLeft {
+      from {
+        opacity: 0;
+        transform: scale(1.5) translateX(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1.5) translateX(0);
+      }
+    }
+
+    .skeleton-sprite {
+      width: 128px;
+      height: 128px;
+      background-image: url('/sprites/skeleton_shot.png');
+      background-repeat: no-repeat;
+      background-position: 0 0;
+      image-rendering: pixelated;
+      position: relative;
+    }
+
+    .arrow {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      background-image: url('/sprites/arrow.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      image-rendering: pixelated;
+      top: 60%;
+      left: 75%;
+      transform: translateX(-50%) translateY(-50%);
+      opacity: 0;
+    }
+
+    .arrow.flying {
+      animation: flyArrow 0.5s linear forwards;
+    }
+
+    @keyframes flyArrow {
+      from {
+        transform: translateX(0) translateY(-50%);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(120px) translateY(-50%);
+        opacity: 0.8;
+      }
+    }
+
+    /* Confetti */
+    .confetti {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    @keyframes confettiExplode {
+      from {
+        opacity: 1;
+        transform: translate(0, 0) rotate(0deg);
+      }
+      to {
+        opacity: 0;
+        transform: translate(var(--x), var(--y)) rotate(var(--rotation));
+      }
+    }
+
+    .info-text {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      text-align: center;
+      opacity: 0.7;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls-panel">
+    <button class="trigger-btn" onclick="showCelebration()">
+      🎉 Trigger Level Up
+    </button>
+    <div class="control-group">
+      <label>Forest Set:</label>
+      <select id="forestSelect">
+        <option value="random">Random</option>
+        <option value="1">Forest 1</option>
+        <option value="2">Forest 2</option>
+        <option value="3">Forest 3</option>
+        <option value="4">Forest 4</option>
+        <option value="5">Forest 5</option>
+        <option value="6">Forest 6</option>
+        <option value="7">Forest 7</option>
+        <option value="8">Forest 8</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="celebration-box" id="celebrationBox">
+      <!-- Background layers will be inserted here -->
+      <div class="background-layers" id="backgroundLayers"></div>
+
+      <div class="content">
+        <h1>LEVEL UP!</h1>
+        <div class="level-info">
+          <div class="level-number">Level 25</div>
+          <div class="level-name">Grandmaster Scholar</div>
+        </div>
+      </div>
+
+      <!-- Skeleton Archer in bottom left corner -->
+      <div class="archer-container">
+        <div class="skeleton-sprite" id="skeletonSprite"></div>
+      </div>
+    </div>
+
+    <!-- Confetti container -->
+    <div id="confettiContainer"></div>
+  </div>
+
+  <div class="info-text">
+    Layered forest backgrounds • All sprites combined for complete scene<br>
+    Skeleton archer + confetti • 8 different forest variations
+  </div>
+
+  <script>
+    const TOTAL_FRAMES = 15;
+    const FRAME_WIDTH = 128;
+    const FRAME_DURATION = 80;
+    const ARROW_SPAWN_FRAME = 13;
+    const CELEBRATION_DURATION = 10000;
+
+    // Define layer configurations for each forest
+    const forestConfigs = {
+      1: [1, 2, 3, 4, 5], // Layer all sprites in order
+      2: [1, 2, 3],
+      3: [1, 2, 3, 4, 5, 6, 7, 8],
+      4: [1, 2, 3, 4, 5, 6],
+      5: [1, 2, 3, 4, 5],
+      6: [1, 2, 3, 4, 5],
+      7: [1, 2, 3, 4],
+      8: [1, 2, 3, 4, 5, 6]
+    };
+
+    let currentFrame = 0;
+    let animationInterval = null;
+
+    function animateSkeletonArcher() {
+      const sprite = document.getElementById('skeletonSprite');
+      currentFrame = 0;
+
+      animationInterval = setInterval(() => {
+        if (currentFrame < TOTAL_FRAMES) {
+          sprite.style.backgroundPosition = `-${currentFrame * FRAME_WIDTH}px 0`;
+
+          if (currentFrame === ARROW_SPAWN_FRAME) {
+            spawnArrow();
+          }
+
+          currentFrame++;
+        } else {
+          clearInterval(animationInterval);
+        }
+      }, FRAME_DURATION);
+    }
+
+    function spawnArrow() {
+      const sprite = document.getElementById('skeletonSprite');
+      const arrow = document.createElement('div');
+      arrow.className = 'arrow flying';
+      sprite.appendChild(arrow);
+
+      setTimeout(() => {
+        arrow.remove();
+      }, 600);
+    }
+
+    function createConfetti() {
+      const container = document.getElementById('confettiContainer');
+      container.innerHTML = '';
+
+      const colors = ['#FCD34D', '#F59E0B', '#EF4444', '#EC4899'];
+      const confettiCount = 20;
+
+      for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.left = '50%';
+        confetti.style.top = '50%';
+
+        const x = (Math.random() - 0.5) * 400;
+        const y = (Math.random() - 0.5) * 400;
+        const rotation = Math.random() * 360;
+
+        confetti.style.setProperty('--x', `${x}px`);
+        confetti.style.setProperty('--y', `${y}px`);
+        confetti.style.setProperty('--rotation', `${rotation}deg`);
+        confetti.style.animation = `confettiExplode 1.5s ease-out ${Math.random() * 0.3}s forwards`;
+
+        container.appendChild(confetti);
+      }
+    }
+
+    function setLayeredBackground() {
+      const forestSelect = document.getElementById('forestSelect');
+      const backgroundLayers = document.getElementById('backgroundLayers');
+
+      let forestNum;
+      if (forestSelect.value === 'random') {
+        forestNum = Math.floor(Math.random() * 8) + 1;
+      } else {
+        forestNum = parseInt(forestSelect.value);
+      }
+
+      const layers = forestConfigs[forestNum];
+      backgroundLayers.innerHTML = '';
+
+      // Create layers from back to front
+      layers.forEach((layerNum) => {
+        const layer = document.createElement('div');
+        layer.className = 'bg-layer';
+        const imagePath = `/craftpix-net-154389-forest-and-trees-free-pixel-backgrounds/${forestNum}/${layerNum}.png`;
+        layer.style.backgroundImage = `url('${imagePath}')`;
+        backgroundLayers.appendChild(layer);
+      });
+
+      console.log(`Using Forest ${forestNum} with ${layers.length} layers`);
+    }
+
+    function showCelebration() {
+      const overlay = document.getElementById('overlay');
+
+      // Set layered background
+      setLayeredBackground();
+
+      overlay.classList.add('active');
+
+      // Start animations
+      setTimeout(() => {
+        createConfetti();
+        animateSkeletonArcher();
+      }, 800);
+
+      // Auto-hide after duration
+      setTimeout(() => {
+        overlay.classList.remove('active');
+      }, CELEBRATION_DURATION);
+    }
+
+    // Auto-show on load
+    setTimeout(() => showCelebration(), 1000);
+  </script>
+</body>
+</html>

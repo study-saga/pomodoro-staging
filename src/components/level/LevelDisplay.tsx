@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import {
@@ -8,10 +8,15 @@ import {
   ROLE_EMOJI_HUMAN,
   getXPNeeded,
 } from '../../data/levels';
-import { getNextMilestone } from '../../data/milestones';
 import { Gift } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { UserStatsModal } from './UserStatsModal';
 
-export const LevelDisplay = memo(function LevelDisplay() {
+interface LevelDisplayProps {
+  onOpenDailyGift?: () => void;
+}
+
+export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: LevelDisplayProps) {
   const {
     level,
     xp,
@@ -20,11 +25,12 @@ export const LevelDisplay = memo(function LevelDisplay() {
     levelPath,
     levelSystemEnabled,
     addXP,
-    totalUniqueDays,
-    consecutiveLoginDays,
   } = useSettingsStore();
 
-  const { isMobile } = useDeviceType(1024); // Use 1024px for Level UI layout
+  const [selectedDay, setSelectedDay] = useState(1);
+  const [showStatsModal, setShowStatsModal] = useState(false);
+
+  const { isMobile } = useDeviceType();
 
   if (!levelSystemEnabled) return null;
 
@@ -33,9 +39,8 @@ export const LevelDisplay = memo(function LevelDisplay() {
   const badge = getBadgeForLevel(level, prestigeLevel);
   const roleEmoji = levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN;
   const progress = (xp / xpNeeded) * 100;
-  const nextMilestone = getNextMilestone(totalUniqueDays);
 
-  // Simulate next day (for testing)
+  // Simulate selected day (for testing)
   const simulateNextDay = () => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -43,22 +48,68 @@ export const LevelDisplay = memo(function LevelDisplay() {
 
     useSettingsStore.setState({
       lastLoginDate: yesterdayStr,
+      consecutiveLoginDays: selectedDay, // Set to the selected day directly
+      lastDailyGiftDate: null, // Reset to allow claiming gift
     });
 
-    window.location.reload();
+    // Open the daily gift modal
+    if (onOpenDailyGift) {
+      onOpenDailyGift();
+    }
   };
 
   return (
-    <div className={`fixed top-4 left-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
+    <div className={`fixed top-4 left-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
       <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>{username}</h2>
+            <h2
+              onClick={() => setShowStatsModal(true)}
+              className={`font-bold text-white cursor-pointer hover:text-blue-400 transition-colors ${isMobile ? 'text-base' : 'text-lg'}`}
+              title="Click to view stats"
+            >
+              {username}
+            </h2>
             <p className={isMobile ? 'text-xs text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
           </div>
           <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
         </div>
+
+        {/* User Stats Modal - Conditional Rendering */}
+        {showStatsModal && (
+          isMobile ? (
+            // Mobile: Viewport-centered modal
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setShowStatsModal(false);
+                }
+              }}
+            >
+              <div className="bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden">
+                <UserStatsModal onClose={() => setShowStatsModal(false)} />
+              </div>
+            </div>
+          ) : (
+            // Desktop: Positioned popover
+            <Popover open={true} onOpenChange={setShowStatsModal}>
+              <PopoverTrigger asChild>
+                <div className="absolute left-0 top-0 w-1 h-1 opacity-0 pointer-events-none" />
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-[300px] p-0 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl"
+                side="right"
+                align="start"
+                alignOffset={-48}
+                sideOffset={175}
+              >
+                <UserStatsModal onClose={() => setShowStatsModal(false)} />
+              </PopoverContent>
+            </Popover>
+          )
+        )}
 
         {/* XP Progress Bar */}
         <div>
@@ -85,22 +136,6 @@ export const LevelDisplay = memo(function LevelDisplay() {
           </div>
         )}
 
-        {/* Milestone Progress */}
-        <div className={`border-t border-white/10 ${isMobile ? 'pt-1.5' : 'pt-2'}`}>
-          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-0.5' : 'text-xs mb-1'}`}>
-            <span>📅 Active Days</span>
-            <span>{totalUniqueDays} days</span>
-          </div>
-          {nextMilestone ? (
-            <div className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-xs'}`}>
-              Next: {nextMilestone.title} at {nextMilestone.days} days
-            </div>
-          ) : (
-            <div className={`text-green-400 ${isMobile ? 'text-xs' : 'text-xs'}`}>
-              All milestones completed! 🎉
-            </div>
-          )}
-        </div>
 
         {import.meta.env.DEV && (
           <div className="space-y-1">
@@ -110,25 +145,29 @@ export const LevelDisplay = memo(function LevelDisplay() {
             >
               Add 50 XP (Dev)
             </button>
-            <button
-              onClick={simulateNextDay}
-              className="w-full px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
-            >
-              <Gift className="w-3 h-3" />
-              Daily Gift
-            </button>
-          </div>
-        )}
-
-        {/* Login Streak Display */}
-        {consecutiveLoginDays > 0 && (
-          <div className={`border-t border-white/10 ${isMobile ? 'pt-1.5' : 'pt-2'}`}>
-            <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs' : 'text-xs'}`}>
-              <span>🎁 Login Streak</span>
-              <span>{consecutiveLoginDays} days</span>
+            <div className="flex gap-1">
+              <select
+                value={selectedDay}
+                onChange={(e) => setSelectedDay(Number(e.target.value))}
+                className="px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:outline-none focus:border-pink-500"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((day) => (
+                  <option key={day} value={day}>
+                    Day {day}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={simulateNextDay}
+                className="flex-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
+              >
+                <Gift className="w-3 h-3" />
+                Daily Gift
+              </button>
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
