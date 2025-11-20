@@ -87,7 +87,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                 }
               }}
             >
-              <div className="bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl w-[calc(100vw-2rem)] max-w-[380px] max-h-[90vh] overflow-hidden">
+              <div className="bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl w-[calc(100vw-2rem)] max-w-[380px] max-h-[85vh] overflow-hidden flex flex-col">
                 <UserStatsModal onClose={() => setShowStatsModal(false)} />
               </div>
             </div>
