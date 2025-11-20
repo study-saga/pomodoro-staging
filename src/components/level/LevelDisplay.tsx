@@ -8,7 +8,6 @@ import {
   ROLE_EMOJI_HUMAN,
   getXPNeeded,
 } from '../../data/levels';
-import { getNextMilestone } from '../../data/milestones';
 import { Gift } from 'lucide-react';
 import { UserStatsModal } from './UserStatsModal';
 
@@ -25,8 +24,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     levelPath,
     levelSystemEnabled,
     addXP,
-    totalUniqueDays,
-    consecutiveLoginDays,
   } = useSettingsStore();
 
   const [selectedDay, setSelectedDay] = useState(1);
@@ -41,7 +38,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const badge = getBadgeForLevel(level, prestigeLevel);
   const roleEmoji = levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN;
   const progress = (xp / xpNeeded) * 100;
-  const nextMilestone = getNextMilestone(totalUniqueDays);
 
   // Simulate selected day (for testing)
   const simulateNextDay = () => {

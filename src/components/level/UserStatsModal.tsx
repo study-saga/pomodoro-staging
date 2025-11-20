@@ -1,7 +1,8 @@
 import { memo, useState } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { getLevelName } from '../../data/levels';
-import { X, Trophy, Target, Calendar, Flame, Clock, Zap } from 'lucide-react';
+import { useDeviceType } from '../../hooks/useDeviceType';
+import { X, Target, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
 
 interface UserStatsModalProps {
   onClose: () => void;
@@ -23,6 +24,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
   } = useSettingsStore();
 
   const [showSinceTooltip, setShowSinceTooltip] = useState(false);
+  const { isMobile } = useDeviceType();
 
   const levelName = getLevelName(level, levelPath);
   const avgSessionLength = totalPomodoros > 0
@@ -55,20 +57,27 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
   }
 
   return (
-    <div className="fixed top-4 left-[304px] z-50 pointer-events-none">
+    <div className={`fixed z-50 pointer-events-none ${
+      isMobile
+        ? 'inset-4'
+        : 'top-4 left-[304px]'
+    }`}>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto"
+        className="fixed inset-0 bg-black/60 pointer-events-auto"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="relative bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 p-4 w-[300px] shadow-2xl pointer-events-auto">
+      <div className={`relative bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl pointer-events-auto ${
+        isMobile
+          ? 'p-6 w-full h-full flex flex-col'
+          : 'p-4 w-[300px]'
+      }`}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-400" />
+            <h2 className="text-lg font-bold text-white">
               {username}
             </h2>
             <p className="text-xs text-gray-400 mt-0.5">{levelName}</p>
@@ -82,7 +91,10 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
         </div>
 
         {/* Stats Grid - 2x4 Layout */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className={`${isMobile ? 'flex-1 overflow-y-auto' : ''}`}>
+          <div className={`grid gap-2 ${
+            isMobile ? 'grid-cols-1' : 'grid-cols-2'
+          }`}>
           {/* Row 1 */}
           <StatCard
             icon={<Target className="w-4 h-4" />}
@@ -127,10 +139,10 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
 
           {/* Row 4 */}
           <StatCard
-            icon={<span className="text-base">📊</span>}
+            icon={<BarChart className="w-4 h-4" />}
             label="Avg Session"
             value={`${avgSessionLength}m`}
-            color="text-indigo-400"
+            color="text-purple-400"
           />
 
           {/* Since Date */}
@@ -170,6 +182,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
               </p>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
