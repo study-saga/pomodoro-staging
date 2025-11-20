@@ -120,8 +120,16 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
 
 ## Version History
 
-**Last Updated**: 2025-11-19
-**Version**: 2.3.1 (Daily Gift Fix)
+**Last Updated**: 2025-11-20
+**Version**: 2.3.2 (Clickable Username Stats)
+
+**Major Changes in 2.3.2**:
+- **Added**: Clickable username in LevelDisplay opens stats modal
+  - Click username to view detailed account statistics
+  - Stats modal shows: level, role, pomodoros completed, study time, active days, login streak, XP progress, avg session length, total logins
+  - Modal displays active XP boosts (+25% boost) if applicable
+  - Modal positioned next to user display with blur backdrop
+  - Implementation: `UserStatsModal` component with `showStatsModal` state in LevelDisplay
 
 **Major Changes in 2.3.1**:
 - **Fixed**: Daily gift claiming bug on refresh

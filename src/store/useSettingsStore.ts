@@ -385,6 +385,7 @@ export const useSettingsStore = create<SettingsStore>()(
             lastLoginDate: today,
             consecutiveLoginDays: 1,
             totalLoginDays: 1,
+            firstLoginDate: today,
           });
           return {
             isNewDay: true,

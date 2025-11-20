@@ -135,6 +135,7 @@ export const DEFAULT_SETTINGS = {
   consecutiveLoginDays: 0,
   lastLoginDate: null,
   lastDailyGiftDate: null,
+  firstLoginDate: null,
   pomodoroBoostActive: false,
   pomodoroBoostExpiresAt: null,
 };

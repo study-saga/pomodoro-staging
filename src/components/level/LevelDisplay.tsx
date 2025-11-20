@@ -10,6 +10,7 @@ import {
 } from '../../data/levels';
 import { getNextMilestone } from '../../data/milestones';
 import { Gift } from 'lucide-react';
+import { UserStatsModal } from './UserStatsModal';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
@@ -29,6 +30,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   } = useSettingsStore();
 
   const [selectedDay, setSelectedDay] = useState(1);
+  const [showStatsModal, setShowStatsModal] = useState(false);
 
   const { isMobile } = useDeviceType();
 
@@ -60,12 +62,18 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   };
 
   return (
-    <div className={`fixed top-4 left-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
+    <div className={`fixed top-4 left-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
       <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>{username}</h2>
+            <h2
+              className={`font-bold text-white cursor-pointer hover:text-blue-400 transition-colors ${isMobile ? 'text-base' : 'text-lg'}`}
+              onClick={() => setShowStatsModal(true)}
+              title="Click to view stats"
+            >
+              {username}
+            </h2>
             <p className={isMobile ? 'text-xs text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
           </div>
           <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
@@ -96,22 +104,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           </div>
         )}
 
-        {/* Milestone Progress */}
-        <div className={`border-t border-white/10 ${isMobile ? 'pt-1.5' : 'pt-2'}`}>
-          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-0.5' : 'text-xs mb-1'}`}>
-            <span>📅 Active Days</span>
-            <span>{totalUniqueDays} days</span>
-          </div>
-          {nextMilestone ? (
-            <div className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-xs'}`}>
-              Next: {nextMilestone.title} at {nextMilestone.days} days
-            </div>
-          ) : (
-            <div className={`text-green-400 ${isMobile ? 'text-xs' : 'text-xs'}`}>
-              All milestones completed! 🎉
-            </div>
-          )}
-        </div>
 
         {import.meta.env.DEV && (
           <div className="space-y-1">
@@ -144,16 +136,10 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           </div>
         )}
 
-        {/* Login Streak Display */}
-        {consecutiveLoginDays > 0 && (
-          <div className={`border-t border-white/10 ${isMobile ? 'pt-1.5' : 'pt-2'}`}>
-            <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs' : 'text-xs'}`}>
-              <span>🎁 Login Streak</span>
-              <span>{consecutiveLoginDays} days</span>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* User Stats Modal */}
+      {showStatsModal && <UserStatsModal onClose={() => setShowStatsModal(false)} />}
     </div>
   );
 });
