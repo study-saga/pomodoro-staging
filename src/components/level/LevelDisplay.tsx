@@ -78,7 +78,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             <PopoverContent
               className="w-[calc(100vw-2rem)] sm:w-[300px] p-0 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl"
               side={isMobile ? 'bottom' : 'right'}
-              align="start"
+              align={isMobile ? 'center' : 'start'}
               alignOffset={isMobile ? 0 : -48}
               sideOffset={isMobile ? 8 : 175}
             >
