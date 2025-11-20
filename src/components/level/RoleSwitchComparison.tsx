@@ -54,7 +54,7 @@ export const RoleSwitchComparison = () => {
   }, []);
 
   return (
-    <div className="fixed top-[240px] left-4 z-40 flex flex-col gap-4">
+    <div className="fixed top-[240px] right-4 z-40 flex flex-col gap-4">
       {/* Label */}
       <div className="text-white text-xs bg-black/50 px-2 py-1 rounded">
         Version 1: Elegant Purple/Pink

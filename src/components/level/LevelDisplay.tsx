@@ -9,7 +9,6 @@ import {
   getXPNeeded,
 } from '../../data/levels';
 import { Gift } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { UserStatsModal } from './UserStatsModal';
 
 interface LevelDisplayProps {
@@ -79,35 +78,26 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         {/* User Stats Modal - Conditional Rendering */}
         {showStatsModal && (
           isMobile ? (
-            // Mobile: Viewport-centered modal
+            // Mobile: Full-screen centered modal (matches WhatsNew pattern)
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
               onClick={(e) => {
                 if (e.target === e.currentTarget) {
                   setShowStatsModal(false);
                 }
               }}
             >
-              <div className="bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden">
+              <div className="bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl w-[calc(100vw-2rem)] max-w-[380px] max-h-[90vh] overflow-hidden">
                 <UserStatsModal onClose={() => setShowStatsModal(false)} />
               </div>
             </div>
           ) : (
-            // Desktop: Positioned popover
-            <Popover open={true} onOpenChange={setShowStatsModal}>
-              <PopoverTrigger asChild>
-                <div className="absolute left-0 top-0 w-1 h-1 opacity-0 pointer-events-none" />
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-[300px] p-0 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl"
-                side="right"
-                align="start"
-                alignOffset={-48}
-                sideOffset={175}
-              >
+            // Desktop: Positioned underneath Level UI
+            <div className="fixed top-[18rem] left-4 z-40">
+              <div className="bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl w-[300px]">
                 <UserStatsModal onClose={() => setShowStatsModal(false)} />
-              </PopoverContent>
-            </Popover>
+              </div>
+            </div>
           )
         )}
 
