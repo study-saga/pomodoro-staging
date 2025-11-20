@@ -6,7 +6,6 @@ import { MusicPlayer } from './components/music/MusicPlayer';
 import { AmbientSoundsPlayer } from './components/music/AmbientSoundsPlayer';
 import { LevelDisplay } from './components/level/LevelDisplay';
 import { LevelUpCelebration } from './components/level/LevelUpCelebration';
-import { RoleSwitch } from './components/level/RoleSwitch';
 import { RoleSwitchComparison } from './components/level/RoleSwitchComparison';
 import { SocialNodes } from './components/level/SocialNodes';
 import { SettingsModal } from './components/settings/SettingsModal';
