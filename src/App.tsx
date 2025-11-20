@@ -21,7 +21,7 @@ import { claimDailyGiftXP } from './lib/userSyncAuth';
 import { showGameToast } from './components/ui/GameToast';
 
 function AppContent() {
-  const { authenticated, loading, error } = useAuth();
+  const { authenticated, loading, error, appUser } = useAuth();
   const { showLevelUp, levelUpData } = useLevelNotifications();
   const addXP = useSettingsStore((state) => state.addXP);
   const consecutiveLoginDays = useSettingsStore((state) => state.consecutiveLoginDays);
