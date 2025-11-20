@@ -9,6 +9,7 @@ import {
   getXPNeeded,
 } from '../../data/levels';
 import { Gift } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { UserStatsModal } from './UserStatsModal';
 
 interface LevelDisplayProps {
@@ -62,16 +63,28 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h2
-              className={`font-bold text-white cursor-pointer hover:text-blue-400 transition-colors ${isMobile ? 'text-base' : 'text-lg'}`}
-              onClick={() => setShowStatsModal(true)}
-              title="Click to view stats"
+          <Popover open={showStatsModal} onOpenChange={setShowStatsModal}>
+            <div>
+              <PopoverTrigger asChild>
+                <h2
+                  className={`font-bold text-white cursor-pointer hover:text-blue-400 transition-colors ${isMobile ? 'text-base' : 'text-lg'}`}
+                  title="Click to view stats"
+                >
+                  {username}
+                </h2>
+              </PopoverTrigger>
+              <p className={isMobile ? 'text-xs text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
+            </div>
+            <PopoverContent
+              className="w-[calc(100vw-2rem)] sm:w-[300px] p-0 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl"
+              side={isMobile ? 'bottom' : 'right'}
+              align="start"
+              alignOffset={isMobile ? 0 : -48}
+              sideOffset={isMobile ? 8 : 175}
             >
-              {username}
-            </h2>
-            <p className={isMobile ? 'text-xs text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
-          </div>
+              <UserStatsModal onClose={() => setShowStatsModal(false)} />
+            </PopoverContent>
+          </Popover>
           <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
         </div>
 
@@ -133,9 +146,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         )}
 
       </div>
-
-      {/* User Stats Modal */}
-      {showStatsModal && <UserStatsModal onClose={() => setShowStatsModal(false)} />}
     </div>
   );
 });
