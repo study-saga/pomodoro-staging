@@ -194,7 +194,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
               </div>
             </PopoverHeader>
             <PopoverBody className="p-0">
-              <ScrollArea className="h-[60vh] max-h-[400px]">
+              <ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
                 <div className="p-4">
                   {statsContent}
                 </div>
@@ -257,7 +257,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
                   </div>
 
                   {/* Body */}
-                  <ScrollArea className="h-[60vh] max-h-[400px]">
+                  <ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
                     <div className="p-4">
                       {statsContent}
                     </div>
