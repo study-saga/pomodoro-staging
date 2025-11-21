@@ -511,7 +511,7 @@ export function SettingsContent(props: SettingsContentProps) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
           transition={{ duration: 0.2 }}
-          className="space-y-8 max-w-md mx-auto"
+          className="space-y-8 max-w-sm mx-auto"
         >
           <div>
             <h3 className="text-white font-bold text-lg mb-2">Hero Progress</h3>
