@@ -11,6 +11,7 @@ import {
 } from '../../data/levels';
 import { Gift } from 'lucide-react';
 import { UserStatsPopover } from './UserStatsPopover';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
@@ -63,20 +64,23 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     <UserStatsPopover
       open={showStatsPopover}
       onOpenChange={setShowStatsPopover}
-      avatarUrl={appUser?.avatar || undefined}
       trigger={
         <div className={`fixed top-4 left-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
           <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
             {/* Header */}
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex items-center gap-2">
+                <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
                 <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>
                   {username}
                 </h2>
-                <p className={isMobile ? 'text-xs text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
               </div>
-              <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
+              <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
+                {appUser?.avatar && <AvatarImage src={appUser.avatar} />}
+                <AvatarFallback>{username.slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
             </div>
+            <p className={`text-xs text-gray-300 ${isMobile ? 'ml-10' : 'ml-12'}`}>{levelName}</p>
 
         {/* XP Progress Bar */}
         <div>
