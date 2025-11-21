@@ -10,8 +10,6 @@ import {
   getXPNeeded,
 } from '../../data/levels';
 import { Gift } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { UserStatsModal } from './UserStatsModal';
 import buffElf from '../../assets/buff-elf.svg';
 import buffHuman from '../../assets/buff-human.svg';
 import { UserStatsPopover } from './UserStatsPopover';
