@@ -560,7 +560,7 @@ export function SettingsContent(props: SettingsContentProps) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
           transition={{ duration: 0.2 }}
-          className={`space-y-8 mx-auto ${isMobile ? 'max-w-sm' : 'max-w-md'}`}
+          className="space-y-8"
         >
           <div>
             <h3 className="text-white font-bold text-lg mb-4">Hero Stats</h3>
