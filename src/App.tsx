@@ -8,7 +8,7 @@ import { LevelDisplay } from './components/level/LevelDisplay';
 import { LevelUpCelebration } from './components/level/LevelUpCelebration';
 // import { RoleSwitch } from './components/level/RoleSwitch';
 // import { RoleSwitchComparison } from './components/level/RoleSwitchComparison';
-import { SocialNodes } from './components/level/SocialNodes';
+
 import { SettingsPopover } from './components/settings/SettingsPopover';
 import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCounter';
 import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
@@ -137,8 +137,7 @@ function AppContent() {
       {/* Role Switch Comparison (Below Level Display) */}
       {/* <RoleSwitchComparison /> */}
 
-      {/* Social Nodes (Below Role Switch) */}
-      <SocialNodes />
+
 
       {/* Online Presence Counter (Top Right, below settings button) */}
       <div className="fixed top-20 right-4 z-10">
@@ -171,7 +170,7 @@ function AppContent() {
       />
 
       {/* Top Right Buttons - Discord & Settings */}
-      <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
+      <div className="fixed top-4 right-4 z-60 flex items-center gap-2">
         <DiscordButton />
         <SettingsPopover />
       </div>
