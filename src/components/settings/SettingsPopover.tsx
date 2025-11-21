@@ -28,7 +28,7 @@ import {
 export const SettingsPopover = memo(function SettingsPopover() {
   const { appUser } = useAuth();
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'music' | 'progress'>('timer');
+  const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'music' | 'progress' | 'whats-new'>('timer');
   const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameLoading, setUsernameLoading] = useState(false);
@@ -320,6 +320,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     { id: 'sounds', label: 'Sounds' },
     { id: 'music', label: 'Music' },
     { id: 'progress', label: 'Progress' },
+    { id: 'whats-new', label: "What's New" },
   ] as const;
 
   // Trigger button component

@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 import { AMBIENT_SOUNDS } from '../../data/constants';
 import {
   ROLE_EMOJI_ELF,
@@ -6,10 +7,12 @@ import {
   getLevelName,
   getBadgeForLevel,
 } from '../../data/levels';
+import { Badge } from '../ui/badge';
+import { changelog, type ChangelogEntry } from '../../data/changelog';
 import { toast } from 'sonner';
 
 interface SettingsContentProps {
-  activeTab: 'timer' | 'appearance' | 'sounds' | 'music' | 'progress';
+  activeTab: 'timer' | 'appearance' | 'sounds' | 'music' | 'progress' | 'whats-new';
   isMobile: boolean;
 
   // Timer settings
@@ -636,6 +639,75 @@ export function SettingsContent(props: SettingsContentProps) {
           </div>
         </motion.div>
       )}
+
+      {activeTab === 'whats-new' && (
+        <motion.div
+          key="whats-new"
+          role="tabpanel"
+          id="whats-new-panel"
+          aria-labelledby="whats-new-tab"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 20 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-4"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles size={20} className="text-purple-400" />
+            <h3 className="text-white font-bold text-lg">Latest Updates</h3>
+          </div>
+          <p className="text-gray-400 text-sm mb-4">Recent features and improvements</p>
+
+          <div className="space-y-4">
+            {changelog.map((entry, index) => (
+              <ChangelogItem key={`${entry.date}-${index}`} entry={entry} />
+            ))}
+
+            {/* End of list */}
+            <div className="py-3 text-center text-xs text-gray-500">
+              You've seen all updates
+            </div>
+          </div>
+        </motion.div>
+      )}
     </AnimatePresence>
+  );
+}
+
+// Helper function for date formatting
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Changelog Item Component
+interface ChangelogItemProps {
+  entry: ChangelogEntry;
+}
+
+function ChangelogItem({ entry }: ChangelogItemProps) {
+  return (
+    <div className="group">
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 w-1.5 h-1.5 mt-2 bg-purple-500 rounded-full" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <h3 className="text-white font-semibold text-sm leading-tight">{entry.title}</h3>
+            <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">
+              {formatDate(entry.date)}
+            </span>
+          </div>
+          <p className="text-gray-400 text-sm leading-relaxed mb-2">{entry.description}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {entry.tags.map((tag) => (
+              <Badge key={tag} variant={tag} className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent mt-4" />
+    </div>
   );
 }
