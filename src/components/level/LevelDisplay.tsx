@@ -190,8 +190,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           {/* 2. Slingshot Buff (Elf only, Nov 22-23 event, +25% XP) - Hide after event ends */}
           {showSlingshot && (
             <div className="relative group">
-              <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500`}>
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center cursor-help overflow-hidden ${
+              <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden ${
                 slingshotActive
                   ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500'
                   : 'bg-gradient-to-r from-gray-500/20 to-gray-600/20 border-2 border-green-500/50'
@@ -248,32 +247,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                   </p>
                   <p className="text-[10px] text-gray-400">
                     Expires in {boostTimeRemaining || getBoostTimeRemaining()}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 4. Inactive Slingshot (Show at end when inactive) */}
-          {levelPath === 'elf' && !slingshotActive && (
-            <div className="relative group">
-              <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30`}>
-                <img
-                  src={buffElfSlingshot}
-                  alt="Elven Slingshot"
-                  className="w-full h-full object-cover"
-                  style={{ filter: 'grayscale(100%) opacity(50%)' }}
-                />
-              </div>
-
-              {/* Hover Tooltip */}
-              <div className="absolute left-0 bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-                <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-gray-500/30">
-                  <p className="text-xs font-semibold mb-0.5 text-gray-400">
-                    Elven Slingshot 🏹
-                  </p>
-                  <p className="text-[10px] text-gray-400">
-                    Activates on Nov 22-23, 2025
                   </p>
                 </div>
               </div>
