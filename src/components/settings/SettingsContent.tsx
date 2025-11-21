@@ -511,10 +511,10 @@ export function SettingsContent(props: SettingsContentProps) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
           transition={{ duration: 0.2 }}
-          className="space-y-4"
+          className="space-y-8"
         >
           <div>
-            <h3 className="text-white font-bold text-lg mb-4">Hero Progress</h3>
+            <h3 className="text-white font-bold text-lg mb-2">Hero Progress</h3>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-white/5 rounded-lg p-3 relative overflow-hidden">
@@ -570,10 +570,10 @@ export function SettingsContent(props: SettingsContentProps) {
 
           <div>
             <h3 className="text-white font-bold text-lg mb-2">Username</h3>
-            <p className="text-gray-400 text-sm mb-3">
+            <p className="text-gray-400 text-sm mb-4">
               Change your display name. Free once per week, or costs 50 XP if changed earlier.
             </p>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={usernameInput}
@@ -602,8 +602,8 @@ export function SettingsContent(props: SettingsContentProps) {
           </div>
 
           <div>
-            <h3 className="text-white font-bold text-lg mb-4">Reset Progress</h3>
-            <p className="text-gray-400 text-sm mb-3">
+            <h3 className="text-white font-bold text-lg mb-2">Reset Progress</h3>
+            <p className="text-gray-400 text-sm mb-4">
               This will reset all your progress including level, XP, prestige, and stats.
               This action cannot be undone.
             </p>
@@ -632,7 +632,7 @@ export function SettingsContent(props: SettingsContentProps) {
                   }
                 });
               }}
-              className="w-full px-4 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors"
+              className="px-4 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors"
             >
               Reset All Progress
             </button>
