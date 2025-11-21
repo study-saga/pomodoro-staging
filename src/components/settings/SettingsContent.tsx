@@ -563,7 +563,7 @@ export function SettingsContent(props: SettingsContentProps) {
               </div>
               <div className="bg-white/5 rounded-lg p-3 col-span-2">
                 <p className="text-gray-400 text-xs mb-1">CURRENT BADGE</p>
-                <p className="text-5xl">{getBadgeForLevel(level, prestigeLevel)}</p>
+                <p className={isMobile ? "text-4xl" : "text-5xl"}>{getBadgeForLevel(level, prestigeLevel)}</p>
               </div>
             </div>
           </div>
