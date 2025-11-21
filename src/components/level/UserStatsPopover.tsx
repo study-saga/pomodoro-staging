@@ -1,4 +1,5 @@
 import { memo, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
@@ -275,10 +276,10 @@ export const UserStatsPopover = memo(function UserStatsPopover({
         </>
       )}
 
-      {/* Gandalf Easter Egg Tooltip - Rendered outside ScrollArea */}
-      {showSinceTooltip && firstLoginDate && (
+      {/* Gandalf Easter Egg Tooltip - Portal to body (escapes all clipping) */}
+      {showSinceTooltip && firstLoginDate && createPortal(
         <div
-          className="fixed transform -translate-x-1/2 px-3 py-2 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 z-[100] shadow-xl whitespace-nowrap pointer-events-none"
+          className="fixed transform -translate-x-1/2 px-3 py-2 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 z-[9999] shadow-xl whitespace-nowrap pointer-events-none"
           style={{
             top: `${tooltipPosition.top}px`,
             left: `${tooltipPosition.left}px`
@@ -288,7 +289,8 @@ export const UserStatsPopover = memo(function UserStatsPopover({
             I was there, Gandalf.<br />
             I was there {daysSinceFirstLogin} {daysSinceFirstLogin === 1 ? 'day' : 'days'} ago!
           </p>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
