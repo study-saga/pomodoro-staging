@@ -4,7 +4,6 @@ import { AMBIENT_SOUNDS } from '../../data/constants';
 import {
   ROLE_EMOJI_ELF,
   ROLE_EMOJI_HUMAN,
-  getLevelName,
 } from '../../data/levels';
 import { Badge } from '../ui/badge';
 import { changelog, type ChangelogEntry } from '../../data/changelog';
@@ -119,9 +118,6 @@ export function SettingsContent(props: SettingsContentProps) {
     setTempAmbientVolumes,
     totalTracks,
     setShowMusicCredits,
-    level,
-    xp,
-    prestigeLevel,
     totalPomodoros,
     totalStudyMinutes,
     levelPath,
