@@ -1,6 +1,7 @@
 import { memo, useState } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   getLevelName,
   getBadgeForLevel,
@@ -9,7 +10,7 @@ import {
   getXPNeeded,
 } from '../../data/levels';
 import { Gift } from 'lucide-react';
-import { UserStatsModal } from './UserStatsModal';
+import { UserStatsPopover } from './UserStatsPopover';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
@@ -27,9 +28,10 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   } = useSettingsStore();
 
   const [selectedDay, setSelectedDay] = useState(1);
-  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showStatsPopover, setShowStatsPopover] = useState(false);
 
   const { isMobile } = useDeviceType();
+  const { appUser } = useAuth();
 
   if (!levelSystemEnabled) return null;
 
@@ -58,48 +60,23 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   };
 
   return (
-    <div className={`fixed top-4 left-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
-      <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2
-              onClick={() => setShowStatsModal(true)}
-              className={`font-bold text-white cursor-pointer hover:text-blue-400 transition-colors ${isMobile ? 'text-base' : 'text-lg'}`}
-              title="Click to view stats"
-            >
-              {username}
-            </h2>
-            <p className={isMobile ? 'text-xs text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
-          </div>
-          <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
-        </div>
-
-        {/* User Stats Modal - Conditional Rendering */}
-        {showStatsModal && (
-          isMobile ? (
-            // Mobile: Full-screen centered modal (matches WhatsNew pattern)
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                  setShowStatsModal(false);
-                }
-              }}
-            >
-              <div className="bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl w-[calc(100vw-2rem)] max-w-[380px] max-h-[85vh] overflow-hidden flex flex-col">
-                <UserStatsModal onClose={() => setShowStatsModal(false)} />
+    <UserStatsPopover
+      open={showStatsPopover}
+      onOpenChange={setShowStatsPopover}
+      avatarUrl={appUser?.avatar || undefined}
+      trigger={
+        <div className={`fixed top-4 left-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
+          <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>
+                  {username}
+                </h2>
+                <p className={isMobile ? 'text-xs text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
               </div>
+              <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
             </div>
-          ) : (
-            // Desktop: Positioned underneath Level UI
-            <div className="fixed top-[18rem] left-4 z-40">
-              <div className="bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl w-[300px]">
-                <UserStatsModal onClose={() => setShowStatsModal(false)} />
-              </div>
-            </div>
-          )
-        )}
 
         {/* XP Progress Bar */}
         <div>
@@ -158,7 +135,9 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           </div>
         )}
 
-      </div>
-    </div>
+          </div>
+        </div>
+      }
+    />
   );
 });
