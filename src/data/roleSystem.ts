@@ -110,9 +110,8 @@ export const ELF_ROLE: RoleConfig = {
       name: 'Perfect Day',
       description: 'Completing 8+ pomodoros in one day grants +50 bonus XP',
       trigger: 'daily_login',
-      effect: (state) => {
+      effect: () => {
         // Check if completed 8+ pomodoros today
-        const today = new Date().toISOString().split('T')[0];
         // This would be tracked in state
         console.log('[Elf Event] Checking for Perfect Day bonus');
       },
@@ -169,7 +168,7 @@ export const HUMAN_ROLE: RoleConfig = {
       name: 'Lucky Streak',
       description: '3 crits in a row grants +100 bonus XP',
       trigger: 'pomodoro_complete',
-      effect: (state) => {
+      effect: () => {
         console.log('[Human Event] Checking for Lucky Streak');
         // Track consecutive crits
       },
@@ -179,7 +178,7 @@ export const HUMAN_ROLE: RoleConfig = {
       name: 'Underdog Bonus',
       description: 'Being 2+ levels below average player level grants +25% XP',
       trigger: 'pomodoro_complete',
-      effect: (state) => {
+      effect: () => {
         console.log('[Human Event] Checking Underdog status');
       },
     },
@@ -289,12 +288,7 @@ export function calculateRoleXP(
  * Get active buffs for a role based on current state
  */
 export function getActiveBuffs(
-  roleType: RoleType,
-  context: {
-    consecutiveDays?: number;
-    totalPomodoros?: number;
-    level?: number;
-  }
+  roleType: RoleType
 ): RoleBuff[] {
   const allBuffs = getRoleBuffs(roleType);
 

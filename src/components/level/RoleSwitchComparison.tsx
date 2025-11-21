@@ -7,10 +7,10 @@ export const RoleSwitchComparison = () => {
   const [isOpen2, setIsOpen2] = useState(false);
   const { levelPath, setLevelPath } = useSettingsStore();
 
-  const idleTimerRef1 = useRef<NodeJS.Timeout | null>(null);
-  const actionTimerRef1 = useRef<NodeJS.Timeout | null>(null);
-  const idleTimerRef2 = useRef<NodeJS.Timeout | null>(null);
-  const actionTimerRef2 = useRef<NodeJS.Timeout | null>(null);
+  const idleTimerRef1 = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const actionTimerRef1 = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleTimerRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const actionTimerRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Version 1 handlers
   const handleMouseEnter1 = () => {

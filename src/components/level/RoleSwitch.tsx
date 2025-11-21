@@ -8,8 +8,8 @@ export const RoleSwitch = () => {
   const { levelPath, setLevelPath } = useSettingsStore();
 
   // Refs to store timer IDs for cleanup
-  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const actionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const actionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Handler: When user hovers over the element
   const handleMouseEnter = () => {

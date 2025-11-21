@@ -2,9 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Settings } from '../types';
 import { DEFAULT_SETTINGS, USERNAME_EDIT_COOLDOWN, USERNAME_EDIT_COST, getDefaultBackground, BACKGROUNDS } from '../data/constants';
-import { MAX_LEVEL, XP_PER_MINUTE, getXPNeeded } from '../data/levels';
+import { MAX_LEVEL, getXPNeeded } from '../data/levels';
 import { getMilestoneForDay, type MilestoneReward } from '../data/milestones';
-import { calculateRoleXP, getRoleStats } from '../data/roleSystem';
+import { calculateRoleXP } from '../data/roleSystem';
 
 // Helper to detect device type
 const getIsMobile = () => {
