@@ -115,7 +115,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
         <PopoverBody className="p-0">
           <ScrollArea className="h-[400px] sm:h-[450px]">
             <div className="p-4">
-              <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              <div className="grid grid-cols-2 gap-2">
                 {/* Row 1 */}
                 <StatCard
                   icon={<Target className="w-4 h-4" />}
