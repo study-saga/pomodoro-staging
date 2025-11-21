@@ -617,13 +617,35 @@ export async function claimDailyGift(
     console.log(`[User Sync] Daily gift claimed successfully - ${result.xp_awarded} XP awarded`)
   }
 
+  // Convert boost_expires_at to milliseconds timestamp
+  let boostExpiresAtMs: number | undefined = undefined;
+  if (result.boost_expires_at) {
+    if (typeof result.boost_expires_at === 'string') {
+      // ISO timestamp string - convert to milliseconds
+      boostExpiresAtMs = new Date(result.boost_expires_at).getTime();
+    } else if (typeof result.boost_expires_at === 'number') {
+      // Check if seconds or milliseconds
+      // If > 100000000000 (Nov 1973 in milliseconds), it's already in milliseconds
+      // Otherwise it's in seconds and needs conversion
+      boostExpiresAtMs = result.boost_expires_at > 100000000000
+        ? result.boost_expires_at
+        : result.boost_expires_at * 1000;
+    }
+  }
+
+  console.log('[User Sync] Boost expires at:', {
+    raw: result.boost_expires_at,
+    converted: boostExpiresAtMs,
+    activated: result.boost_activated
+  });
+
   return {
     success: result.success,
     message: result.message,
     xpAwarded: result.xp_awarded,
     newXp: result.new_xp,
     boostActivated: result.boost_activated,
-    boostExpiresAt: result.boost_expires_at,
+    boostExpiresAt: boostExpiresAtMs,
     alreadyClaimed: result.already_claimed || false
   }
 }

@@ -95,6 +95,13 @@ export const ELF_ROLE: RoleConfig = {
       icon: '🧘',
       type: 'passive',
     },
+    {
+      id: 'elf_slingshot',
+      name: 'Elven Slingshot',
+      description: 'Coming soon...',
+      icon: '🏹',
+      type: 'passive',
+    },
   ],
   stats: {
     baseXPMultiplier: 1.0,
