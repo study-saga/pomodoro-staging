@@ -83,16 +83,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
 
   // Stats grid content (shared between mobile and desktop)
   const statsContent = (
-    <div className="relative">
-      {/* Close Button - Positioned at top-right with gap */}
-      <button
-        onClick={() => onOpenChange?.(false)}
-        className="absolute -top-3 -right-3 p-1.5 bg-gray-900 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors z-20"
-      >
-        <X className="w-4 h-4" />
-      </button>
-
-      <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-2 gap-2">
         {/* Role Toggle - Full Size */}
         <label className="bg-white/5 rounded-lg border border-white/10 cursor-pointer relative overflow-hidden flex items-center justify-center">
           <input
@@ -167,7 +158,6 @@ export const UserStatsPopover = memo(function UserStatsPopover({
           </p>
         </div>
       )}
-      </div>
     </div>
   );
 
@@ -187,6 +177,12 @@ export const UserStatsPopover = memo(function UserStatsPopover({
           >
             <PopoverBody className="p-0">
               <div className="relative">
+                <button
+                  onClick={() => onOpenChange?.(false)}
+                  className="absolute top-3 right-3 z-10 p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
                 <ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
                   <div className="p-4 pt-12">
                     {statsContent}
@@ -226,6 +222,12 @@ export const UserStatsPopover = memo(function UserStatsPopover({
                   className="relative bg-gray-900/95 backdrop-blur-xl border-white/10 border rounded-2xl w-full max-w-sm"
                 >
                   <div className="relative">
+                    <button
+                      onClick={() => onOpenChange?.(false)}
+                      className="absolute top-3 right-3 z-10 p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                     <ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
                       <div className="p-4 pt-12">
                         {statsContent}
