@@ -396,7 +396,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
                 </div>
 
                 {/* Content - Scrollable */}
-                <ScrollArea className="flex-1">
+                <ScrollArea className="flex-1 overflow-y-auto">
                   <div className="p-4">
                     <SettingsContent
                       activeTab={activeTab}
@@ -532,7 +532,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
                   </div>
 
                   {/* Content - Scrollable */}
-                  <ScrollArea className="flex-1">
+                  <ScrollArea className="flex-1 overflow-y-auto">
                     <div className="p-4">
                       <SettingsContent
                         activeTab={activeTab}
