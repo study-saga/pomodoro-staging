@@ -344,7 +344,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
             {trigger}
           </PopoverTrigger>
           <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[480px] p-0 max-h-[85vh] z-[60]"
+            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[480px] p-0 max-h-[85vh] z-[100]"
             align="end"
             side="bottom"
             sideOffset={8}
@@ -473,7 +473,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
 
           <AnimatePresence>
             {open && (
-              <div className="fixed inset-0 flex items-center justify-center z-[60] p-4">
+              <div className="fixed inset-0 flex items-center justify-center z-[100] p-4">
                 {/* Backdrop */}
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -489,7 +489,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 20 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="relative bg-gray-900/95 backdrop-blur-xl border-white/10 border rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden"
+                  className="relative z-[110] bg-gray-900/95 backdrop-blur-xl border-white/10 border rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden"
                 >
                   {/* Header */}
                   <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">

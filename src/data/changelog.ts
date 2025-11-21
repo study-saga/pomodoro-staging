@@ -18,7 +18,25 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   // ⬇️ ADD NEW UPDATES HERE (most recent first) ⬇️
-    {
+  {
+    date: '2025-11-21',
+    title: 'Settings Redesign',
+    description: 'Complete redesign of Settings with professional animations matching User Info style. Now uses modern popover on desktop and centered modal on mobile for a more polished experience.',
+    tags: ['improvement'],
+  },
+  {
+    date: '2025-11-21',
+    title: "What's New Integration",
+    description: "What's New has been integrated into Settings as the 6th tab, making all app features accessible from one place. View the latest updates and features directly in Settings.",
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-21',
+    title: 'UI Improvements',
+    description: 'Fixed z-index layering issues, added horizontal scrolling for Settings tabs, and improved content scrolling for better mobile and desktop experience.',
+    tags: ['fix'],
+  },
+  {
     date: '2025-11-18',
     title: 'Music Player',
     description: 'Improved the music player for better design on PC and Mobiles.',
