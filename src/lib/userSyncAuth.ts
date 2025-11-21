@@ -694,3 +694,65 @@ export async function resetUserProgress(
     return data as AppUser
   }
 }
+
+/**
+ * Claim daily gift XP with server-side validation
+ * Prevents XP exploit from repeated page reloads
+ *
+ * SECURITY: Server validates:
+ * - User hasn't already claimed today (checks last_login_date in DB)
+ * - Atomically updates XP + login date + streak
+ *
+ * Supports dual authentication modes (web + Discord Activity)
+ */
+export async function claimDailyGiftXP(
+  userId: string,
+  discordId: string
+): Promise<{ success: boolean; xpAwarded: number; consecutiveDays: number }> {
+  console.log(`[User Sync] Claiming daily gift XP for user ${userId}`)
+
+  // Determine authentication mode
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (session) {
+    // Web Mode: Use Supabase Auth
+    console.log('[User Sync] Using web mode for daily gift claim')
+
+    const { data, error } = await supabase.rpc('claim_daily_gift_xp', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('[User Sync] Error claiming daily gift:', error)
+      throw new Error(`Failed to claim daily gift: ${error.message}`)
+    }
+
+    const result = Array.isArray(data) ? data[0] : data
+    console.log('[User Sync] Daily gift claim result (web mode):', result)
+    return {
+      success: result.success,
+      xpAwarded: result.xp_awarded,
+      consecutiveDays: result.consecutive_days
+    }
+  } else {
+    // Discord Activity Mode
+    console.log('[User Sync] Using Discord Activity mode for daily gift claim')
+
+    const { data, error } = await supabase.rpc('claim_daily_gift_xp_discord', {
+      p_discord_id: discordId
+    })
+
+    if (error) {
+      console.error('[User Sync] Error claiming daily gift:', error)
+      throw new Error(`Failed to claim daily gift: ${error.message}`)
+    }
+
+    const result = Array.isArray(data) ? data[0] : data
+    console.log('[User Sync] Daily gift claim result (Discord Activity mode):', result)
+    return {
+      success: result.success,
+      xpAwarded: result.xp_awarded,
+      consecutiveDays: result.consecutive_days
+    }
+  }
+}

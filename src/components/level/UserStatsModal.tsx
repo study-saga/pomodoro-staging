@@ -72,7 +72,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
       </div>
 
       {/* Stats Grid with ScrollArea */}
-      <ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
+      <ScrollArea className="h-[60vh] sm:h-[400px]">
         <div className="p-4">
           <div className={`grid gap-2 ${
             isMobile ? 'grid-cols-1' : 'grid-cols-2'

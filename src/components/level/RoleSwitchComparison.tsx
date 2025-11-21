@@ -7,10 +7,10 @@ export const RoleSwitchComparison = () => {
   const [isOpen2, setIsOpen2] = useState(false);
   const { levelPath, setLevelPath } = useSettingsStore();
 
-  const idleTimerRef1 = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const actionTimerRef1 = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const idleTimerRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const actionTimerRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleTimerRef1 = useRef<number | null>(null);
+  const actionTimerRef1 = useRef<number | null>(null);
+  const idleTimerRef2 = useRef<number | null>(null);
+  const actionTimerRef2 = useRef<number | null>(null);
 
   // Version 1 handlers
   const handleMouseEnter1 = () => {
@@ -54,7 +54,7 @@ export const RoleSwitchComparison = () => {
   }, []);
 
   return (
-    <div className="fixed top-[240px] left-4 z-40 flex flex-col gap-4">
+    <div className="fixed top-[240px] right-4 z-40 flex flex-col gap-4">
       {/* Label */}
       <div className="text-white text-xs bg-black/50 px-2 py-1 rounded">
         Version 1: Elegant Purple/Pink

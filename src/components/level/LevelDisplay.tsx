@@ -1,6 +1,7 @@
 import { memo, useState } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   getLevelName,
   getBadgeForLevel,
@@ -9,10 +10,10 @@ import {
   getXPNeeded,
 } from '../../data/levels';
 import { Gift } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { UserStatsModal } from './UserStatsModal';
 import buffElf from '../../assets/buff-elf.svg';
 import buffHuman from '../../assets/buff-human.svg';
+import { UserStatsPopover } from './UserStatsPopover';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
@@ -30,9 +31,10 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   } = useSettingsStore();
 
   const [selectedDay, setSelectedDay] = useState(1);
-  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showStatsPopover, setShowStatsPopover] = useState(false);
 
   const { isMobile } = useDeviceType();
+  const { appUser } = useAuth();
 
   if (!levelSystemEnabled) return null;
 
@@ -61,57 +63,26 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   };
 
   return (
-    <div className={`fixed top-4 left-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
-      <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2
-              onClick={() => setShowStatsModal(true)}
-              className={`font-bold text-white cursor-pointer hover:text-blue-400 transition-colors ${isMobile ? 'text-base' : 'text-lg'}`}
-              title="Click to view stats"
-            >
-              {username}
-            </h2>
-            <p className={isMobile ? 'text-xs text-gray-300' : 'text-xs text-gray-300'}>{levelName}</p>
-          </div>
-          <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
-        </div>
-
-        {/* User Stats Modal - Conditional Rendering */}
-        {showStatsModal && (
-          isMobile ? (
-            // Mobile: Viewport-centered modal
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                  setShowStatsModal(false);
-                }
-              }}
-            >
-              <div className="bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden">
-                <UserStatsModal onClose={() => setShowStatsModal(false)} />
+    <UserStatsPopover
+      open={showStatsPopover}
+      onOpenChange={setShowStatsPopover}
+      trigger={
+        <div className={`fixed top-4 left-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
+          <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
+                <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>
+                  {username}
+                </h2>
               </div>
+              <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
+                {appUser?.avatar && <AvatarImage src={appUser.avatar} />}
+                <AvatarFallback>{username.slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
             </div>
-          ) : (
-            // Desktop: Positioned popover
-            <Popover open={true} onOpenChange={setShowStatsModal}>
-              <PopoverTrigger asChild>
-                <div className="absolute left-0 top-0 w-1 h-1 opacity-0 pointer-events-none" />
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-[300px] p-0 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl"
-                side="right"
-                align="start"
-                alignOffset={-48}
-                sideOffset={175}
-              >
-                <UserStatsModal onClose={() => setShowStatsModal(false)} />
-              </PopoverContent>
-            </Popover>
-          )
-        )}
+            <p className={`text-xs text-gray-300 ${isMobile ? 'ml-10' : 'ml-12'}`}>{levelName}</p>
 
         {/* XP Progress Bar */}
         <div>
@@ -194,7 +165,9 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           </div>
         )}
 
-      </div>
-    </div>
+          </div>
+        </div>
+      }
+    />
   );
 });
