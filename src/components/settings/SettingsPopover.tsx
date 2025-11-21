@@ -344,7 +344,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
             {trigger}
           </PopoverTrigger>
           <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[480px] p-0 max-h-[85vh]"
+            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[480px] p-0 max-h-[85vh] z-[60]"
             align="end"
             side="bottom"
             sideOffset={8}
@@ -371,7 +371,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
                 <div
                   role="tablist"
                   aria-label="Settings categories"
-                  className="flex gap-1 px-4 pt-4 border-b border-white/10 shrink-0"
+                  className="flex gap-1 px-4 pt-4 border-b border-white/10 shrink-0 overflow-x-auto scroll-smooth"
                 >
                   {tabs.map((tab) => (
                     <button
@@ -381,7 +381,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
                       aria-controls={`${tab.id}-panel`}
                       id={`${tab.id}-tab`}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`px-4 py-2 font-medium transition-colors relative ${
+                      className={`px-3 py-2 text-sm font-medium transition-colors relative whitespace-nowrap ${
                         activeTab === tab.id
                           ? 'text-white'
                           : 'text-gray-400 hover:text-gray-300'
@@ -473,7 +473,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
 
           <AnimatePresence>
             {open && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+              <div className="fixed inset-0 flex items-center justify-center z-[60] p-4">
                 {/* Backdrop */}
                 <motion.div
                   initial={{ opacity: 0 }}
