@@ -4,7 +4,6 @@ import { useDeviceType } from '../../hooks/useDeviceType';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   getLevelName,
-  getBadgeForLevel,
   ROLE_EMOJI_ELF,
   ROLE_EMOJI_HUMAN,
   getXPNeeded,
@@ -44,9 +43,12 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   const xpNeeded = getXPNeeded(level);
   const levelName = getLevelName(level, levelPath);
-  const badge = getBadgeForLevel(level, prestigeLevel);
   const roleEmoji = levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN;
   const progress = (xp / xpNeeded) * 100;
+
+  // Extract emoji and text from levelName
+  const levelBadge = levelName.split(' ')[0]; // Get emoji (first part before space)
+  const levelTitle = levelName.split(' ').slice(1).join(' '); // Get text (everything after first space)
 
   // Check if slingshot buff is active (Nov 22-23 onwards for elves)
   const isSlingshotActive = () => {
@@ -109,12 +111,12 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
+                <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{levelBadge}</div>
                 <div>
                   <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>
                     {username}
                   </h2>
-                  <p className="text-xs text-gray-300">{levelName}</p>
+                  <p className="text-xs text-gray-300">{levelTitle}</p>
                 </div>
               </div>
               <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
