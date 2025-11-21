@@ -70,6 +70,17 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   const boostTimeRemaining = getBoostTimeRemaining();
 
+  // Debug logging for boost state
+  if (import.meta.env.DEV && pomodoroBoostActive) {
+    console.log('[LevelDisplay] Boost state:', {
+      active: pomodoroBoostActive,
+      expiresAt: pomodoroBoostExpiresAt,
+      now: Date.now(),
+      isExpired: pomodoroBoostExpiresAt ? pomodoroBoostExpiresAt <= Date.now() : 'no expiry set',
+      timeRemaining: boostTimeRemaining
+    });
+  }
+
   // Simulate selected day (for testing)
   const simulateNextDay = () => {
     const yesterday = new Date();
@@ -181,7 +192,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           )}
 
           {/* 3. 24h Boost Buff (Time-limited - Shows remaining time) */}
-          {pomodoroBoostActive && boostTimeRemaining && (
+          {pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (
             <div className="relative group">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 animate-pulse">
                 <img
@@ -199,7 +210,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                     🍅 +25% XP Boost
                   </p>
                   <p className="text-[10px] text-gray-400">
-                    Expires in {boostTimeRemaining}
+                    Expires in {boostTimeRemaining || getBoostTimeRemaining()}
                   </p>
                 </div>
               </div>
