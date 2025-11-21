@@ -143,6 +143,11 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setLevelSystemEnabled,
     levelPath,
     setLevelPath,
+    totalUniqueDays,
+    consecutiveLoginDays,
+    pomodoroBoostActive,
+    pomodoroBoostExpiresAt,
+    firstLoginDate,
   } = useSettingsStore();
 
   // Filter backgrounds based on viewport orientation (portrait vs landscape)
@@ -439,6 +444,11 @@ export const SettingsPopover = memo(function SettingsPopover() {
                       usernameLoading={usernameLoading}
                       handleSaveUsername={handleSaveUsername}
                       resetProgress={resetProgress}
+                      totalUniqueDays={totalUniqueDays}
+                      consecutiveLoginDays={consecutiveLoginDays}
+                      pomodoroBoostActive={pomodoroBoostActive}
+                      pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
+                      firstLoginDate={firstLoginDate}
                     />
                   </div>
                 </ScrollArea>
@@ -575,6 +585,11 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         usernameLoading={usernameLoading}
                         handleSaveUsername={handleSaveUsername}
                         resetProgress={resetProgress}
+                        totalUniqueDays={totalUniqueDays}
+                        consecutiveLoginDays={consecutiveLoginDays}
+                        pomodoroBoostActive={pomodoroBoostActive}
+                        pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
+                        firstLoginDate={firstLoginDate}
                       />
                     </div>
                   </ScrollArea>

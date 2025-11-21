@@ -1,15 +1,35 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
 import { AMBIENT_SOUNDS } from '../../data/constants';
 import {
   ROLE_EMOJI_ELF,
   ROLE_EMOJI_HUMAN,
   getLevelName,
-  getBadgeForLevel,
 } from '../../data/levels';
 import { Badge } from '../ui/badge';
 import { changelog, type ChangelogEntry } from '../../data/changelog';
 import { toast } from 'sonner';
+
+// Copied from UserStatsPopover.tsx
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  color: string;
+}
+
+function StatCard({ icon, label, value, color }: StatCardProps) {
+  return (
+    <div className="bg-white/5 rounded-lg p-2 border border-white/10">
+      <div className={`flex items-center gap-1.5 ${color} mb-0.5`}>
+        {icon}
+        <span className="text-xs text-gray-400">{label}</span>
+      </div>
+      <p className="text-base font-bold text-white text-left">{value}</p>
+    </div>
+  );
+}
+
 
 interface SettingsContentProps {
   activeTab: 'timer' | 'appearance' | 'sounds' | 'music' | 'progress' | 'whats-new';
@@ -62,6 +82,13 @@ interface SettingsContentProps {
   usernameLoading: boolean;
   handleSaveUsername: () => Promise<void>;
   resetProgress: () => void;
+
+  // New props for stats
+  totalUniqueDays: number;
+  consecutiveLoginDays: number;
+  pomodoroBoostActive: boolean;
+  pomodoroBoostExpiresAt: number | null;
+  firstLoginDate: string | null;
 }
 
 export function SettingsContent(props: SettingsContentProps) {
@@ -106,7 +133,33 @@ export function SettingsContent(props: SettingsContentProps) {
     usernameLoading,
     handleSaveUsername,
     resetProgress,
+    totalUniqueDays,
+    consecutiveLoginDays,
+    pomodoroBoostActive,
+    pomodoroBoostExpiresAt,
+    firstLoginDate,
   } = props;
+
+    // Logic from UserStatsPopover
+    const avgSessionLength = totalPomodoros > 0
+    ? Math.round(totalStudyMinutes / totalPomodoros)
+    : 0;
+  const studyHours = Math.floor(totalStudyMinutes / 60);
+  const studyMins = totalStudyMinutes % 60;
+  let boostTimeRemaining = '';
+  if (pomodoroBoostActive && pomodoroBoostExpiresAt) {
+    const timeLeft = pomodoroBoostExpiresAt - Date.now();
+    if (timeLeft > 0) {
+      const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+      const minsLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      boostTimeRemaining = `${hoursLeft}h ${minsLeft}m`;
+    }
+  }
+  let formattedFirstLoginDate = '';
+  if (firstLoginDate) {
+    const firstDate = new Date(firstLoginDate);
+    formattedFirstLoginDate = firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
 
   return (
     <AnimatePresence mode="wait">
@@ -514,57 +567,75 @@ export function SettingsContent(props: SettingsContentProps) {
           className={`space-y-8 mx-auto ${isMobile ? 'max-w-sm' : 'max-w-md'}`}
         >
           <div>
-            <h3 className="text-white font-bold text-lg mb-2">Hero Progress</h3>
-
-            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
-              <div className="bg-white/5 rounded-lg p-3 relative overflow-hidden">
-                <div className="flex items-start justify-between mb-1">
-                  <p className="text-gray-400 text-xs">CURRENT LEVEL</p>
-                  {/* Role Toggle Switch */}
-                  <label className="relative inline-block w-14 h-7 cursor-pointer shrink-0 ml-2">
-                    <input
-                      type="checkbox"
-                      className="opacity-0 w-0 h-0 peer"
-                      checked={levelPath === 'human'}
-                      onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
-                    />
-                    <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full transition-all duration-300 shadow-lg peer-checked:from-blue-600 peer-checked:to-blue-700"></span>
-                    <span className="absolute top-[3px] left-[3px] w-[22px] h-[22px] bg-white rounded-full transition-all duration-300 flex items-center justify-center text-sm shadow-md peer-checked:translate-x-[28px]">
-                      {levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}
-                    </span>
-                  </label>
+            <h3 className="text-white font-bold text-lg mb-4">Hero Stats</h3>
+            <div className="grid grid-cols-2 gap-2">
+                <label className="bg-white/5 rounded-lg border border-white/10 cursor-pointer relative overflow-hidden flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    className="opacity-0 w-0 h-0 peer"
+                    checked={levelPath === 'human'}
+                    onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
+                  />
+                  <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg transition-all duration-300 peer-checked:from-blue-600 peer-checked:to-blue-700"></span>
+                  <span className="relative text-4xl z-10 transition-transform duration-300">
+                    {levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}
+                  </span>
+                </label>
+              <StatCard
+                icon={<span className="text-base">{levelPath === 'elf' ? '🧝' : '⚔️'}</span>}
+                label=""
+                value={levelPath === 'elf' ? 'Elf' : 'Human'}
+                color="text-purple-400"
+              />
+              <StatCard
+                icon={<span className="text-base">🍅</span>}
+                label="Pomodoros"
+                value={totalPomodoros.toLocaleString()}
+                color="text-red-400"
+              />
+              <StatCard
+                icon={<Clock className="w-4 h-4" />}
+                label="Study Time"
+                value={studyHours > 0 ? `${studyHours}h ${studyMins}m` : `${studyMins}m`}
+                color="text-green-400"
+              />
+              <StatCard
+                icon={<Calendar className="w-4 h-4" />}
+                label="Active Days"
+                value={`${totalUniqueDays}`}
+                color="text-cyan-400"
+              />
+              <StatCard
+                icon={<Flame className="w-4 h-4" />}
+                label="Login Streak"
+                value={`${consecutiveLoginDays} days`}
+                color="text-orange-400"
+              />
+              <StatCard
+                icon={<BarChart className="w-4 h-4" />}
+                label="Avg Session"
+                value={`${avgSessionLength}m`}
+                color="text-purple-400"
+              />
+              {firstLoginDate && (
+                <StatCard
+                    icon={<Calendar className="w-4 h-4" />}
+                    label="Since"
+                    value={formattedFirstLoginDate}
+                    color="text-pink-400"
+                />
+              )}
+              {pomodoroBoostActive && boostTimeRemaining && (
+                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-3 col-span-full">
+                  <div className="flex items-center gap-2 text-purple-300">
+                    <Zap className="w-4 h-4" />
+                    <span className="text-sm font-semibold">+25% XP Boost Active</span>
+                  </div>
+                  <p className="text-xs text-purple-400 mt-1">
+                    Expires in {boostTimeRemaining}
+                  </p>
                 </div>
-                <p
-                  className="text-white font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full"
-                  style={{
-                    fontSize: getLevelName(level, levelPath).length > 18 ? '0.85rem' : getLevelName(level, levelPath).length > 14 ? '0.95rem' : getLevelName(level, levelPath).length > 11 ? '1.1rem' : '1.25rem'
-                  }}
-                >
-                  {level} - {getLevelName(level, levelPath)}
-                </p>
-              </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <p className="text-gray-400 text-xs mb-1">CURRENT XP</p>
-                <p className="text-white text-xl font-bold">{xp} / {level * 100}</p>
-              </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <p className="text-gray-400 text-xs mb-1">PRESTIGE LEVEL</p>
-                <p className="text-white text-xl font-bold">{prestigeLevel}</p>
-              </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <p className="text-gray-400 text-xs mb-1">TOTAL POMODOROS</p>
-                <p className="text-white text-xl font-bold">{totalPomodoros}</p>
-              </div>
-              <div className="bg-white/5 rounded-lg p-3 col-span-2">
-                <p className="text-gray-400 text-xs mb-1">TOTAL STUDY TIME</p>
-                <p className="text-white text-xl font-bold">
-                  {Math.floor(totalStudyMinutes / 60)}h {totalStudyMinutes % 60}m
-                </p>
-              </div>
-              <div className="bg-white/5 rounded-lg p-3 col-span-2">
-                <p className="text-gray-400 text-xs mb-1">CURRENT BADGE</p>
-                <p className={isMobile ? "text-4xl" : "text-5xl"}>{getBadgeForLevel(level, prestigeLevel)}</p>
-              </div>
+              )}
             </div>
           </div>
 
