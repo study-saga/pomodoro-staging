@@ -304,9 +304,10 @@ export async function saveCompletedPomodoro(
     xp_earned: number
     task_name?: string
     notes?: string
+    critical_success?: boolean
   }
 ): Promise<string> {
-  console.log(`[User Sync] Saving pomodoro for user ${userId}`)
+  console.log(`[User Sync] Saving pomodoro for user ${userId}`, data.critical_success ? '🎯 CRITICAL SUCCESS!' : '')
 
   // Use atomic RPC function to save pomodoro and update stats in one transaction
   const { data: pomodoroId, error } = await supabase.rpc(
@@ -317,7 +318,8 @@ export async function saveCompletedPomodoro(
       p_duration_minutes: data.duration_minutes,
       p_xp_earned: data.xp_earned,
       p_task_name: data.task_name || null,
-      p_notes: data.notes || null
+      p_notes: data.notes || null,
+      p_critical_success: data.critical_success || false
     }
   )
 

@@ -11,6 +11,8 @@ import {
 import { Gift } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { UserStatsModal } from './UserStatsModal';
+import buffElf from '../../assets/buff-elf.svg';
+import buffHuman from '../../assets/buff-human.svg';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
@@ -124,6 +126,30 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
             />
+          </div>
+        </div>
+
+        {/* Role Buff Icon - Small Square */}
+        <div className="relative group">
+          <div className="w-8 h-8 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden">
+            <img
+              src={levelPath === 'elf' ? buffElf : buffHuman}
+              alt={`${levelPath} buff`}
+              className="w-full h-full object-cover"
+              style={{ filter: 'drop-shadow(0 0 6px rgba(168, 85, 247, 0.5))' }}
+            />
+          </div>
+
+          {/* Hover Tooltip */}
+          <div className="absolute left-0 bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+            <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-3 py-2 shadow-lg min-w-[180px]">
+              <p className="text-xs font-semibold text-purple-300 mb-0.5">
+                {levelPath === 'elf' ? 'Elf Consistency' : 'Human Risk/Reward'}
+              </p>
+              <p className="text-[10px] text-gray-400">
+                {levelPath === 'elf' ? '+0.5 XP per minute' : '25% chance to double XP'}
+              </p>
+            </div>
           </div>
         </div>
 

@@ -138,6 +138,10 @@ export const DEFAULT_SETTINGS = {
   firstLoginDate: null,
   pomodoroBoostActive: false,
   pomodoroBoostExpiresAt: null,
+  consecutiveCriticals: 0,
+  todayPomodoros: 0,
+  comebackActive: false,
+  comebackPomodoros: 0,
 };
 
 export const USERNAME_EDIT_COOLDOWN = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
