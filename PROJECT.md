@@ -19,6 +19,7 @@ This is a feature-rich Pomodoro timer that runs as a Discord Activity, allowing 
 
 - **Pomodoro Timer**: Custom durations (1-120 min), auto-start options
 - **XP & Leveling**: 2 XP/min (pomodoro), 1 XP/min (breaks), max level 50
+- **Event Buff System**: Extensible JSONB-based buffs with additive stacking (see [BUFF_SYSTEM.md](BUFF_SYSTEM.md))
 - **Music & Sounds**: 2 playlists (Lofi, Synthwave), 9 ambient sounds
 - **Cross-Device Sync**: Settings and progress sync across all devices
 - **Discord Integration**: Runs natively in Discord voice channels as an Activity

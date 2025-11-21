@@ -5,6 +5,7 @@ import { DEFAULT_SETTINGS, USERNAME_EDIT_COOLDOWN, USERNAME_EDIT_COST, getDefaul
 import { MAX_LEVEL, getXPNeeded } from '../data/levels';
 import { getMilestoneForDay, type MilestoneReward } from '../data/milestones';
 import { calculateRoleXP } from '../data/roleSystem';
+import { calculateBuffStack } from '../lib/buffManager';
 
 // Helper to detect device type
 const getIsMobile = () => {
@@ -130,38 +131,42 @@ export const useSettingsStore = create<SettingsStore>()(
 
         console.log('[XP] addXP called with minutes:', minutes, 'Current level:', state.level, 'Current XP:', state.xp, 'Role:', state.levelPath);
 
-        // Check if pomodoro boost is active and not expired
-        let boostMultiplier = 1;
-        let boostStillActive = state.pomodoroBoostActive;
+        /**
+         * NEW BUFF SYSTEM: Calculate event buff multiplier from activeBuffs
+         * This replaces hardcoded boost checks and enables stacking
+         * Example: day10_boost (+25%) + slingshot (+25%) = 1.50x multiplier
+         */
+        const buffStackResult = calculateBuffStack(state.activeBuffs, state.levelPath);
+        const eventBuffMultiplier = buffStackResult.totalXPMultiplier;
 
-        if (state.pomodoroBoostActive && state.pomodoroBoostExpiresAt) {
-          if (Date.now() > state.pomodoroBoostExpiresAt) {
-            // Boost has expired
-            boostStillActive = false;
-            console.log('[XP] Pomodoro boost expired');
-          } else {
-            // Boost is still active
-            boostMultiplier = 1.25; // +25% XP
-            console.log('[XP] Applying +25% XP boost!');
-          }
+        // Log active event buffs
+        if (buffStackResult.bonusStrings.length > 0) {
+          console.log('[XP] Active event buffs:', buffStackResult.bonusStrings.join(', '));
         }
 
-        // Role-based XP calculation using role system
+        // Role-based XP calculation with event buff multiplier
         const roleResult = calculateRoleXP(state.levelPath, minutes, {
           consecutiveDays: state.consecutiveLoginDays,
           prestigeLevel: state.prestigeLevel,
           consecutiveCrits: state.consecutiveCriticals,
+          eventBuffMultiplier, // Pass event buffs to role calculation
         });
 
-        let baseXP = roleResult.xpGained;
+        const xpGained = roleResult.xpGained;
         const criticalSuccess = roleResult.criticalSuccess;
 
         // Log role bonuses
         if (roleResult.bonuses.length > 0) {
-          console.log('[XP] Role buffs applied:', roleResult.bonuses.join(', '));
+          console.log('[XP] Role bonuses:', roleResult.bonuses.join(', '));
         }
 
-        const xpGained = Math.floor(baseXP * boostMultiplier);
+        /**
+         * LEGACY FIELD SYNC: Keep old boost fields in sync for backwards compatibility
+         * Check if day10_boost is active in new buff system
+         */
+        const day10Buff = state.activeBuffs.day10_boost;
+        const boostStillActive = day10Buff && (!day10Buff.expiresAt || day10Buff.expiresAt > Date.now());
+
         let newXP = state.xp + xpGained;
         let newLevel = state.level;
         let newPrestigeLevel = state.prestigeLevel;
