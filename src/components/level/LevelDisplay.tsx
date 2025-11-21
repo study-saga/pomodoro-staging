@@ -106,7 +106,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       open={showStatsPopover}
       onOpenChange={setShowStatsPopover}
       trigger={
-        <div className={`fixed top-4 left-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
+        <div className={`fixed top-4 left-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
           <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
             {/* Header */}
             <div className="flex items-center justify-between">
