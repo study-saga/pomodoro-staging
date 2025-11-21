@@ -59,6 +59,13 @@ export interface Settings {
   todayPomodoros: number; // Pomodoros completed today (for elf perfect day event)
   comebackActive: boolean; // Human comeback buff active
   comebackPomodoros: number; // Remaining pomodoros with comeback buff
+
+  // Active buffs (from database)
+  activeBuffs: Record<string, {
+    value: number;
+    expiresAt: number | null;
+    metadata?: Record<string, any>;
+  }>;
 }
 
 export interface LevelData {

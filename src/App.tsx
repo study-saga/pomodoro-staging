@@ -17,6 +17,7 @@ import DiscordButton from './components/DiscordButton';
 import WhatsNewButton from './components/WhatsNewButton';
 import { useLevelNotifications } from './hooks/useLevelNotifications';
 import { useSettingsSync } from './hooks/useSettingsSync';
+import { useBuffActivation } from './hooks/useBuffActivation';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { getEnvironment } from './lib/environment';
@@ -32,6 +33,9 @@ function AppContent() {
 
   // Enable cross-device settings sync
   useSettingsSync();
+
+  // Auto-activate event buffs (slingshot for elves, etc.)
+  useBuffActivation();
 
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [showDailyGift, setShowDailyGift] = useState(false);

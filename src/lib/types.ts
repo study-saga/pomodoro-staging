@@ -39,6 +39,13 @@ export interface AppUser {
   pomodoro_boost_active: boolean
   pomodoro_boost_expires_at: number | null
 
+  // Active buffs (SERVER-CONTROLLED - read-only from client)
+  active_buffs: Record<string, {
+    value: number;
+    expires_at: number | null;
+    metadata?: Record<string, any>;
+  }>
+
   // Audio settings (CLIENT-CONTROLLED - read/write)
   sound_enabled: boolean
   volume: number

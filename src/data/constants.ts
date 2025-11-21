@@ -142,6 +142,7 @@ export const DEFAULT_SETTINGS = {
   todayPomodoros: 0,
   comebackActive: false,
   comebackPomodoros: 0,
+  activeBuffs: {},
 };
 
 export const USERNAME_EDIT_COOLDOWN = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds

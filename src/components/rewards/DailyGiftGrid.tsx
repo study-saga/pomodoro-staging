@@ -177,26 +177,26 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
               markDailyGiftClaimed();
               setXpAwarded(true);
 
-              // If boost was activated, sync to local state immediately
+              // If boost was activated, sync to local state AND new buff system
               if (result.boostActivated && result.boostExpiresAt) {
-                console.log(`[DailyGift] ✓ Pomodoro boost activated until ${new Date(result.boostExpiresAt)}`);
-                console.log('[DailyGift] Setting boost state:', {
-                  active: true,
-                  expiresAt: result.boostExpiresAt,
-                  expiresAtDate: new Date(result.boostExpiresAt),
-                  timeUntilExpiry: result.boostExpiresAt - Date.now()
-                });
+                console.log(`[DailyGift] ✓ Day 10 boost activated until ${new Date(result.boostExpiresAt)}`);
 
                 // Update local state immediately so buff icon shows
                 useSettingsStore.setState({
                   pomodoroBoostActive: true,
-                  pomodoroBoostExpiresAt: result.boostExpiresAt
+                  pomodoroBoostExpiresAt: result.boostExpiresAt,
+                  // Also update new buff system
+                  activeBuffs: {
+                    ...useSettingsStore.getState().activeBuffs,
+                    day10_boost: {
+                      value: 0.25,
+                      expiresAt: result.boostExpiresAt,
+                      metadata: { claimedAt: Date.now() }
+                    }
+                  }
                 });
 
-                console.log('[DailyGift] State set, current store:', {
-                  active: useSettingsStore.getState().pomodoroBoostActive,
-                  expiresAt: useSettingsStore.getState().pomodoroBoostExpiresAt
-                });
+                console.log('[DailyGift] Buff state updated');
               } else {
                 console.log('[DailyGift] Boost NOT activated:', {
                   boostActivated: result.boostActivated,

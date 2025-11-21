@@ -5,12 +5,17 @@
 
 export type RoleType = 'elf' | 'human';
 
+export type BuffCategory = 'permanent' | 'event' | 'proc';
+
 export interface RoleBuff {
   id: string;
   name: string;
   description: string;
   icon: string;
   type: 'passive' | 'active' | 'proc'; // passive = always on, active = user triggered, proc = chance-based
+  category: BuffCategory; // permanent = always active, event = time-limited, proc = chance-based
+  roles?: RoleType[]; // Which roles can use this buff (undefined = all roles)
+  xpBonus?: number; // XP multiplier (0.15 = +15%)
 }
 
 export interface RoleStats {
@@ -73,36 +78,7 @@ export const ELF_ROLE: RoleConfig = {
     secondary: '#9333ea',
     gradient: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
   },
-  buffs: [
-    {
-      id: 'elf_consistency',
-      name: 'Elven Focus',
-      description: '+0.5 XP per minute (consistent bonus)',
-      icon: '🎯',
-      type: 'passive',
-    },
-    {
-      id: 'elf_streak_master',
-      name: 'Streak Master',
-      description: '+0.1 XP per consecutive day (max +2 XP/min)',
-      icon: '📈',
-      type: 'passive',
-    },
-    {
-      id: 'elf_meditation',
-      name: 'Meditation',
-      description: 'Break time reduced by 20%',
-      icon: '🧘',
-      type: 'passive',
-    },
-    {
-      id: 'elf_slingshot',
-      name: 'Elven Slingshot',
-      description: 'Coming soon...',
-      icon: '🏹',
-      type: 'passive',
-    },
-  ],
+  buffs: [],
   stats: {
     baseXPMultiplier: 1.0,
     xpBonus: 0.5, // +0.5 XP/min
@@ -139,29 +115,7 @@ export const HUMAN_ROLE: RoleConfig = {
     secondary: '#2563eb',
     gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
   },
-  buffs: [
-    {
-      id: 'human_critical',
-      name: 'Critical Success',
-      description: '25% chance to double session XP',
-      icon: '🎯',
-      type: 'proc',
-    },
-    {
-      id: 'human_determination',
-      name: 'Determination',
-      description: 'Each failed crit increases next crit chance by 5% (stacks)',
-      icon: '💪',
-      type: 'passive',
-    },
-    {
-      id: 'human_comeback',
-      name: 'Comeback King',
-      description: 'Breaking a streak of 7+ days grants 2x XP for next 3 pomodoros',
-      icon: '👑',
-      type: 'proc',
-    },
-  ],
+  buffs: [],
   stats: {
     baseXPMultiplier: 1.0,
     xpBonus: 0, // No flat bonus
@@ -220,6 +174,7 @@ export function calculateRoleXP(
     consecutiveDays?: number;
     prestigeLevel?: number;
     consecutiveCrits?: number;
+    eventBuffMultiplier?: number; // From calculateBuffStack (e.g., 1.40 = +40%)
   }
 ): { xpGained: number; criticalSuccess: boolean; bonuses: string[] } {
   const role = getRoleConfig(roleType);
@@ -276,10 +231,20 @@ export function calculateRoleXP(
     }
   }
 
-  // Calculate total XP
+  // Calculate base XP
   totalXP = baseMinutes * xpPerMinute;
 
-  // Apply critical multiplier
+  // Apply event buff multiplier (ADDITIVE - stacks from active buffs)
+  if (additionalContext?.eventBuffMultiplier) {
+    totalXP *= additionalContext.eventBuffMultiplier;
+    const percentage = Math.round((additionalContext.eventBuffMultiplier - 1) * 100);
+    if (percentage > 0) {
+      bonuses.push(`+${percentage}% Event Buffs`);
+    }
+  }
+
+  // Apply critical multiplier (FINAL - multiplicative after all additive bonuses)
+  // Human crits are calculated LAST to avoid double-stacking with event buffs
   if (criticalSuccess && stats.criticalMultiplier) {
     totalXP *= stats.criticalMultiplier;
   }
@@ -289,6 +254,50 @@ export function calculateRoleXP(
     criticalSuccess,
     bonuses,
   };
+}
+
+// ============================================
+// EVENT BUFFS (TIME-LIMITED, ALL OR SPECIFIC ROLES)
+// ============================================
+
+export const EVENT_BUFFS: RoleBuff[] = [
+  {
+    id: 'day10_boost',
+    name: '+25% XP Boost',
+    description: '24-hour XP boost from day 10 gift',
+    icon: '🍅',
+    type: 'passive',
+    category: 'event',
+    xpBonus: 0.25, // +25%
+    // No roles restriction - applies to all
+  },
+  {
+    id: 'slingshot_nov22',
+    name: 'Elven Slingshot',
+    description: '+25% XP boost (Nov 22-23 event)',
+    icon: '🏹',
+    type: 'passive',
+    category: 'event',
+    roles: ['elf'], // Only elves
+    xpBonus: 0.25, // +25%
+  },
+];
+
+/**
+ * Get event buff by ID
+ */
+export function getEventBuff(buffId: string): RoleBuff | undefined {
+  return EVENT_BUFFS.find(b => b.id === buffId);
+}
+
+/**
+ * Check if an event buff applies to a role
+ */
+export function eventBuffAppliesToRole(buff: RoleBuff, roleType: RoleType): boolean {
+  // If no role restriction, applies to all
+  if (!buff.roles || buff.roles.length === 0) return true;
+  // Check if role is in the allowed list
+  return buff.roles.includes(roleType);
 }
 
 /**
