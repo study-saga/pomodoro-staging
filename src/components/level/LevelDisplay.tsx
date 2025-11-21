@@ -162,7 +162,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         </div>
 
         {/* Role Buff Icons - Ordered: Permanent first, then by expiration */}
-        <div className="flex gap-2">
+        {/* Buff icons show tooltips but don't open UserStatsPopover */}
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
           {/* 1. Role Buff (Permanent - Always first) */}
           <div className="relative group">
             <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}>
