@@ -9,7 +9,7 @@ import { LevelUpCelebration } from './components/level/LevelUpCelebration';
 // import { RoleSwitch } from './components/level/RoleSwitch';
 // import { RoleSwitchComparison } from './components/level/RoleSwitchComparison';
 import { SocialNodes } from './components/level/SocialNodes';
-import { SettingsModal } from './components/settings/SettingsModal';
+import { SettingsPopover } from './components/settings/SettingsPopover';
 import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCounter';
 import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
 import { LoginScreen } from './components/auth/LoginScreen';
@@ -175,7 +175,7 @@ function AppContent() {
       <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
         <WhatsNewButton />
         <DiscordButton />
-        <SettingsModal />
+        <SettingsPopover />
       </div>
 
       {/* Toaster for notifications */}
