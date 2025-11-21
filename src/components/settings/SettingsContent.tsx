@@ -516,7 +516,7 @@ export function SettingsContent(props: SettingsContentProps) {
           <div>
             <h3 className="text-white font-bold text-lg mb-2">Hero Progress</h3>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
               <div className="bg-white/5 rounded-lg p-3 relative overflow-hidden">
                 <div className="flex items-start justify-between mb-1">
                   <p className="text-gray-400 text-xs">CURRENT LEVEL</p>
