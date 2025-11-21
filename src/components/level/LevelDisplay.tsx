@@ -106,8 +106,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       open={showStatsPopover}
       onOpenChange={setShowStatsPopover}
       trigger={
-        <div className={`fixed top-4 left-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
-          <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
+        <div className={`fixed top-4 left-4 z-50 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
+          <div className={isMobile ? 'space-y-2.5' : 'space-y-3'}>
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -127,13 +127,13 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
         {/* XP Progress Bar */}
         <div>
-          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-0.5' : 'text-xs mb-1'}`}>
+          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-1' : 'text-xs mb-1'}`}>
             <span>{roleEmoji} Level {level}</span>
             <span>
               {xp} / {xpNeeded} XP
             </span>
           </div>
-          <div className={`w-full bg-gray-700/50 rounded-full overflow-hidden ${isMobile ? 'h-1.5' : 'h-2'}`}>
+          <div className={`w-full bg-gray-700/50 rounded-full overflow-hidden ${isMobile ? 'h-2' : 'h-2'}`}>
             <div
               className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
@@ -145,7 +145,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         <div className="flex gap-2">
           {/* 1. Role Buff (Permanent - Always first) */}
           <div className="relative group">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden">
+            <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}>
               <img
                 src={levelPath === 'elf' ? buffElf : buffHuman}
                 alt={`${levelPath} buff`}
@@ -170,7 +170,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           {/* 2. Slingshot Buff (Permanent when active - Elf only, Nov 22+) */}
           {levelPath === 'elf' && slingshotActive && (
             <div className="relative group">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500">
+              <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500`}>
                 <img
                   src={buffElfSlingshot}
                   alt="Elven Slingshot"
@@ -196,7 +196,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           {/* 3. 24h Boost Buff (Time-limited - Shows remaining time) */}
           {pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (
             <div className="relative group">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 animate-pulse">
+              <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 animate-pulse`}>
                 <img
                   src={buffBoost}
                   alt="XP Boost"
@@ -222,7 +222,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           {/* 4. Inactive Slingshot (Show at end when inactive) */}
           {levelPath === 'elf' && !slingshotActive && (
             <div className="relative group">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30">
+              <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30`}>
                 <img
                   src={buffElfSlingshot}
                   alt="Elven Slingshot"
