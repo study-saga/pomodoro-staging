@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
-import { X, Target, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
+import { X, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { ROLE_EMOJI_ELF, ROLE_EMOJI_HUMAN } from '../../data/levels';
 import {
@@ -25,10 +25,8 @@ export const UserStatsPopover = memo(function UserStatsPopover({
   onOpenChange,
 }: UserStatsPopoverProps) {
   const {
-    level,
     levelPath,
     setLevelPath,
-    prestigeLevel,
     totalPomodoros,
     totalStudyMinutes,
     totalUniqueDays,
