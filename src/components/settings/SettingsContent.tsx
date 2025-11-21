@@ -511,7 +511,7 @@ export function SettingsContent(props: SettingsContentProps) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
           transition={{ duration: 0.2 }}
-          className="space-y-8 max-w-sm mx-auto"
+          className={`space-y-8 mx-auto ${isMobile ? 'max-w-sm' : 'max-w-md'}`}
         >
           <div>
             <h3 className="text-white font-bold text-lg mb-2">Hero Progress</h3>
@@ -591,7 +591,7 @@ export function SettingsContent(props: SettingsContentProps) {
                 disabled={usernameLoading}
                 className="px-6 py-2 bg-white text-black font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {usernameLoading ? 'Saving...' : 'Save Username'}
+                {usernameLoading ? 'Saving...' : 'Update'}
               </button>
             </div>
             {usernameError && (
