@@ -4,6 +4,7 @@ import type { Settings } from '../types';
 import { DEFAULT_SETTINGS, USERNAME_EDIT_COOLDOWN, USERNAME_EDIT_COST, getDefaultBackground, BACKGROUNDS } from '../data/constants';
 import { MAX_LEVEL, XP_PER_MINUTE, getXPNeeded } from '../data/levels';
 import { getMilestoneForDay, type MilestoneReward } from '../data/milestones';
+import { calculateRoleXP, getRoleStats } from '../data/roleSystem';
 
 // Helper to detect device type
 const getIsMobile = () => {
@@ -127,7 +128,7 @@ export const useSettingsStore = create<SettingsStore>()(
       addXP: (minutes) => {
         const state = get();
 
-        console.log('[XP] addXP called with minutes:', minutes, 'Current level:', state.level, 'Current XP:', state.xp);
+        console.log('[XP] addXP called with minutes:', minutes, 'Current level:', state.level, 'Current XP:', state.xp, 'Role:', state.levelPath);
 
         // Check if pomodoro boost is active and not expired
         let boostMultiplier = 1;
@@ -145,7 +146,21 @@ export const useSettingsStore = create<SettingsStore>()(
           }
         }
 
-        const baseXP = minutes * XP_PER_MINUTE;
+        // Role-based XP calculation using role system
+        const roleResult = calculateRoleXP(state.levelPath, minutes, {
+          consecutiveDays: state.consecutiveLoginDays,
+          prestigeLevel: state.prestigeLevel,
+          consecutiveCrits: state.consecutiveCriticals,
+        });
+
+        let baseXP = roleResult.xpGained;
+        const criticalSuccess = roleResult.criticalSuccess;
+
+        // Log role bonuses
+        if (roleResult.bonuses.length > 0) {
+          console.log('[XP] Role buffs applied:', roleResult.bonuses.join(', '));
+        }
+
         const xpGained = Math.floor(baseXP * boostMultiplier);
         let newXP = state.xp + xpGained;
         let newLevel = state.level;
@@ -184,6 +199,38 @@ export const useSettingsStore = create<SettingsStore>()(
           }
         }
 
+        // Update role-specific stats
+        let newConsecutiveCrits = state.consecutiveCriticals;
+        let newTodayPomodoros = state.todayPomodoros;
+        let newComebackActive = state.comebackActive;
+        let newComebackPomodoros = state.comebackPomodoros;
+
+        // Reset today counter if new day
+        if (state.lastPomodoroDate !== today) {
+          newTodayPomodoros = 0;
+        }
+        newTodayPomodoros++;
+
+        // Update consecutive criticals for humans
+        if (state.levelPath === 'human') {
+          if (criticalSuccess) {
+            newConsecutiveCrits = Math.max(0, newConsecutiveCrits) + 1;
+            console.log('[XP] Consecutive crits:', newConsecutiveCrits);
+          } else {
+            newConsecutiveCrits = Math.min(0, newConsecutiveCrits) - 1;
+            console.log('[XP] Consecutive fails:', Math.abs(newConsecutiveCrits));
+          }
+
+          // Comeback buff: use and decrement
+          if (newComebackActive && newComebackPomodoros > 0) {
+            newComebackPomodoros--;
+            if (newComebackPomodoros === 0) {
+              newComebackActive = false;
+              console.log('[XP] Comeback buff expired');
+            }
+          }
+        }
+
         // Update local store first (optimistic update for instant UI feedback)
         console.log('[XP] Updating state - Old level:', state.level, '→ New level:', newLevel, '| Old XP:', state.xp, '→ New XP:', newXP);
         set({
@@ -194,8 +241,12 @@ export const useSettingsStore = create<SettingsStore>()(
           totalStudyMinutes: state.totalStudyMinutes + minutes,
           totalUniqueDays: newTotalUniqueDays,
           lastPomodoroDate: today,
-          pomodoroBoostActive: boostStillActive, // Update boost status
+          pomodoroBoostActive: boostStillActive,
           pomodoroBoostExpiresAt: boostStillActive ? state.pomodoroBoostExpiresAt : null,
+          consecutiveCriticals: newConsecutiveCrits,
+          todayPomodoros: newTodayPomodoros,
+          comebackActive: newComebackActive,
+          comebackPomodoros: newComebackPomodoros,
         });
         console.log('[XP] State updated successfully');
 
@@ -230,6 +281,7 @@ export const useSettingsStore = create<SettingsStore>()(
             await saveCompletedPomodoro(appUser.id, appUser.discord_id, {
               duration_minutes: minutes,
               xp_earned: xpGained,
+              critical_success: criticalSuccess,
             });
 
             console.log('[addXP] ✓ XP synced to database');

@@ -53,6 +53,12 @@ export interface Settings {
   // Active bonuses
   pomodoroBoostActive: boolean; // Whether ANY boost is active
   pomodoroBoostExpiresAt: number | null; // Timestamp when boost expires
+
+  // Role-specific stats
+  consecutiveCriticals: number; // Track consecutive crits for humans (negative = consecutive fails)
+  todayPomodoros: number; // Pomodoros completed today (for elf perfect day event)
+  comebackActive: boolean; // Human comeback buff active
+  comebackPomodoros: number; // Remaining pomodoros with comeback buff
 }
 
 export interface LevelData {
