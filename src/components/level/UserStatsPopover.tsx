@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
@@ -42,6 +42,8 @@ export const UserStatsPopover = memo(function UserStatsPopover({
   } = useSettingsStore();
 
   const [showSinceTooltip, setShowSinceTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const sinceCardRef = useRef<HTMLDivElement>(null);
   const { isMobile } = useDeviceType();
 
   const avgSessionLength = totalPomodoros > 0
@@ -75,6 +77,17 @@ export const UserStatsPopover = memo(function UserStatsPopover({
 
   const badge = getBadgeForLevel(level, prestigeLevel);
   const initials = username.slice(0, 2).toUpperCase();
+
+  // Calculate tooltip position when shown
+  useEffect(() => {
+    if (showSinceTooltip && sinceCardRef.current) {
+      const rect = sinceCardRef.current.getBoundingClientRect();
+      setTooltipPosition({
+        top: rect.bottom + 8,
+        left: rect.left + rect.width / 2,
+      });
+    }
+  }, [showSinceTooltip]);
 
   // Stats grid content (shared between mobile and desktop)
   const statsContent = (
@@ -123,6 +136,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
       />
       {firstLoginDate && (
         <div
+          ref={sinceCardRef}
           className="relative bg-white/5 rounded-lg p-2 border border-white/10 cursor-help"
           onMouseEnter={() => setShowSinceTooltip(true)}
           onMouseLeave={() => setShowSinceTooltip(false)}
@@ -132,14 +146,6 @@ export const UserStatsPopover = memo(function UserStatsPopover({
             <span className="text-xs text-gray-400">Since</span>
           </div>
           <p className="text-base font-bold text-white">{formattedFirstLoginDate}</p>
-          {showSinceTooltip && (
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 z-50 shadow-xl whitespace-nowrap">
-              <p className="text-xs text-gray-200 text-center">
-                I was there, Gandalf.<br />
-                I was there {daysSinceFirstLogin} {daysSinceFirstLogin === 1 ? 'day' : 'days'} ago!
-              </p>
-            </div>
-          )}
         </div>
       )}
       {pomodoroBoostActive && boostTimeRemaining && (
@@ -267,6 +273,22 @@ export const UserStatsPopover = memo(function UserStatsPopover({
             )}
           </AnimatePresence>
         </>
+      )}
+
+      {/* Gandalf Easter Egg Tooltip - Rendered outside ScrollArea */}
+      {showSinceTooltip && firstLoginDate && (
+        <div
+          className="fixed transform -translate-x-1/2 px-3 py-2 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 z-[100] shadow-xl whitespace-nowrap pointer-events-none"
+          style={{
+            top: `${tooltipPosition.top}px`,
+            left: `${tooltipPosition.left}px`
+          }}
+        >
+          <p className="text-xs text-gray-200 text-center">
+            I was there, Gandalf.<br />
+            I was there {daysSinceFirstLogin} {daysSinceFirstLogin === 1 ? 'day' : 'days'} ago!
+          </p>
+        </div>
       )}
     </>
   );
