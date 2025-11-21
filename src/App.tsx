@@ -8,13 +8,12 @@ import { LevelDisplay } from './components/level/LevelDisplay';
 import { LevelUpCelebration } from './components/level/LevelUpCelebration';
 // import { RoleSwitch } from './components/level/RoleSwitch';
 // import { RoleSwitchComparison } from './components/level/RoleSwitchComparison';
-import { SocialNodes } from './components/level/SocialNodes';
-import { SettingsModal } from './components/settings/SettingsModal';
+
+import { SettingsPopover } from './components/settings/SettingsPopover';
 import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCounter';
 import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
 import { LoginScreen } from './components/auth/LoginScreen';
 import DiscordButton from './components/DiscordButton';
-import WhatsNewButton from './components/WhatsNewButton';
 import { useLevelNotifications } from './hooks/useLevelNotifications';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useBuffActivation } from './hooks/useBuffActivation';
@@ -142,8 +141,7 @@ function AppContent() {
       {/* Role Switch Comparison (Below Level Display) */}
       {/* <RoleSwitchComparison /> */}
 
-      {/* Social Nodes (Below Role Switch) */}
-      <SocialNodes />
+
 
       {/* Online Presence Counter (Top Right, below settings button) */}
       <div className="fixed top-20 right-4 z-10">
@@ -175,11 +173,10 @@ function AppContent() {
         currentDay={consecutiveLoginDays}
       />
 
-      {/* Top Right Buttons - What's New, Discord & Settings */}
+      {/* Top Right Buttons - Discord & Settings */}
       <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
-        <WhatsNewButton />
         <DiscordButton />
-        <SettingsModal />
+        <SettingsPopover />
       </div>
 
       {/* Toaster for notifications */}

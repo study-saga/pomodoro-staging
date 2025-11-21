@@ -4,7 +4,6 @@ import { useDeviceType } from '../../hooks/useDeviceType';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   getLevelName,
-  getBadgeForLevel,
   ROLE_EMOJI_ELF,
   ROLE_EMOJI_HUMAN,
   getXPNeeded,
@@ -44,9 +43,12 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   const xpNeeded = getXPNeeded(level);
   const levelName = getLevelName(level, levelPath);
-  const badge = getBadgeForLevel(level, prestigeLevel);
   const roleEmoji = levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN;
   const progress = (xp / xpNeeded) * 100;
+
+  // Extract emoji and text from levelName
+  const levelBadge = levelName.split(' ')[0]; // Get emoji (first part before space)
+  const levelTitle = levelName.split(' ').slice(1).join(' '); // Get text (everything after first space)
 
   /**
    * Slingshot Event Buff (Elf only, Nov 22-23)
@@ -124,17 +126,17 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       open={showStatsPopover}
       onOpenChange={setShowStatsPopover}
       trigger={
-        <div className={`fixed top-4 left-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors ${isMobile ? 'p-2 min-w-[180px] max-w-[220px]' : 'p-4 min-w-[280px]'}`}>
-          <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
+        <div className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
+          <div className={isMobile ? 'space-y-2.5' : 'space-y-3'}>
             {/* Header */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
-                <div>
-                  <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{levelBadge}</div>
+                <div className="min-w-0 overflow-hidden flex-1">
+                  <h2 className={`font-bold text-white truncate ${isMobile ? 'text-base' : 'text-lg'}`}>
                     {username}
                   </h2>
-                  <p className="text-xs text-gray-300">{levelName}</p>
+                  <p className="text-xs text-gray-300">{levelTitle}</p>
                 </div>
               </div>
               <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
@@ -145,13 +147,13 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
         {/* XP Progress Bar */}
         <div>
-          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-0.5' : 'text-xs mb-1'}`}>
+          <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-1' : 'text-xs mb-1'}`}>
             <span>{roleEmoji} Level {level}</span>
             <span>
               {xp} / {xpNeeded} XP
             </span>
           </div>
-          <div className={`w-full bg-gray-700/50 rounded-full overflow-hidden ${isMobile ? 'h-1.5' : 'h-2'}`}>
+          <div className={`w-full bg-gray-700/50 rounded-full overflow-hidden ${isMobile ? 'h-2' : 'h-2'}`}>
             <div
               className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
@@ -163,7 +165,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         <div className="flex gap-2">
           {/* 1. Role Buff (Permanent - Always first) */}
           <div className="relative group">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden">
+            <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}>
               <img
                 src={levelPath === 'elf' ? buffElf : buffHuman}
                 alt={`${levelPath} buff`}
@@ -188,6 +190,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           {/* 2. Slingshot Buff (Elf only, Nov 22-23 event, +25% XP) - Hide after event ends */}
           {showSlingshot && (
             <div className="relative group">
+              <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500`}>
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center cursor-help overflow-hidden ${
                 slingshotActive
                   ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500'
@@ -228,7 +231,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           {/* 3. Day 10 Boost (24h, +25% XP, all roles) */}
           {pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (
             <div className="relative group">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 animate-pulse">
+              <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 animate-pulse`}>
                 <img
                   src={buffBoost}
                   alt="XP Boost"
@@ -245,6 +248,32 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                   </p>
                   <p className="text-[10px] text-gray-400">
                     Expires in {boostTimeRemaining || getBoostTimeRemaining()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 4. Inactive Slingshot (Show at end when inactive) */}
+          {levelPath === 'elf' && !slingshotActive && (
+            <div className="relative group">
+              <div className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30`}>
+                <img
+                  src={buffElfSlingshot}
+                  alt="Elven Slingshot"
+                  className="w-full h-full object-cover"
+                  style={{ filter: 'grayscale(100%) opacity(50%)' }}
+                />
+              </div>
+
+              {/* Hover Tooltip */}
+              <div className="absolute left-0 bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-gray-500/30">
+                  <p className="text-xs font-semibold mb-0.5 text-gray-400">
+                    Elven Slingshot 🏹
+                  </p>
+                  <p className="text-[10px] text-gray-400">
+                    Activates on Nov 22-23, 2025
                   </p>
                 </div>
               </div>

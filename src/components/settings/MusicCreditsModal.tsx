@@ -34,7 +34,7 @@ export function MusicCreditsModal({ tracks, onClose }: MusicCreditsModalProps) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
