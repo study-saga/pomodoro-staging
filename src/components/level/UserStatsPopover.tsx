@@ -177,7 +177,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
                   <X className="w-4 h-4" />
                 </button>
                 <ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
-                  <div className="p-4">
+                  <div className="p-4 pt-12">
                     {statsContent}
                   </div>
                 </ScrollArea>
@@ -269,7 +269,7 @@ function StatCard({ icon, label, value, color }: StatCardProps) {
         {icon}
         <span className="text-xs text-gray-400">{label}</span>
       </div>
-      <p className="text-base font-bold text-white">{value}</p>
+      <p className="text-base font-bold text-white text-left">{value}</p>
     </div>
   );
 }

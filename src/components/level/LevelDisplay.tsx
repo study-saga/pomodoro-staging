@@ -73,16 +73,18 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
-                <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>
-                  {username}
-                </h2>
+                <div>
+                  <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>
+                    {username}
+                  </h2>
+                  <p className="text-xs text-gray-300">{levelName}</p>
+                </div>
               </div>
               <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
                 {appUser?.avatar && <AvatarImage src={appUser.avatar} />}
                 <AvatarFallback>{username.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
             </div>
-            <p className={`text-xs text-gray-300 ${isMobile ? 'ml-10' : 'ml-12'}`}>{levelName}</p>
 
         {/* XP Progress Bar */}
         <div>
