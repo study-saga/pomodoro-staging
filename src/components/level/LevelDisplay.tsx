@@ -12,6 +12,8 @@ import {
 import { Gift } from 'lucide-react';
 import buffElf from '../../assets/buff-elf.svg';
 import buffHuman from '../../assets/buff-human.svg';
+import buffElfSlingshot from '../../assets/buff-elf-slingshot.svg';
+import buffBoost from '../../assets/buff-boost.svg';
 import { UserStatsPopover } from './UserStatsPopover';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 
@@ -28,6 +30,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     levelPath,
     levelSystemEnabled,
     addXP,
+    pomodoroBoostActive,
+    pomodoroBoostExpiresAt,
   } = useSettingsStore();
 
   const [selectedDay, setSelectedDay] = useState(1);
@@ -43,6 +47,28 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const badge = getBadgeForLevel(level, prestigeLevel);
   const roleEmoji = levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN;
   const progress = (xp / xpNeeded) * 100;
+
+  // Check if slingshot buff is active (Nov 22-23 onwards for elves)
+  const isSlingshotActive = () => {
+    if (levelPath !== 'elf') return false;
+    const today = new Date();
+    const activationDate = new Date('2025-11-22');
+    return today >= activationDate;
+  };
+
+  const slingshotActive = isSlingshotActive();
+
+  // Calculate boost time remaining
+  const getBoostTimeRemaining = () => {
+    if (!pomodoroBoostActive || !pomodoroBoostExpiresAt) return '';
+    const timeLeft = pomodoroBoostExpiresAt - Date.now();
+    if (timeLeft <= 0) return '';
+    const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+    const minsLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hoursLeft}h ${minsLeft}m`;
+  };
+
+  const boostTimeRemaining = getBoostTimeRemaining();
 
   // Simulate selected day (for testing)
   const simulateNextDay = () => {
@@ -73,16 +99,18 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{badge}</div>
-                <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>
-                  {username}
-                </h2>
+                <div>
+                  <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>
+                    {username}
+                  </h2>
+                  <p className="text-xs text-gray-300">{levelName}</p>
+                </div>
               </div>
               <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
                 {appUser?.avatar && <AvatarImage src={appUser.avatar} />}
                 <AvatarFallback>{username.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
             </div>
-            <p className={`text-xs text-gray-300 ${isMobile ? 'ml-10' : 'ml-12'}`}>{levelName}</p>
 
         {/* XP Progress Bar */}
         <div>
@@ -100,28 +128,109 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           </div>
         </div>
 
-        {/* Role Buff Icon - Small Square */}
-        <div className="relative group">
-          <div className="w-8 h-8 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden">
-            <img
-              src={levelPath === 'elf' ? buffElf : buffHuman}
-              alt={`${levelPath} buff`}
-              className="w-full h-full object-cover"
-              style={{ filter: 'drop-shadow(0 0 6px rgba(168, 85, 247, 0.5))' }}
-            />
-          </div>
+        {/* Role Buff Icons - Ordered: Permanent first, then by expiration */}
+        <div className="flex gap-2">
+          {/* 1. Role Buff (Permanent - Always first) */}
+          <div className="relative group">
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden">
+              <img
+                src={levelPath === 'elf' ? buffElf : buffHuman}
+                alt={`${levelPath} buff`}
+                className="w-full h-full object-cover"
+                style={{ filter: 'drop-shadow(0 0 6px rgba(168, 85, 247, 0.5))' }}
+              />
+            </div>
 
-          {/* Hover Tooltip */}
-          <div className="absolute left-0 bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-            <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-3 py-2 shadow-lg min-w-[180px]">
-              <p className="text-xs font-semibold text-purple-300 mb-0.5">
-                {levelPath === 'elf' ? 'Elf Consistency' : 'Human Risk/Reward'}
-              </p>
-              <p className="text-[10px] text-gray-400">
-                {levelPath === 'elf' ? '+0.5 XP per minute' : '25% chance to double XP'}
-              </p>
+            {/* Hover Tooltip */}
+            <div className="absolute left-0 bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+              <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-3 py-2 shadow-lg min-w-[180px]">
+                <p className="text-xs font-semibold text-purple-300 mb-0.5">
+                  {levelPath === 'elf' ? 'Elf Consistency' : 'Human Risk/Reward'}
+                </p>
+                <p className="text-[10px] text-gray-400">
+                  {levelPath === 'elf' ? '+0.5 XP per minute' : '25% chance to double XP'}
+                </p>
+              </div>
             </div>
           </div>
+
+          {/* 2. Slingshot Buff (Permanent when active - Elf only, Nov 22+) */}
+          {levelPath === 'elf' && slingshotActive && (
+            <div className="relative group">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500">
+                <img
+                  src={buffElfSlingshot}
+                  alt="Elven Slingshot"
+                  className="w-full h-full object-cover"
+                  style={{ filter: 'drop-shadow(0 0 6px rgba(34, 197, 94, 0.5))' }}
+                />
+              </div>
+
+              {/* Hover Tooltip */}
+              <div className="absolute left-0 bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-green-500/30">
+                  <p className="text-xs font-semibold mb-0.5 text-green-300">
+                    Elven Slingshot 🏹
+                  </p>
+                  <p className="text-[10px] text-gray-400">
+                    Buff is now active!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. 24h Boost Buff (Time-limited - Shows remaining time) */}
+          {pomodoroBoostActive && boostTimeRemaining && (
+            <div className="relative group">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 animate-pulse">
+                <img
+                  src={buffBoost}
+                  alt="XP Boost"
+                  className="w-full h-full object-cover"
+                  style={{ filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.5))' }}
+                />
+              </div>
+
+              {/* Hover Tooltip */}
+              <div className="absolute left-0 bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-yellow-500/30">
+                  <p className="text-xs font-semibold mb-0.5 text-yellow-300">
+                    🍅 +25% XP Boost
+                  </p>
+                  <p className="text-[10px] text-gray-400">
+                    Expires in {boostTimeRemaining}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 4. Inactive Slingshot (Show at end when inactive) */}
+          {levelPath === 'elf' && !slingshotActive && (
+            <div className="relative group">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30">
+                <img
+                  src={buffElfSlingshot}
+                  alt="Elven Slingshot"
+                  className="w-full h-full object-cover"
+                  style={{ filter: 'grayscale(100%) opacity(50%)' }}
+                />
+              </div>
+
+              {/* Hover Tooltip */}
+              <div className="absolute left-0 bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-gray-500/30">
+                  <p className="text-xs font-semibold mb-0.5 text-gray-400">
+                    Elven Slingshot 🏹
+                  </p>
+                  <p className="text-[10px] text-gray-400">
+                    Activates on Nov 22-23, 2025
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Prestige Stars */}

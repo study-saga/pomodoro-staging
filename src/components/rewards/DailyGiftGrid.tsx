@@ -177,10 +177,14 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
               markDailyGiftClaimed();
               setXpAwarded(true);
 
-              // If boost was activated, store the expiration time
+              // If boost was activated, sync to local state immediately
               if (result.boostActivated && result.boostExpiresAt) {
                 console.log(`[DailyGift] ✓ Pomodoro boost activated until ${new Date(result.boostExpiresAt)}`);
-                // Note: The server already updated the database, local state will sync on next refresh
+                // Update local state immediately so buff icon shows
+                useSettingsStore.setState({
+                  pomodoroBoostActive: true,
+                  pomodoroBoostExpiresAt: result.boostExpiresAt
+                });
               }
             } else if (result.alreadyClaimed) {
               console.log('[DailyGift] Gift already claimed today (verified by server)');

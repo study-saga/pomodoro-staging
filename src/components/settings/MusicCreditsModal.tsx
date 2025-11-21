@@ -56,7 +56,7 @@ export function MusicCreditsModal({ tracks, onClose }: MusicCreditsModalProps) {
           }`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-white/20 shrink-0">
+          <div className="flex items-center justify-between p-6 border-b border-white/20 shrink-0 gap-4">
             <div>
               <h2 className={`font-bold text-white ${isMobile ? 'text-xl' : 'text-2xl'}`}>
                 Music Credits
