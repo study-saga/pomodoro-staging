@@ -113,7 +113,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               <div className="flex items-center gap-2">
                 <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{levelBadge}</div>
                 <div>
-                  <h2 className={`font-bold text-white ${isMobile ? 'text-base' : 'text-lg'}`}>
+                  <h2 className={`font-bold text-white truncate ${isMobile ? 'text-base' : 'text-lg'}`}>
                     {username}
                   </h2>
                   <p className="text-xs text-gray-300">{levelTitle}</p>
