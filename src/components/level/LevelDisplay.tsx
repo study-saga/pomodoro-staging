@@ -378,6 +378,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           <div
             ref={roleBuffRef}
             className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}
+            style={{ transform: 'translateZ(0)' }}
             onClick={(e) => handleBuffClick(e, 'role-buff', roleBuffRef)}
             onMouseEnter={() => {
               if (!isMobile) {
@@ -400,6 +401,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             <div
               ref={slingshotActiveRef}
               className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500`}
+              style={{ transform: 'translateZ(0)' }}
               onClick={(e) => handleBuffClick(e, 'slingshot-active', slingshotActiveRef)}
               onMouseEnter={() => {
                 if (!isMobile) {
@@ -423,6 +425,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             <div
               ref={boostRef}
               className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 animate-pulse`}
+              style={{ transform: 'translateZ(0)' }}
               onClick={(e) => handleBuffClick(e, 'boost', boostRef)}
               onMouseEnter={() => {
                 if (!isMobile) {
@@ -446,6 +449,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             <div
               ref={slingshotInactiveRef}
               className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30`}
+              style={{ transform: 'translateZ(0)' }}
               onClick={(e) => handleBuffClick(e, 'slingshot-inactive', slingshotInactiveRef)}
               onMouseEnter={() => {
                 if (!isMobile) {
@@ -547,11 +551,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           }}
         >
           <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-green-500/30">
-            <p className="text-xs font-semibold mb-0.5 text-green-300">
-              Elven Slingshot 🏹
-            </p>
-            <p className="text-[10px] text-gray-400">
-              Buff is now active!
+            <p className="text-xs font-semibold text-green-300">
+              +25% XP Event
             </p>
           </div>
         </div>,
@@ -589,11 +590,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           }}
         >
           <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-gray-500/30">
-            <p className="text-xs font-semibold mb-0.5 text-gray-400">
-              Elven Slingshot 🏹
-            </p>
-            <p className="text-[10px] text-gray-400">
-              Activates on Nov 22-23, 2025
+            <p className="text-xs font-semibold text-gray-400">
+              +25% XP Event
             </p>
           </div>
         </div>,
