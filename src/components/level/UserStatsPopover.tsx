@@ -169,11 +169,14 @@ export const UserStatsPopover = memo(function UserStatsPopover({
           <PopoverTrigger asChild>
             {trigger}
           </PopoverTrigger>
+
           <PopoverContent
             className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[360px] p-0"
             align="start"
-            side="bottom"
-            sideOffset={8}
+            side="right"
+            sideOffset={28}
+            alignOffset={-16}
+            collisionPadding={12}
           >
             <PopoverBody className="p-0">
               <div className="relative">
