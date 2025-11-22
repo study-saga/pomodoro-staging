@@ -378,9 +378,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           <div
             ref={roleBuffRef}
             className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}
-            style={{
-              WebkitMaskImage: '-webkit-radial-gradient(white, black)'
-            } as React.CSSProperties}
             onClick={(e) => handleBuffClick(e, 'role-buff', roleBuffRef)}
             onMouseEnter={() => {
               if (!isMobile) {
@@ -393,7 +390,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             <img
               src={levelPath === 'elf' ? buffElf : buffHuman}
               alt={`${levelPath} buff`}
-              className="w-full h-full object-cover"
+              className="w-full h-full rounded-lg"
               style={{ filter: 'drop-shadow(0 0 6px rgba(168, 85, 247, 0.5))' }}
             />
           </div>
@@ -403,9 +400,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             <div
               ref={slingshotActiveRef}
               className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500`}
-              style={{
-                WebkitMaskImage: '-webkit-radial-gradient(white, black)'
-              } as React.CSSProperties}
               onClick={(e) => handleBuffClick(e, 'slingshot-active', slingshotActiveRef)}
               onMouseEnter={() => {
                 if (!isMobile) {
@@ -418,7 +412,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               <img
                 src={buffElfSlingshot}
                 alt="Elven Slingshot"
-                className="w-full h-full object-cover"
+                className="w-full h-full rounded-lg"
                 style={{ filter: 'drop-shadow(0 0 6px rgba(34, 197, 94, 0.5))' }}
               />
             </div>
@@ -428,10 +422,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           {pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (
             <div
               ref={boostRef}
-              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 animate-pulse`}
-              style={{
-                WebkitMaskImage: '-webkit-radial-gradient(white, black)'
-              } as React.CSSProperties}
+              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500`}
               onClick={(e) => handleBuffClick(e, 'boost', boostRef)}
               onMouseEnter={() => {
                 if (!isMobile) {
@@ -444,7 +435,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               <img
                 src={buffBoost}
                 alt="XP Boost"
-                className="w-full h-full object-cover"
+                className="w-full h-full rounded-lg"
                 style={{ filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.5))' }}
               />
             </div>
@@ -455,9 +446,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             <div
               ref={slingshotInactiveRef}
               className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30`}
-              style={{
-                WebkitMaskImage: '-webkit-radial-gradient(white, black)'
-              } as React.CSSProperties}
               onClick={(e) => handleBuffClick(e, 'slingshot-inactive', slingshotInactiveRef)}
               onMouseEnter={() => {
                 if (!isMobile) {
@@ -470,7 +458,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               <img
                 src={buffElfSlingshot}
                 alt="Elven Slingshot"
-                className="w-full h-full object-cover"
+                className="w-full h-full rounded-lg"
                 style={{ filter: 'grayscale(100%) opacity(50%)' }}
               />
             </div>
