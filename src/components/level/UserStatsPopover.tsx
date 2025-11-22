@@ -173,7 +173,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
           <PopoverContent
             className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[360px] p-0"
             align="start"
-            side="left"
+            side="right"
             sideOffset={12}
             alignOffset={0}
             collisionPadding={12}
