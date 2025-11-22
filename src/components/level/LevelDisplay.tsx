@@ -169,7 +169,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       setTooltipPositions(prev => ({
         ...prev,
         [buffId]: {
-          top: rect.top - 8,
+          top: rect.bottom + 8,
           left: rect.left + rect.width / 2,
         }
       }));
@@ -467,14 +467,14 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       {/* Buff Tooltips - Portaled outside container */}
       {tooltipPositions['role-buff'] && (isMobile ? activeBuffTooltip === 'role-buff' : hoveredBuff === 'role-buff') && createPortal(
         <div
-          className="fixed transform -translate-x-1/2 -translate-y-full pointer-events-none z-[9999] transition-opacity duration-200"
+          className="fixed transform -translate-x-1/2 pointer-events-none z-[9999] transition-opacity duration-200"
           style={{
             top: `${tooltipPositions['role-buff'].top}px`,
             left: `${tooltipPositions['role-buff'].left}px`,
             opacity: isMobile ? (activeBuffTooltip === 'role-buff' ? 1 : 0) : undefined,
           }}
         >
-          <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-3 py-2 shadow-lg min-w-[180px] mb-2">
+          <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-3 py-2 shadow-lg min-w-[180px]">
             <p className="text-xs font-semibold text-purple-300 mb-0.5">
               {levelPath === 'elf' ? 'Elf Consistency' : 'Human Risk/Reward'}
             </p>
@@ -488,14 +488,14 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
       {tooltipPositions['slingshot-active'] && levelPath === 'elf' && slingshotActive && (isMobile ? activeBuffTooltip === 'slingshot-active' : hoveredBuff === 'slingshot-active') && createPortal(
         <div
-          className="fixed transform -translate-x-1/2 -translate-y-full pointer-events-none z-[9999] transition-opacity duration-200"
+          className="fixed transform -translate-x-1/2 pointer-events-none z-[9999] transition-opacity duration-200"
           style={{
             top: `${tooltipPositions['slingshot-active'].top}px`,
             left: `${tooltipPositions['slingshot-active'].left}px`,
             opacity: isMobile ? (activeBuffTooltip === 'slingshot-active' ? 1 : 0) : undefined,
           }}
         >
-          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-green-500/30 mb-2">
+          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-green-500/30">
             <p className="text-xs font-semibold mb-0.5 text-green-300">
               Elven Slingshot 🏹
             </p>
@@ -509,14 +509,14 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
       {tooltipPositions['boost'] && pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (isMobile ? activeBuffTooltip === 'boost' : hoveredBuff === 'boost') && createPortal(
         <div
-          className="fixed transform -translate-x-1/2 -translate-y-full pointer-events-none z-[9999] transition-opacity duration-200"
+          className="fixed transform -translate-x-1/2 pointer-events-none z-[9999] transition-opacity duration-200"
           style={{
             top: `${tooltipPositions['boost'].top}px`,
             left: `${tooltipPositions['boost'].left}px`,
             opacity: isMobile ? (activeBuffTooltip === 'boost' ? 1 : 0) : undefined,
           }}
         >
-          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-yellow-500/30 mb-2">
+          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-yellow-500/30">
             <p className="text-xs font-semibold mb-0.5 text-yellow-300">
               🍅 +25% XP Boost
             </p>
@@ -530,14 +530,14 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
       {tooltipPositions['slingshot-inactive'] && levelPath === 'elf' && !slingshotActive && (isMobile ? activeBuffTooltip === 'slingshot-inactive' : hoveredBuff === 'slingshot-inactive') && createPortal(
         <div
-          className="fixed transform -translate-x-1/2 -translate-y-full pointer-events-none z-[9999] transition-opacity duration-200"
+          className="fixed transform -translate-x-1/2 pointer-events-none z-[9999] transition-opacity duration-200"
           style={{
             top: `${tooltipPositions['slingshot-inactive'].top}px`,
             left: `${tooltipPositions['slingshot-inactive'].left}px`,
             opacity: isMobile ? (activeBuffTooltip === 'slingshot-inactive' ? 1 : 0) : undefined,
           }}
         >
-          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-gray-500/30 mb-2">
+          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-gray-500/30">
             <p className="text-xs font-semibold mb-0.5 text-gray-400">
               Elven Slingshot 🏹
             </p>
