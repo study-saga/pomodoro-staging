@@ -163,7 +163,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   };
 
   // Update tooltip position based on buff ref with viewport boundary checks
-  const updateTooltipPosition = (buffId: string, ref: React.RefObject<HTMLDivElement>) => {
+  const updateTooltipPosition = (buffId: string, ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
       const rect = ref.current.getBoundingClientRect();
       const tooltipHeight = 80; // Estimated tooltip height
@@ -199,7 +199,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   };
 
   // Handle buff icon click on mobile
-  const handleBuffClick = (e: React.MouseEvent, buffId: string, ref: React.RefObject<HTMLDivElement>) => {
+  const handleBuffClick = (e: React.MouseEvent, buffId: string, ref: React.RefObject<HTMLDivElement | null>) => {
     if (isMobile) {
       e.stopPropagation();
       const newActiveTooltip = activeBuffTooltip === buffId ? null : buffId;
