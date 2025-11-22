@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { BACKGROUNDS, AMBIENT_SOUNDS } from '../../data/constants';
 import { useDeviceType } from '../../hooks/useDeviceType';
+import { useRoleChange } from '../../hooks/useRoleChange';
 import {
   ROLE_EMOJI_ELF,
   ROLE_EMOJI_HUMAN,
@@ -23,7 +24,6 @@ export function SettingsModal() {
   const { appUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'music' | 'progress'>('timer');
-  const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameLoading, setUsernameLoading] = useState(false);
   const [showMusicCredits, setShowMusicCredits] = useState(false);
@@ -46,16 +46,6 @@ export function SettingsModal() {
     window.addEventListener('notificationPermissionChange', handlePermissionChange);
     return () => window.removeEventListener('notificationPermissionChange', handlePermissionChange);
   }, []);
-
-  // Auto-dismiss role change message
-  useEffect(() => {
-    if (roleChangeMessage) {
-      const timer = setTimeout(() => {
-        setRoleChangeMessage(null);
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [roleChangeMessage]);
 
   // Focus management: focus modal when opened, return focus when closed
   useEffect(() => {
@@ -82,27 +72,7 @@ export function SettingsModal() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen]);
 
-  const handleRoleChange = (newRole: 'elf' | 'human') => {
-    setLevelPath(newRole);
-
-    const messages = {
-      elf: [
-        "You have chosen the path of the Elf! May nature guide your journey.",
-        "The forest welcomes you, brave Elf. Your adventure begins anew!",
-        "An Elf emerges! The ancient woods await your wisdom.",
-        "You walk the Elven path. Grace and focus shall be your companions.",
-      ],
-      human: [
-        "You have chosen the path of the Human! May courage light your way.",
-        "A warrior's path chosen! Your legend starts now, brave Human.",
-        "The Human spirit awakens within you. Face your challenges head-on!",
-        "You walk the Human path. Strength and determination guide you forward.",
-      ],
-    };
-
-    const randomMessage = messages[newRole][Math.floor(Math.random() * messages[newRole].length)];
-    setRoleChangeMessage(randomMessage);
-  };
+  const { handleRoleChange, levelPath } = useRoleChange();
 
   const {
     timers,
@@ -136,8 +106,6 @@ export function SettingsModal() {
     // canEditUsername, // Removed - using server-first approach instead
     levelSystemEnabled,
     setLevelSystemEnabled,
-    levelPath,
-    setLevelPath,
   } = useSettingsStore();
 
   const { isMobile, isPortrait } = useDeviceType();
@@ -932,19 +900,6 @@ export function SettingsModal() {
           </button>
         </div>
       </div>
-
-      {/* Role Change Toast Notification */}
-      {roleChangeMessage && (
-        <div className="fixed bottom-6 right-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-4 rounded-lg shadow-2xl border-2 border-white/20 max-w-sm animate-slide-up z-[100]">
-          <div className="flex items-start gap-3">
-            <span className="text-3xl">{levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}</span>
-            <div>
-              <p className="font-bold text-sm mb-1">Role Changed!</p>
-              <p className="text-sm leading-relaxed">{roleChangeMessage}</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Music Credits Modal */}
       <AnimatePresence>

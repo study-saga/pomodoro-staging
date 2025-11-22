@@ -131,10 +131,11 @@ export function calculateBuffStack(
      * Allows future reactivation without re-granting the buff
      */
     if (buffId === 'slingshot_nov22') {
-      const today = new Date();
-      const startDate = new Date('2025-11-22');
-      const endDate = new Date('2025-11-24'); // End of Nov 23
-      const isEventActive = today >= startDate && today < endDate;
+      // UTC-based date check
+      const now = Date.now();
+      const startDate = Date.UTC(2025, 10, 22); // Nov 22 00:00 UTC (month is 0-indexed)
+      const endDate = Date.UTC(2025, 10, 24);   // Nov 24 00:00 UTC (end of Nov 23)
+      const isEventActive = now >= startDate && now < endDate;
 
       if (!isEventActive) {
         console.log('[BuffManager] Slingshot event not active, keeping in storage');
@@ -176,11 +177,12 @@ export function calculateBuffStack(
  * Activate slingshot buff (Nov 22-23, elf only, +25% XP)
  */
 export async function activateSlingshotBuff(userId: string): Promise<void> {
-  const today = new Date();
-  const activationDate = new Date('2025-11-22');
+  // UTC-based date check
+  const now = Date.now();
+  const startDate = Date.UTC(2025, 10, 22); // Nov 22 00:00 UTC (month is 0-indexed)
 
-  if (today < activationDate) {
-    console.log('[BuffManager] Slingshot buff not yet active (activates Nov 22)');
+  if (now < startDate) {
+    console.log('[BuffManager] Slingshot buff not yet active (activates Nov 22 UTC)');
     return;
   }
 

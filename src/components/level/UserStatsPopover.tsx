@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
+import { useRoleChange } from '../../hooks/useRoleChange';
 import { X, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { ROLE_EMOJI_ELF, ROLE_EMOJI_HUMAN } from '../../data/levels';
@@ -25,8 +26,6 @@ export const UserStatsPopover = memo(function UserStatsPopover({
   onOpenChange,
 }: UserStatsPopoverProps) {
   const {
-    levelPath,
-    setLevelPath,
     totalPomodoros,
     totalStudyMinutes,
     totalUniqueDays,
@@ -35,6 +34,8 @@ export const UserStatsPopover = memo(function UserStatsPopover({
     pomodoroBoostExpiresAt,
     firstLoginDate,
   } = useSettingsStore();
+
+  const { handleRoleChange, levelPath } = useRoleChange();
 
   const [showSinceTooltip, setShowSinceTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
@@ -90,7 +91,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
             type="checkbox"
             className="opacity-0 w-0 h-0 peer"
             checked={levelPath === 'human'}
-            onChange={(e) => setLevelPath(e.target.checked ? 'human' : 'elf')}
+            onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
           />
           <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg transition-all duration-300 peer-checked:from-blue-600 peer-checked:to-blue-700"></span>
           <span className="relative text-4xl z-10 transition-transform duration-300">

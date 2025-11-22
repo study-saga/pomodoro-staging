@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSettingsStore } from '../../store/useSettingsStore';
+import { useRoleChange } from '../../hooks/useRoleChange';
 import { ROLE_EMOJI_ELF, ROLE_EMOJI_HUMAN } from '../../data/levels';
 import './RoleSwitch.css';
 
 export const RoleSwitch = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { levelPath, setLevelPath } = useSettingsStore();
+  const { handleRoleChange, levelPath } = useRoleChange();
 
   // Refs to store timer IDs for cleanup
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -31,8 +31,8 @@ export const RoleSwitch = () => {
 
   // Timer 2: Action Timer (10 seconds)
   // Closes the menu 10s after a selection is made
-  const handleRoleChange = (newRole: 'elf' | 'human') => {
-    setLevelPath(newRole);
+  const onRoleSelect = (newRole: 'elf' | 'human') => {
+    handleRoleChange(newRole);
 
     // Clear the idle timer since the user interacted
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
@@ -74,7 +74,7 @@ export const RoleSwitch = () => {
           type="checkbox"
           className="opacity-0 w-0 h-0 peer"
           checked={levelPath === 'human'}
-          onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
+          onChange={(e) => onRoleSelect(e.target.checked ? 'human' : 'elf')}
         />
 
         {/* Background Track (matching gray-900/95 style) */}

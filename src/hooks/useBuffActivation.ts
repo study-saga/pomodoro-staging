@@ -26,12 +26,12 @@ export function useBuffActivation() {
         return;
       }
 
-      // Check date
-      const today = new Date();
-      const activationDate = new Date('2025-11-22');
+      // Check date (UTC-based)
+      const now = Date.now();
+      const startDate = Date.UTC(2025, 10, 22); // Nov 22 00:00 UTC (month is 0-indexed)
 
-      if (today < activationDate) {
-        console.log('[BuffActivation] Slingshot buff not yet available (activates Nov 22)');
+      if (now < startDate) {
+        console.log('[BuffActivation] Slingshot buff not yet available (activates Nov 22 UTC)');
         return;
       }
 
