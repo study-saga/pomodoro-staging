@@ -1,4 +1,5 @@
 import { memo, useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
@@ -39,7 +40,13 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [activeBuffTooltip, setActiveBuffTooltip] = useState<string | null>(null);
+  const [hoveredBuff, setHoveredBuff] = useState<string | null>(null);
+  const [tooltipPositions, setTooltipPositions] = useState<Record<string, { top: number; left: number }>>({});
   const prevLevelRef = useRef(level);
+  const roleBuffRef = useRef<HTMLDivElement>(null);
+  const slingshotActiveRef = useRef<HTMLDivElement>(null);
+  const boostRef = useRef<HTMLDivElement>(null);
+  const slingshotInactiveRef = useRef<HTMLDivElement>(null);
 
   const { isMobile } = useDeviceType();
   const { appUser } = useAuth();
@@ -155,13 +162,46 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     }
   };
 
-  // Handle buff icon click on mobile
-  const handleBuffClick = (e: React.MouseEvent, buffId: string) => {
-    if (isMobile) {
-      e.stopPropagation();
-      setActiveBuffTooltip(activeBuffTooltip === buffId ? null : buffId);
+  // Update tooltip position based on buff ref
+  const updateTooltipPosition = (buffId: string, ref: React.RefObject<HTMLDivElement>) => {
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      setTooltipPositions(prev => ({
+        ...prev,
+        [buffId]: {
+          top: rect.top - 8,
+          left: rect.left + rect.width / 2,
+        }
+      }));
     }
   };
+
+  // Handle buff icon click on mobile
+  const handleBuffClick = (e: React.MouseEvent, buffId: string, ref: React.RefObject<HTMLDivElement>) => {
+    if (isMobile) {
+      e.stopPropagation();
+      const newActiveTooltip = activeBuffTooltip === buffId ? null : buffId;
+      setActiveBuffTooltip(newActiveTooltip);
+      if (newActiveTooltip) {
+        updateTooltipPosition(buffId, ref);
+      }
+    }
+  };
+
+  // Update tooltip positions on hover for desktop
+  useEffect(() => {
+    if (!isMobile) {
+      const updatePositions = () => {
+        if (roleBuffRef.current) updateTooltipPosition('role-buff', roleBuffRef);
+        if (slingshotActiveRef.current) updateTooltipPosition('slingshot-active', slingshotActiveRef);
+        if (boostRef.current) updateTooltipPosition('boost', boostRef);
+        if (slingshotInactiveRef.current) updateTooltipPosition('slingshot-inactive', slingshotInactiveRef);
+      };
+      updatePositions();
+      window.addEventListener('resize', updatePositions);
+      return () => window.removeEventListener('resize', updatePositions);
+    }
+  }, [isMobile, levelPath, slingshotActive, pomodoroBoostActive]);
 
   return (
     <>
@@ -284,132 +324,92 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         {/* Role Buff Icons - Ordered: Permanent first, then by expiration */}
         <div className="flex gap-2">
           {/* 1. Role Buff (Permanent - Always first) */}
-          <div className="relative group">
-            <div
-              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}
-              onClick={(e) => handleBuffClick(e, 'role-buff')}
-            >
-              <img
-                src={levelPath === 'elf' ? buffElf : buffHuman}
-                alt={`${levelPath} buff`}
-                className="w-full h-full object-cover"
-                style={{ filter: 'drop-shadow(0 0 6px rgba(168, 85, 247, 0.5))' }}
-              />
-            </div>
-
-            {/* Tooltip - Show on hover (desktop) or click (mobile) */}
-            <div className={`absolute left-0 bottom-full mb-2 transition-opacity duration-200 pointer-events-none z-50 ${
-              isMobile
-                ? (activeBuffTooltip === 'role-buff' ? 'opacity-100' : 'opacity-0')
-                : 'opacity-0 group-hover:opacity-100'
-            }`}>
-              <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-3 py-2 shadow-lg min-w-[180px]">
-                <p className="text-xs font-semibold text-purple-300 mb-0.5">
-                  {levelPath === 'elf' ? 'Elf Consistency' : 'Human Risk/Reward'}
-                </p>
-                <p className="text-[10px] text-gray-400">
-                  {levelPath === 'elf' ? '+0.5 XP per minute' : '25% chance to double XP'}
-                </p>
-              </div>
-            </div>
+          <div
+            ref={roleBuffRef}
+            className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}
+            onClick={(e) => handleBuffClick(e, 'role-buff', roleBuffRef)}
+            onMouseEnter={() => {
+              if (!isMobile) {
+                setHoveredBuff('role-buff');
+                updateTooltipPosition('role-buff', roleBuffRef);
+              }
+            }}
+            onMouseLeave={() => !isMobile && setHoveredBuff(null)}
+          >
+            <img
+              src={levelPath === 'elf' ? buffElf : buffHuman}
+              alt={`${levelPath} buff`}
+              className="w-full h-full object-cover"
+              style={{ filter: 'drop-shadow(0 0 6px rgba(168, 85, 247, 0.5))' }}
+            />
           </div>
 
           {/* 2. Slingshot Buff (Permanent when active - Elf only, Nov 22+) */}
           {levelPath === 'elf' && slingshotActive && (
-            <div className="relative group">
-              <div
-                className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500`}
-                onClick={(e) => handleBuffClick(e, 'slingshot-active')}
-              >
-                <img
-                  src={buffElfSlingshot}
-                  alt="Elven Slingshot"
-                  className="w-full h-full object-cover"
-                  style={{ filter: 'drop-shadow(0 0 6px rgba(34, 197, 94, 0.5))' }}
-                />
-              </div>
-
-              {/* Tooltip - Show on hover (desktop) or click (mobile) */}
-              <div className={`absolute left-0 bottom-full mb-2 transition-opacity duration-200 pointer-events-none z-50 ${
-                isMobile
-                  ? (activeBuffTooltip === 'slingshot-active' ? 'opacity-100' : 'opacity-0')
-                  : 'opacity-0 group-hover:opacity-100'
-              }`}>
-                <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-green-500/30">
-                  <p className="text-xs font-semibold mb-0.5 text-green-300">
-                    Elven Slingshot 🏹
-                  </p>
-                  <p className="text-[10px] text-gray-400">
-                    Buff is now active!
-                  </p>
-                </div>
-              </div>
+            <div
+              ref={slingshotActiveRef}
+              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500`}
+              onClick={(e) => handleBuffClick(e, 'slingshot-active', slingshotActiveRef)}
+              onMouseEnter={() => {
+                if (!isMobile) {
+                  setHoveredBuff('slingshot-active');
+                  updateTooltipPosition('slingshot-active', slingshotActiveRef);
+                }
+              }}
+              onMouseLeave={() => !isMobile && setHoveredBuff(null)}
+            >
+              <img
+                src={buffElfSlingshot}
+                alt="Elven Slingshot"
+                className="w-full h-full object-cover"
+                style={{ filter: 'drop-shadow(0 0 6px rgba(34, 197, 94, 0.5))' }}
+              />
             </div>
           )}
 
           {/* 3. 24h Boost Buff (Time-limited - Shows remaining time) */}
           {pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (
-            <div className="relative group">
-              <div
-                className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 animate-pulse`}
-                onClick={(e) => handleBuffClick(e, 'boost')}
-              >
-                <img
-                  src={buffBoost}
-                  alt="XP Boost"
-                  className="w-full h-full object-cover"
-                  style={{ filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.5))' }}
-                />
-              </div>
-
-              {/* Tooltip - Show on hover (desktop) or click (mobile) */}
-              <div className={`absolute left-0 bottom-full mb-2 transition-opacity duration-200 pointer-events-none z-50 ${
-                isMobile
-                  ? (activeBuffTooltip === 'boost' ? 'opacity-100' : 'opacity-0')
-                  : 'opacity-0 group-hover:opacity-100'
-              }`}>
-                <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-yellow-500/30">
-                  <p className="text-xs font-semibold mb-0.5 text-yellow-300">
-                    🍅 +25% XP Boost
-                  </p>
-                  <p className="text-[10px] text-gray-400">
-                    Expires in {boostTimeRemaining || getBoostTimeRemaining()}
-                  </p>
-                </div>
-              </div>
+            <div
+              ref={boostRef}
+              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 animate-pulse`}
+              onClick={(e) => handleBuffClick(e, 'boost', boostRef)}
+              onMouseEnter={() => {
+                if (!isMobile) {
+                  setHoveredBuff('boost');
+                  updateTooltipPosition('boost', boostRef);
+                }
+              }}
+              onMouseLeave={() => !isMobile && setHoveredBuff(null)}
+            >
+              <img
+                src={buffBoost}
+                alt="XP Boost"
+                className="w-full h-full object-cover"
+                style={{ filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.5))' }}
+              />
             </div>
           )}
 
           {/* 4. Inactive Slingshot (Show at end when inactive) */}
           {levelPath === 'elf' && !slingshotActive && (
-            <div className="relative group">
-              <div
-                className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30`}
-                onClick={(e) => handleBuffClick(e, 'slingshot-inactive')}
-              >
-                <img
-                  src={buffElfSlingshot}
-                  alt="Elven Slingshot"
-                  className="w-full h-full object-cover"
-                  style={{ filter: 'grayscale(100%) opacity(50%)' }}
-                />
-              </div>
-
-              {/* Tooltip - Show on hover (desktop) or click (mobile) */}
-              <div className={`absolute left-0 bottom-full mb-2 transition-opacity duration-200 pointer-events-none z-50 ${
-                isMobile
-                  ? (activeBuffTooltip === 'slingshot-inactive' ? 'opacity-100' : 'opacity-0')
-                  : 'opacity-0 group-hover:opacity-100'
-              }`}>
-                <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-gray-500/30">
-                  <p className="text-xs font-semibold mb-0.5 text-gray-400">
-                    Elven Slingshot 🏹
-                  </p>
-                  <p className="text-[10px] text-gray-400">
-                    Activates on Nov 22-23, 2025
-                  </p>
-                </div>
-              </div>
+            <div
+              ref={slingshotInactiveRef}
+              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30`}
+              onClick={(e) => handleBuffClick(e, 'slingshot-inactive', slingshotInactiveRef)}
+              onMouseEnter={() => {
+                if (!isMobile) {
+                  setHoveredBuff('slingshot-inactive');
+                  updateTooltipPosition('slingshot-inactive', slingshotInactiveRef);
+                }
+              }}
+              onMouseLeave={() => !isMobile && setHoveredBuff(null)}
+            >
+              <img
+                src={buffElfSlingshot}
+                alt="Elven Slingshot"
+                className="w-full h-full object-cover"
+                style={{ filter: 'grayscale(100%) opacity(50%)' }}
+              />
             </div>
           )}
         </div>
@@ -463,6 +463,91 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         onOpenChange={setShowStatsPopover}
         trigger={<div />}
       />
+
+      {/* Buff Tooltips - Portaled outside container */}
+      {tooltipPositions['role-buff'] && (isMobile ? activeBuffTooltip === 'role-buff' : hoveredBuff === 'role-buff') && createPortal(
+        <div
+          className="fixed transform -translate-x-1/2 -translate-y-full pointer-events-none z-[9999] transition-opacity duration-200"
+          style={{
+            top: `${tooltipPositions['role-buff'].top}px`,
+            left: `${tooltipPositions['role-buff'].left}px`,
+            opacity: isMobile ? (activeBuffTooltip === 'role-buff' ? 1 : 0) : undefined,
+          }}
+        >
+          <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-3 py-2 shadow-lg min-w-[180px] mb-2">
+            <p className="text-xs font-semibold text-purple-300 mb-0.5">
+              {levelPath === 'elf' ? 'Elf Consistency' : 'Human Risk/Reward'}
+            </p>
+            <p className="text-[10px] text-gray-400">
+              {levelPath === 'elf' ? '+0.5 XP per minute' : '25% chance to double XP'}
+            </p>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {tooltipPositions['slingshot-active'] && levelPath === 'elf' && slingshotActive && (isMobile ? activeBuffTooltip === 'slingshot-active' : hoveredBuff === 'slingshot-active') && createPortal(
+        <div
+          className="fixed transform -translate-x-1/2 -translate-y-full pointer-events-none z-[9999] transition-opacity duration-200"
+          style={{
+            top: `${tooltipPositions['slingshot-active'].top}px`,
+            left: `${tooltipPositions['slingshot-active'].left}px`,
+            opacity: isMobile ? (activeBuffTooltip === 'slingshot-active' ? 1 : 0) : undefined,
+          }}
+        >
+          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-green-500/30 mb-2">
+            <p className="text-xs font-semibold mb-0.5 text-green-300">
+              Elven Slingshot 🏹
+            </p>
+            <p className="text-[10px] text-gray-400">
+              Buff is now active!
+            </p>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {tooltipPositions['boost'] && pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (isMobile ? activeBuffTooltip === 'boost' : hoveredBuff === 'boost') && createPortal(
+        <div
+          className="fixed transform -translate-x-1/2 -translate-y-full pointer-events-none z-[9999] transition-opacity duration-200"
+          style={{
+            top: `${tooltipPositions['boost'].top}px`,
+            left: `${tooltipPositions['boost'].left}px`,
+            opacity: isMobile ? (activeBuffTooltip === 'boost' ? 1 : 0) : undefined,
+          }}
+        >
+          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-yellow-500/30 mb-2">
+            <p className="text-xs font-semibold mb-0.5 text-yellow-300">
+              🍅 +25% XP Boost
+            </p>
+            <p className="text-[10px] text-gray-400">
+              Expires in {boostTimeRemaining || getBoostTimeRemaining()}
+            </p>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {tooltipPositions['slingshot-inactive'] && levelPath === 'elf' && !slingshotActive && (isMobile ? activeBuffTooltip === 'slingshot-inactive' : hoveredBuff === 'slingshot-inactive') && createPortal(
+        <div
+          className="fixed transform -translate-x-1/2 -translate-y-full pointer-events-none z-[9999] transition-opacity duration-200"
+          style={{
+            top: `${tooltipPositions['slingshot-inactive'].top}px`,
+            left: `${tooltipPositions['slingshot-inactive'].left}px`,
+            opacity: isMobile ? (activeBuffTooltip === 'slingshot-inactive' ? 1 : 0) : undefined,
+          }}
+        >
+          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-gray-500/30 mb-2">
+            <p className="text-xs font-semibold mb-0.5 text-gray-400">
+              Elven Slingshot 🏹
+            </p>
+            <p className="text-[10px] text-gray-400">
+              Activates on Nov 22-23, 2025
+            </p>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* "LEVEL UP!" text - appears to the right of Level UI */}
       <AnimatePresence>
