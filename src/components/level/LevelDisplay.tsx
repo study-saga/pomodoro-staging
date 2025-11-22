@@ -317,7 +317,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             className="cursor-pointer space-y-2.5"
             onClick={(e) => {
               e.stopPropagation();
-              setShowStatsPopover(!showStatsPopover);
+              setShowStatsPopover(prev => !prev);
             }}
           >
             {/* Header */}
@@ -512,7 +512,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       <UserStatsPopover
         open={showStatsPopover}
         onOpenChange={setShowStatsPopover}
-        trigger={<div />}
+        trigger={<button style={{ display: 'none' }} aria-hidden="true" />}
       />
 
       {/* Buff Tooltips - Portaled outside container */}
