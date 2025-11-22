@@ -5,7 +5,6 @@ import { PomodoroTimer } from './components/timer/PomodoroTimer';
 import { MusicPlayer } from './components/music/MusicPlayer';
 import { AmbientSoundsPlayer } from './components/music/AmbientSoundsPlayer';
 import { LevelDisplay } from './components/level/LevelDisplay';
-import { LevelUpCelebration } from './components/level/LevelUpCelebration';
 // import { RoleSwitch } from './components/level/RoleSwitch';
 // import { RoleSwitchComparison } from './components/level/RoleSwitchComparison';
 
@@ -14,7 +13,6 @@ import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCount
 import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
 import { LoginScreen } from './components/auth/LoginScreen';
 import DiscordButton from './components/DiscordButton';
-import { useLevelNotifications } from './hooks/useLevelNotifications';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -24,7 +22,6 @@ import { showGameToast } from './components/ui/GameToast';
 
 function AppContent() {
   const { authenticated, loading, error, appUser } = useAuth();
-  const { showLevelUp, levelUpData } = useLevelNotifications();
   const addXP = useSettingsStore((state) => state.addXP);
   const consecutiveLoginDays = useSettingsStore((state) => state.consecutiveLoginDays);
   const settingsSyncComplete = useSettingsStore((state) => state.settingsSyncComplete);
@@ -154,13 +151,6 @@ function AppContent() {
 
       {/* Ambient Sounds Player (Hidden) */}
       <AmbientSoundsPlayer musicPlaying={musicPlaying} />
-
-      {/* Level Up Celebration */}
-      <LevelUpCelebration
-        show={showLevelUp}
-        level={levelUpData.level}
-        levelName={levelUpData.levelName}
-      />
 
       {/* Daily Gift Grid */}
       <DailyGiftGrid

@@ -1,5 +1,5 @@
-import { memo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { memo, useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useAuth } from '../../contexts/AuthContext';
@@ -36,6 +36,9 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   const [selectedDay, setSelectedDay] = useState(1);
   const [showStatsPopover, setShowStatsPopover] = useState(false);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const prevLevelRef = useRef(level);
 
   const { isMobile } = useDeviceType();
   const { appUser } = useAuth();
@@ -46,6 +49,33 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const levelName = getLevelName(level, levelPath);
   const roleEmoji = levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN;
   const progress = (xp / xpNeeded) * 100;
+
+  // Generate confetti particles
+  const confettiParticles = useMemo(() => {
+    const colors = ['#FCD34D', '#F59E0B', '#A855F7', '#EC4899'];
+    const sizes = [
+      { w: 8, h: 4 },   // small
+      { w: 12, h: 6 },  // medium
+      { w: 16, h: 8 },  // large
+    ];
+
+    return Array.from({ length: 90 }, (_, i) => {
+      const size = sizes[Math.floor(Math.random() * sizes.length)];
+      return {
+        id: i,
+        x: Math.random() * 100,
+        delay: Math.random() * 0.5,
+        duration: 5,
+        rotation: Math.random() * 720 - 360,
+        rotateX: Math.random() * 720,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        width: size.w,
+        height: size.h,
+        wobbleSpeed: 2 + Math.random() * 3,
+        wobbleAmount: 20 + Math.random() * 40,
+      };
+    });
+  }, []);
 
   // Extract emoji and text from levelName
   const levelBadge = levelName.split(' ')[0]; // Get emoji (first part before space)
@@ -72,6 +102,28 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   };
 
   const boostTimeRemaining = getBoostTimeRemaining();
+
+  // Detect level-up and trigger celebration
+  useEffect(() => {
+    if (level > prevLevelRef.current) {
+      setShowLevelUp(true);
+      setShowConfetti(true);
+
+      // Hide confetti after 5s
+      const confettiTimer = setTimeout(() => setShowConfetti(false), 5000);
+
+      // Hide "LEVEL UP!" text after 3.5s (fade in 0.3s + stay 2.5s + fade out 0.5s)
+      const textTimer = setTimeout(() => setShowLevelUp(false), 3300);
+
+      prevLevelRef.current = level;
+
+      return () => {
+        clearTimeout(confettiTimer);
+        clearTimeout(textTimer);
+      };
+    }
+    prevLevelRef.current = level;
+  }, [level]);
 
   // Debug logging for boost state
   if (import.meta.env.DEV && pomodoroBoostActive) {
@@ -103,11 +155,61 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   };
 
   return (
-    <UserStatsPopover
-      open={showStatsPopover}
-      onOpenChange={setShowStatsPopover}
-      trigger={
-        <div className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
+    <>
+      <UserStatsPopover
+        open={showStatsPopover}
+        onOpenChange={setShowStatsPopover}
+        trigger={
+          <div className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
+            {/* Confetti - contained inside Level UI */}
+            {showConfetti && (
+              <div className="absolute inset-0 overflow-hidden pointer-events-none z-50">
+                {confettiParticles.map((particle) => (
+                  <motion.div
+                    key={particle.id}
+                    className="absolute"
+                    style={{
+                      width: `${particle.width}px`,
+                      height: `${particle.height}px`,
+                      left: `${particle.x}%`,
+                      top: '-8px',
+                      backgroundColor: particle.color,
+                      borderRadius: '2px',
+                    }}
+                    initial={{
+                      y: 0,
+                      x: 0,
+                      opacity: 1,
+                      rotateZ: 0,
+                      rotateX: 0,
+                      scale: 1,
+                    }}
+                    animate={{
+                      y: isMobile ? 200 : 280,
+                      x: [0, particle.wobbleAmount, -particle.wobbleAmount, 0],
+                      opacity: [1, 1, 1, 1, 0],
+                      rotateZ: particle.rotation * 3,
+                      rotateX: [0, particle.rotateX * 2],
+                      scale: [1, 0.9, 0.7],
+                    }}
+                    transition={{
+                      duration: particle.duration,
+                      delay: particle.delay,
+                      ease: [0.4, 0.0, 0.6, 1],
+                      x: {
+                        duration: particle.duration,
+                        ease: 'easeInOut',
+                      },
+                      opacity: {
+                        duration: particle.duration,
+                        times: [0, 0.2, 0.8, 0.9, 1],
+                        ease: 'easeOut',
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           <div className={isMobile ? 'space-y-2.5' : 'space-y-3'}>
             {/* Header */}
             <div className="flex items-center justify-between">
@@ -308,7 +410,35 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
           </div>
         </div>
-      }
-    />
+        }
+      />
+
+      {/* "LEVEL UP!" text - appears to the right of Level UI */}
+      <AnimatePresence>
+        {showLevelUp && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{
+              duration: 0.3,
+              exit: { duration: 0.5 }
+            }}
+            className={`fixed z-50 ${isMobile ? 'left-[200px] top-20' : 'left-[330px] top-24'} pointer-events-none`}
+          >
+            <div
+              className="font-extrabold text-4xl"
+              style={{
+                color: '#FCD34D',
+                textShadow: '0 0 10px #FCD34D, 0 0 20px #F59E0B, 0 0 30px #F59E0B, 0 0 40px #F59E0B',
+                filter: 'drop-shadow(0 0 15px rgba(252, 211, 77, 0.9))'
+              }}
+            >
+              LEVEL UP!
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 });
