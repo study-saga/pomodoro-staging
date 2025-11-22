@@ -16,6 +16,7 @@ import buffHuman from '../../assets/buff-human.svg';
 import buffElfSlingshot from '../../assets/buff-elf-slingshot.svg';
 import buffBoost from '../../assets/buff-boost.svg';
 import { UserStatsPopover } from './UserStatsPopover';
+import { UserStatsModal } from './UserStatsModal';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 
 interface LevelDisplayProps {
@@ -508,25 +509,55 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         </div>
       </div>
 
-      {/* UserStatsPopover - Rendered outside container */}
-      <UserStatsPopover
-        open={showStatsPopover}
-        onOpenChange={setShowStatsPopover}
-        trigger={
-          <button
-            style={{
-              position: 'fixed',
-              top: '1rem',
-              left: '1rem',
-              width: '1px',
-              height: '1px',
-              opacity: 0,
-              pointerEvents: 'none'
-            }}
-            aria-hidden="true"
-          />
-        }
-      />
+      {/* User Stats - Different components for desktop/mobile */}
+      {!isMobile ? (
+        /* Desktop: Popover positioned next to Level UI */
+        <UserStatsPopover
+          open={showStatsPopover}
+          onOpenChange={setShowStatsPopover}
+          trigger={
+            <button
+              style={{
+                position: 'fixed',
+                top: '1rem',
+                left: '1rem',
+                width: '1px',
+                height: '1px',
+                opacity: 0,
+                pointerEvents: 'none'
+              }}
+              aria-hidden="true"
+            />
+          }
+        />
+      ) : (
+        /* Mobile: Centered modal with backdrop */
+        createPortal(
+          <AnimatePresence>
+            {showStatsPopover && (
+              <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                  onClick={() => setShowStatsPopover(false)}
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  className="relative bg-gray-900/95 backdrop-blur-xl border-white/10 border rounded-2xl w-full max-w-sm"
+                >
+                  <UserStatsModal onClose={() => setShowStatsPopover(false)} />
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )
+      )}
 
       {/* Buff Tooltips - Portaled outside container */}
       {tooltipPositions['role-buff'] && (isMobile ? activeBuffTooltip === 'role-buff' : hoveredBuff === 'role-buff') && createPortal(
