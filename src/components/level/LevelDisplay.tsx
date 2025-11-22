@@ -520,7 +520,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               style={{
                 position: 'fixed',
                 top: '1rem',
-                left: '21rem',
+                left: 'calc(1rem + 320px)',
                 width: '1px',
                 height: '1px',
                 opacity: 0,
