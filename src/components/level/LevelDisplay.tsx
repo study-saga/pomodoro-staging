@@ -225,6 +225,35 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     }
   }, [isMobile, levelPath, slingshotActive, pomodoroBoostActive]);
 
+  // Close tooltips on click outside (mobile) or escape key
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (isMobile && activeBuffTooltip) {
+        // Check if click is outside all buff icons
+        const isClickOnBuff = [roleBuffRef, slingshotActiveRef, boostRef, slingshotInactiveRef]
+          .some(ref => ref.current?.contains(e.target as Node));
+
+        if (!isClickOnBuff) {
+          setActiveBuffTooltip(null);
+        }
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveBuffTooltip(null);
+        setHoveredBuff(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isMobile, activeBuffTooltip]);
+
   return (
     <>
       {/* Level UI Container - Fixed position */}
@@ -489,7 +518,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       {/* Buff Tooltips - Portaled outside container */}
       {tooltipPositions['role-buff'] && (isMobile ? activeBuffTooltip === 'role-buff' : hoveredBuff === 'role-buff') && createPortal(
         <div
-          className="fixed transform -translate-x-1/2 pointer-events-none z-[9999] transition-opacity duration-200"
+          className="fixed transform -translate-x-1/2 pointer-events-none z-40 transition-opacity duration-200"
           style={{
             top: `${tooltipPositions['role-buff'].top}px`,
             left: `${tooltipPositions['role-buff'].left}px`,
@@ -510,7 +539,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
       {tooltipPositions['slingshot-active'] && levelPath === 'elf' && slingshotActive && (isMobile ? activeBuffTooltip === 'slingshot-active' : hoveredBuff === 'slingshot-active') && createPortal(
         <div
-          className="fixed transform -translate-x-1/2 pointer-events-none z-[9999] transition-opacity duration-200"
+          className="fixed transform -translate-x-1/2 pointer-events-none z-40 transition-opacity duration-200"
           style={{
             top: `${tooltipPositions['slingshot-active'].top}px`,
             left: `${tooltipPositions['slingshot-active'].left}px`,
@@ -531,7 +560,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
       {tooltipPositions['boost'] && pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (isMobile ? activeBuffTooltip === 'boost' : hoveredBuff === 'boost') && createPortal(
         <div
-          className="fixed transform -translate-x-1/2 pointer-events-none z-[9999] transition-opacity duration-200"
+          className="fixed transform -translate-x-1/2 pointer-events-none z-40 transition-opacity duration-200"
           style={{
             top: `${tooltipPositions['boost'].top}px`,
             left: `${tooltipPositions['boost'].left}px`,
@@ -552,7 +581,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
       {tooltipPositions['slingshot-inactive'] && levelPath === 'elf' && !slingshotActive && (isMobile ? activeBuffTooltip === 'slingshot-inactive' : hoveredBuff === 'slingshot-inactive') && createPortal(
         <div
-          className="fixed transform -translate-x-1/2 pointer-events-none z-[9999] transition-opacity duration-200"
+          className="fixed transform -translate-x-1/2 pointer-events-none z-40 transition-opacity duration-200"
           style={{
             top: `${tooltipPositions['slingshot-inactive'].top}px`,
             left: `${tooltipPositions['slingshot-inactive'].left}px`,
