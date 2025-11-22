@@ -1,5 +1,17 @@
 import { DiscordSDK, type DiscordSDKMock } from '@discord/embedded-app-sdk'
 
+/**
+ * Generate cryptographic random state for CSRF protection
+ */
+function generateOAuthState(): string {
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
+// Store state for validation (in-memory, cleared on page refresh)
+let oauthState: string | null = null
+
 export interface DiscordUser {
   id: string
   username: string
@@ -43,6 +55,9 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
 
   console.log('[Discord Auth] SDK ready, requesting authorization...')
 
+  // Generate CSRF state token
+  oauthState = generateOAuthState()
+
   // Step 3: Authorize with Discord
   // prompt: "none" enables auto-login for users who have already authorized
   // We need to catch the error and re-prompt with "consent" for first-time users
@@ -50,7 +65,7 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
     .authorize({
       client_id: import.meta.env.VITE_DISCORD_CLIENT_ID,
       response_type: 'code',
-      state: '',
+      state: oauthState,
       prompt: 'none', // Auto-login for returning users
       scope: [
         'identify', // User ID, username, avatar
@@ -65,7 +80,7 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
       return discordSdk.commands.authorize({
         client_id: import.meta.env.VITE_DISCORD_CLIENT_ID,
         response_type: 'code',
-        state: '',
+        state: oauthState!,
         scope: [
           'identify', // User ID, username, avatar
           'guilds', // Server list
