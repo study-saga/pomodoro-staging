@@ -166,7 +166,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   return (
     <>
       {/* Level UI Container - Fixed position */}
-      <div className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-visible ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
+      <div className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
         {/* Confetti - contained inside Level UI */}
         {showConfetti && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none z-50">
@@ -221,65 +221,65 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           className={isMobile ? 'space-y-2.5' : 'space-y-3'}
           onClick={() => isMobile && setActiveBuffTooltip(null)}
         >
-          {/* UserStatsPopover - Wraps only header + XP bar */}
-          <UserStatsPopover
-            open={showStatsPopover}
-            onOpenChange={setShowStatsPopover}
-            trigger={
-              <div className="cursor-pointer space-y-2.5">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{levelBadge}</div>
-                    <div className="min-w-0 overflow-hidden flex-1">
-                      <h2 className={`font-bold text-white truncate ${isMobile ? 'text-base' : 'text-lg'}`}>
-                        {username}
-                      </h2>
-                      <p className="text-xs text-gray-300">{levelTitle}</p>
-                    </div>
-                  </div>
-                  <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
-                    {appUser?.avatar && <AvatarImage src={appUser.avatar} />}
-                    <AvatarFallback>{username.slice(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                </div>
-
-                {/* XP Progress Bar */}
-                <div>
-                  <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-1' : 'text-xs mb-1'}`}>
-                    <span>{roleEmoji} Level {level}</span>
-                    <span>
-                      {xp} / {xpNeeded} XP
-                    </span>
-                  </div>
-                  <div className={`w-full bg-gray-700/50 rounded-full overflow-hidden ${isMobile ? 'h-2' : 'h-2'}`}>
-                    <div
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full relative overflow-hidden"
-                      style={{ width: `${progress}%` }}
-                    >
-                      {/* Soft Glow Wave - Sweeps left to right */}
-                      <motion.div
-                        className="absolute top-0 left-0 h-full w-[80px] pointer-events-none"
-                        style={{
-                          background: 'radial-gradient(ellipse at center, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 25%, rgba(255,255,255,0.4) 50%, transparent 80%)',
-                          filter: 'blur(3px) brightness(1.3)',
-                        }}
-                        animate={{
-                          x: ['-100%', '250%'],
-                          opacity: [0, 1, 1, 1, 0]
-                        }}
-                        transition={{
-                          duration: 4,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                        }}
-                      />
-                    </div>
-                  </div>
+          {/* Clickable header - triggers stats popover */}
+          <div
+            className="cursor-pointer space-y-2.5"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowStatsPopover(!showStatsPopover);
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{levelBadge}</div>
+                <div className="min-w-0 overflow-hidden flex-1">
+                  <h2 className={`font-bold text-white truncate ${isMobile ? 'text-base' : 'text-lg'}`}>
+                    {username}
+                  </h2>
+                  <p className="text-xs text-gray-300">{levelTitle}</p>
                 </div>
               </div>
-            }
-          />
+              <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
+                {appUser?.avatar && <AvatarImage src={appUser.avatar} />}
+                <AvatarFallback>{username.slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </div>
+
+            {/* XP Progress Bar */}
+            <div>
+              <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-1' : 'text-xs mb-1'}`}>
+                <span>{roleEmoji} Level {level}</span>
+                <span>
+                  {xp} / {xpNeeded} XP
+                </span>
+              </div>
+              <div className={`w-full bg-gray-700/50 rounded-full overflow-hidden ${isMobile ? 'h-2' : 'h-2'}`}>
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full relative overflow-hidden"
+                  style={{ width: `${progress}%` }}
+                >
+                  {/* Soft Glow Wave - Sweeps left to right */}
+                  <motion.div
+                    className="absolute top-0 left-0 h-full w-[80px] pointer-events-none"
+                    style={{
+                      background: 'radial-gradient(ellipse at center, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 25%, rgba(255,255,255,0.4) 50%, transparent 80%)',
+                      filter: 'blur(3px) brightness(1.3)',
+                    }}
+                    animate={{
+                      x: ['-100%', '250%'],
+                      opacity: [0, 1, 1, 1, 0]
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
 
         {/* Role Buff Icons - Ordered: Permanent first, then by expiration */}
         <div className="flex gap-2">
@@ -456,6 +456,13 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           )}
         </div>
       </div>
+
+      {/* UserStatsPopover - Rendered outside container */}
+      <UserStatsPopover
+        open={showStatsPopover}
+        onOpenChange={setShowStatsPopover}
+        trigger={<div />}
+      />
 
       {/* "LEVEL UP!" text - appears to the right of Level UI */}
       <AnimatePresence>
