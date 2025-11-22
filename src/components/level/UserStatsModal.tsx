@@ -13,6 +13,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
   const {
     level,
     levelPath,
+    setLevelPath,
     prestigeLevel,
     totalPomodoros,
     totalStudyMinutes,
