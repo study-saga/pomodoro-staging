@@ -120,8 +120,19 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
 
 ## Version History
 
-**Last Updated**: 2025-11-20
-**Version**: 2.3.2 (Clickable Username Stats)
+**Last Updated**: 2025-11-22
+**Version**: 2.3.3 (Mobile Buff Tooltips + Popover Fix)
+
+**Major Changes in 2.3.3**:
+- **Fixed**: UserStatsPopover clipping issue - moved outside Level UI container
+  - Popover now renders properly without being clipped by `overflow-hidden`
+  - Implementation: Restructured to wrap only the clickable trigger section
+- **Enhanced**: Mobile buff icon interactions
+  - Desktop: tooltips show on hover (unchanged)
+  - Mobile: tap buff icon to toggle tooltip, tap elsewhere to close
+  - UserStatsPopover trigger limited to header + XP bar section only on mobile
+  - Buff icons now independently tappable with stopPropagation
+  - Implementation: `activeBuffTooltip` state, conditional tooltip visibility, `handleBuffClick` with stopPropagation
 
 **Major Changes in 2.3.2**:
 - **Added**: Clickable username in LevelDisplay opens stats modal
