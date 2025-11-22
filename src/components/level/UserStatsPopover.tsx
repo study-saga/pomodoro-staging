@@ -5,7 +5,6 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { X, Target, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
-import { ROLE_EMOJI_ELF, ROLE_EMOJI_HUMAN } from '../../data/levels';
 import {
   Popover,
   PopoverTrigger,

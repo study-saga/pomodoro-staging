@@ -5,7 +5,6 @@ import { BELL_SOUND } from '../../data/constants';
 import { useAuth } from '../../contexts/AuthContext';
 import type { TimerType } from '../../types';
 
-const XP_PER_MINUTE_POMODORO = 2;
 const XP_PER_MINUTE_BREAK = 1;
 
 export const PomodoroTimer = memo(function PomodoroTimer() {
@@ -15,7 +14,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const [isFlashing, setIsFlashing] = useState(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const { appUser, isDiscordActivity } = useAuth();
+  const { isDiscordActivity } = useAuth();
 
   const {
     timers,

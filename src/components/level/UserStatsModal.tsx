@@ -1,7 +1,6 @@
 
 import { memo, useState } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import { useDeviceType } from '../../hooks/useDeviceType';
 import { X, Target, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 
@@ -25,7 +24,6 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
   } = useSettingsStore();
 
   const [showSinceTooltip, setShowSinceTooltip] = useState(false);
-  const { isMobile } = useDeviceType();
   const avgSessionLength = totalPomodoros > 0
     ? Math.round(totalStudyMinutes / totalPomodoros)
     : 0;
