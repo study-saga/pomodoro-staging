@@ -162,16 +162,38 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     }
   };
 
-  // Update tooltip position based on buff ref
+  // Update tooltip position based on buff ref with viewport boundary checks
   const updateTooltipPosition = (buffId: string, ref: React.RefObject<HTMLDivElement>) => {
     if (ref.current) {
       const rect = ref.current.getBoundingClientRect();
+      const tooltipHeight = 80; // Estimated tooltip height
+      const tooltipWidth = 180; // Min width from className
+      const padding = 12; // Safe padding from viewport edges
+
+      let top = rect.bottom + 8;
+      let left = rect.left + rect.width / 2;
+
+      // Check bottom overflow - if tooltip goes below viewport, position above icon
+      if (top + tooltipHeight > window.innerHeight - padding) {
+        top = rect.top - tooltipHeight - 8;
+      }
+
+      // Check top overflow - ensure minimum distance from top
+      if (top < padding) {
+        top = padding;
+      }
+
+      // Check horizontal overflow
+      const halfWidth = tooltipWidth / 2;
+      if (left - halfWidth < padding) {
+        left = halfWidth + padding;
+      } else if (left + halfWidth > window.innerWidth - padding) {
+        left = window.innerWidth - halfWidth - padding;
+      }
+
       setTooltipPositions(prev => ({
         ...prev,
-        [buffId]: {
-          top: rect.bottom + 8,
-          left: rect.left + rect.width / 2,
-        }
+        [buffId]: { top, left }
       }));
     }
   };
