@@ -390,7 +390,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             <img
               src={levelPath === 'elf' ? buffElf : buffHuman}
               alt={`${levelPath} buff`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-lg"
               style={{ filter: 'drop-shadow(0 0 6px rgba(168, 85, 247, 0.5))' }}
             />
           </div>
@@ -412,7 +412,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               <img
                 src={buffElfSlingshot}
                 alt="Elven Slingshot"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-lg"
                 style={{ filter: 'drop-shadow(0 0 6px rgba(34, 197, 94, 0.5))' }}
               />
             </div>
@@ -435,7 +435,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               <img
                 src={buffBoost}
                 alt="XP Boost"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-lg"
                 style={{ filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.5))' }}
               />
             </div>
@@ -458,7 +458,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               <img
                 src={buffElfSlingshot}
                 alt="Elven Slingshot"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-lg"
                 style={{ filter: 'grayscale(100%) opacity(50%)' }}
               />
             </div>
