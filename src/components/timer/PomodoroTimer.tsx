@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useTimer } from 'react-timer-hook';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { BELL_SOUND } from '../../data/constants';
+import { saveCompletedBreak } from '../../lib/userSyncAuth';
 import { useAuth } from '../../contexts/AuthContext';
 import type { TimerType } from '../../types';
 
@@ -14,7 +15,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const [isFlashing, setIsFlashing] = useState(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const { isDiscordActivity } = useAuth();
+  const { appUser, isDiscordActivity } = useAuth();
 
   const {
     timers,
@@ -287,6 +288,31 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       useSettingsStore.setState({
         xp: currentState.xp + xpEarned
       });
+
+      // Save to database (async - don't block UI)
+      if (appUser?.id && appUser?.discord_id) {
+        console.log('[Timer] Saving break to database...', {
+          userId: appUser.id,
+          discordId: appUser.discord_id,
+          breakType: timerType === 'shortBreak' ? 'short' : 'long',
+          duration: durationMinutes,
+          xp: xpEarned
+        });
+
+        saveCompletedBreak(appUser.id, appUser.discord_id, {
+          break_type: timerType === 'shortBreak' ? 'short' : 'long',
+          duration_minutes: durationMinutes,
+          xp_earned: xpEarned
+        })
+          .then(() => {
+            console.log('[Timer] ✓ Break saved to database successfully');
+          })
+          .catch((error) => {
+            console.error('[Timer] ✗ Failed to save break to database:', error);
+          });
+      } else {
+        console.warn('[Timer] Cannot save break - user not authenticated', { appUser });
+      }
     }
 
     // CRITICAL: Read fresh auto-start settings from store to avoid stale closure

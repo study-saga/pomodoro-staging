@@ -583,6 +583,7 @@ export async function updateUsername(
  */
 export async function claimDailyGift(
   userId: string,
+  discordId: string,
   xpAmount: number,
   activateBoost: boolean = false
 ): Promise<{
@@ -596,11 +597,37 @@ export async function claimDailyGift(
 }> {
   console.log(`[User Sync] Claiming daily gift for user ${userId} (XP: ${xpAmount}, Boost: ${activateBoost})`)
 
-  const { data, error } = await supabase.rpc('claim_daily_gift', {
-    p_user_id: userId,
-    p_xp_amount: xpAmount,
-    p_activate_boost: activateBoost
-  })
+  // Determine authentication mode by checking for Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  let data, error
+
+  if (session) {
+    // Web Mode: Use Supabase Auth with auth.uid()
+    console.log('[User Sync] Using web mode (Supabase Auth)')
+
+    const result = await supabase.rpc('claim_daily_gift', {
+      p_user_id: userId,
+      p_xp_amount: xpAmount,
+      p_activate_boost: activateBoost
+    })
+
+    data = result.data
+    error = result.error
+  } else {
+    // Discord Activity Mode: Use discord_id
+    console.log('[User Sync] Using Discord Activity mode (discord_id)')
+
+    const result = await supabase.rpc('claim_daily_gift_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId,
+      p_xp_amount: xpAmount,
+      p_activate_boost: activateBoost
+    })
+
+    data = result.data
+    error = result.error
+  }
 
   if (error) {
     console.error('[User Sync] Error claiming daily gift:', error)
@@ -652,14 +679,35 @@ export async function claimDailyGift(
  * Check if user can claim daily gift today
  *
  * @param userId - User's UUID
+ * @param discordId - User's Discord ID (for Discord Activity mode)
  * @returns true if gift can be claimed, false if already claimed today
  */
-export async function canClaimDailyGift(userId: string): Promise<boolean> {
+export async function canClaimDailyGift(userId: string, discordId: string): Promise<boolean> {
   console.log(`[User Sync] Checking if user ${userId} can claim daily gift`)
 
-  const { data, error } = await supabase.rpc('can_claim_daily_gift', {
-    p_user_id: userId
-  })
+  // Determine authentication mode by checking for Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  let data, error
+
+  if (session) {
+    // Web Mode: Use Supabase Auth with auth.uid()
+    const result = await supabase.rpc('can_claim_daily_gift', {
+      p_user_id: userId
+    })
+
+    data = result.data
+    error = result.error
+  } else {
+    // Discord Activity Mode: Use discord_id
+    const result = await supabase.rpc('can_claim_daily_gift_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId
+    })
+
+    data = result.data
+    error = result.error
+  }
 
   if (error) {
     console.error('[User Sync] Error checking gift eligibility:', error)
@@ -712,6 +760,75 @@ export async function resetUserProgress(
 
     console.log('[User Sync] Progress reset successfully (Discord Activity mode)')
     return data as AppUser
+  }
+}
+
+/**
+ * Save completed break atomically with dual authentication support
+ * Uses atomic database function to prevent inconsistent state
+ *
+ * Supports dual authentication modes:
+ * - Web Mode: Uses Supabase Auth session (auth.uid()) via atomic_save_completed_break RPC
+ * - Discord Activity Mode: Uses Discord SDK identity (discord_id) via atomic_save_completed_break_discord RPC
+ */
+export async function saveCompletedBreak(
+  userId: string,
+  discordId: string,
+  data: {
+    break_type: 'short' | 'long'
+    duration_minutes: number
+    xp_earned: number
+  }
+): Promise<string> {
+  console.log(`[User Sync] Saving break for user ${userId}`)
+
+  // Determine authentication mode by checking for Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (session) {
+    // Web Mode: Use Supabase Auth with auth.uid()
+    console.log('[User Sync] Using web mode (Supabase Auth)')
+
+    const { data: breakId, error } = await supabase.rpc(
+      'atomic_save_completed_break',
+      {
+        p_user_id: userId,
+        p_discord_id: discordId,
+        p_break_type: data.break_type,
+        p_duration_minutes: data.duration_minutes,
+        p_xp_earned: data.xp_earned
+      }
+    )
+
+    if (error) {
+      console.error('[User Sync] Error saving break:', error)
+      throw new Error(`Failed to save break: ${error.message}`)
+    }
+
+    console.log('[User Sync] Break saved successfully (web mode):', breakId)
+    return breakId as string
+  } else {
+    // Discord Activity Mode: Use Discord ID from Discord SDK
+    console.log('[User Sync] Using Discord Activity mode (Discord SDK)')
+
+    const { data: breakId, error } = await supabase.rpc(
+      'atomic_save_completed_break_discord',
+      {
+        p_user_id: userId,
+        p_discord_id: discordId,
+        p_break_type: data.break_type,
+        p_duration_minutes: data.duration_minutes,
+        p_xp_earned: data.xp_earned
+      }
+    )
+
+    if (error) {
+      console.error('[User Sync] Error saving break:', error)
+      throw new Error(`Failed to save break: ${error.message}`)
+    }
+
+    console.log('[User Sync] Break saved successfully (Discord Activity mode):', breakId)
+    return breakId as string
   }
 }
 

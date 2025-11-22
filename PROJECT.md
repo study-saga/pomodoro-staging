@@ -18,9 +18,11 @@ A Pomodoro timer application built as a Discord Activity, featuring study tracki
 This is a feature-rich Pomodoro timer that runs as a Discord Activity, allowing friends to study together in voice channels. The app includes:
 
 - **Pomodoro Timer**: Custom durations (1-120 min), auto-start options
-- **XP & Leveling**: 2 XP/min (pomodoro), 1 XP/min (breaks), max level 50
+- **XP & Leveling**: 2 XP/min (pomodoro), 1 XP/min (breaks), max level 20
+- **Daily Gifts**: Random XP rewards (10-100) for logging in, day 10 = +25% boost (24hrs)
+- **Break XP Sync**: Breaks award 1 XP/min synced to DB with +25% boost support
 - **Music & Sounds**: 2 playlists (Lofi, Synthwave), 9 ambient sounds
-- **Cross-Device Sync**: Settings and progress sync across all devices
+- **Cross-Device Sync**: Settings and progress sync across all devices with 500ms debounce
 - **Discord Integration**: Runs natively in Discord voice channels as an Activity
 - **Web Version**: Also accessible via browser at study-saga.com
 
@@ -121,35 +123,47 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
 ## Version History
 
 **Last Updated**: 2025-11-22
-**Version**: 2.3.3 (Mobile Buff Tooltips + Popover Fix)
+**Version**: 2.3.3 (Role System + UI Improvements)
 
 **Major Changes in 2.3.3**:
-- **Fixed**: UserStatsPopover clipping issue - moved outside Level UI container
-  - Popover now renders properly without being clipped by `overflow-hidden`
-  - Implementation: Restructured to wrap only the clickable trigger section
-- **Enhanced**: Mobile buff icon interactions
-  - Desktop: tooltips show on hover (unchanged)
-  - Mobile: tap buff icon to toggle tooltip, tap elsewhere to close
-  - UserStatsPopover trigger limited to header + XP bar section only on mobile
-  - Buff icons now independently tappable with stopPropagation
-  - Implementation: `activeBuffTooltip` state, conditional tooltip visibility, `handleBuffClick` with stopPropagation
+- **Added**: Role/Path system (Human vs Elf) with buff mechanics
+  - Human: 25% chance for 2x XP (risk/reward)
+  - Elf: +0.5 XP/min consistency bonus + streak bonuses
+  - Buffs stack multiplicatively with pomodoro boost (25%)
+  - Segmented toggle UI for path selection (desktop + mobile)
+- **Added**: User Stats modal/popover showing detailed account info
+  - Separate mobile (modal) and desktop (popover) components
+  - 2-column grid layout on mobile
+  - Stats: level, path, pomodoros, study time, streaks, Discord avatar
+- **Added**: Buff system with tooltips
+  - 4 new SVG buff icons (boost, elf-slingshot, elf, human)
+  - Mobile: tap to toggle tooltips, tap outside to close
+  - Desktop: hover tooltips with viewport boundary checks
+  - Portal rendering to prevent clipping
+- **Added**: Settings redesign
+  - Dual-pattern popover/modal for desktop/mobile
+  - "What's New" as 6th tab
+  - Progress tab redesign matching user stats style
+- **Enhanced**: Level UI improvements
+  - XP progress bar with glow wave animation
+  - Realistic paper confetti on level up
+  - Username truncation with ellipsis
+  - Mobile layout optimizations
+- **Fixed**: UserStatsPopover clipping - moved outside overflow-hidden container
+- **Fixed**: Mobile webkit border-radius flickering on buff icons
+- **Fixed**: Double XP save bug - removed duplicate database call
+- **Fixed**: OAuth redirect issues for local IP development
 
 **Major Changes in 2.3.2**:
-- **Added**: Clickable username in LevelDisplay opens stats modal
-  - Click username to view detailed account statistics
-  - Stats modal shows: level, role, pomodoros completed, study time, active days, login streak, XP progress, avg session length, total logins
-  - Modal displays active XP boosts (+25% boost) if applicable
-  - Modal positioned next to user display with blur backdrop
-  - Implementation: `UserStatsModal` component with `showStatsModal` state in LevelDisplay
-
-**Major Changes in 2.3.1**:
-- **Fixed**: Daily gift claiming bug on refresh
-  - Modal now checks localStorage before attempting server claim
-  - Prevents repeated claim attempts when user refreshes page
-  - Marks gift as claimed locally even when auth fails to prevent UI loop
-  - Implementation: Check `lastDailyGiftDate` in localStorage first, skip server claim if already claimed today
+- **Fixed**: Daily gifts trigger on every refresh for Discord Activity users
+  - Root cause: `claim_daily_gift()` RPC only validated web users via `auth.uid()`
+  - Discord users authenticate via `discord_id`, causing auth errors → frontend marked as claimed locally → server never recorded
+  - Solution: Added dual-auth RPC functions (`claim_daily_gift_discord`, `can_claim_daily_gift_discord`)
+  - Updated `claimDailyGift()` to detect auth mode and call correct RPC
+  - Files: `20250119000000_add_discord_daily_gift_claim.sql`, `userSyncAuth.ts`, `DailyGiftGrid.tsx`
 
 **Previous Versions**:
+- **2.3.1** (2025-11-19): localStorage check before server claim (partial fix for web users)
 - **2.3.0** (2025-11-18): Split PROJECT.md into 6 modular docs for better navigation
 - **2.2.0** (2025-11-18): Added missing sections (Utility Functions, RPC Functions, Migration History)
 - **2.1.0** (2025-01-18): Comprehensive documentation update (3,200 → 4,350 lines)

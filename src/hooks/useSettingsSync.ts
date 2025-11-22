@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { updateUserPreferences } from '../lib/userSyncAuth'
 import { supabase } from '../lib/supabase'
+import { getEnvironment } from '../lib/environment'
 
 /**
  * Professional Settings Synchronization Hook
@@ -32,6 +33,10 @@ export function useSettingsSync() {
   const lastSyncedStateRef = useRef<string>('')
   const periodicSyncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const loadGracePeriodRef = useRef(false) // Prevents false dirty flags during load
+  const debounceSyncRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Check if running in Discord Activity (iframe - unreliable unload events)
+  const isDiscordActivity = getEnvironment() === 'discord'
 
   /**
    * Get fresh store state (avoids stale closure)
@@ -357,6 +362,16 @@ export function useSettingsSync() {
       isDirtyRef.current = true
       console.log('[Settings Sync] Settings changed - marked dirty (will sync on trigger)')
 
+      // Sync with 500ms debounce (both web + Discord)
+      // Discord: don't rely on unload events in iframe
+      // Web: batch rapid changes (e.g. volume slider spam)
+      if (debounceSyncRef.current) {
+        clearTimeout(debounceSyncRef.current)
+      }
+      debounceSyncRef.current = setTimeout(() => {
+        syncToDatabase(isDiscordActivity ? 'discord-debounced' : 'web-debounced')
+      }, 500)
+
       // Debug: show what changed (only in development)
       if (import.meta.env.DEV) {
         try {
@@ -440,14 +455,21 @@ export function useSettingsSync() {
     // Add event listeners
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('pagehide', handleBeforeUnload) // More reliable for iframes
 
     // Cleanup
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('pagehide', handleBeforeUnload)
 
       if (periodicSyncIntervalRef.current) {
         clearInterval(periodicSyncIntervalRef.current)
+      }
+
+      // Clear debounce timeout
+      if (debounceSyncRef.current) {
+        clearTimeout(debounceSyncRef.current)
       }
 
       // Final sync on unmount using synchronous fetch with keepalive
