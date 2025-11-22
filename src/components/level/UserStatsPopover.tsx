@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
-import { X, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
+import { X, Target, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { ROLE_EMOJI_ELF, ROLE_EMOJI_HUMAN } from '../../data/levels';
 import {
@@ -25,8 +25,10 @@ export const UserStatsPopover = memo(function UserStatsPopover({
   onOpenChange,
 }: UserStatsPopoverProps) {
   const {
+    level,
     levelPath,
     setLevelPath,
+    prestigeLevel,
     totalPomodoros,
     totalStudyMinutes,
     totalUniqueDays,
@@ -84,25 +86,26 @@ export const UserStatsPopover = memo(function UserStatsPopover({
   // Stats grid content (shared between mobile and desktop)
   const statsContent = (
     <div className="grid grid-cols-2 gap-2">
-        {/* Role Toggle - Full Size */}
-        <label className="bg-white/5 rounded-lg border border-white/10 cursor-pointer relative overflow-hidden flex items-center justify-center">
-          <input
-            type="checkbox"
-            className="opacity-0 w-0 h-0 peer"
-            checked={levelPath === 'human'}
-            onChange={(e) => setLevelPath(e.target.checked ? 'human' : 'elf')}
-          />
-          <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg transition-all duration-300 peer-checked:from-blue-600 peer-checked:to-blue-700"></span>
-          <span className="relative text-4xl z-10 transition-transform duration-300">
-            {levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}
-          </span>
-        </label>
       <StatCard
-        icon={<span className="text-base">{levelPath === 'elf' ? '🧝' : '⚔️'}</span>}
-        label=""
-        value={levelPath === 'elf' ? 'Elf' : 'Human'}
-        color="text-purple-400"
+        icon={<Target className="w-4 h-4" />}
+        label="Level"
+        value={`${level}${prestigeLevel > 0 ? ` ⭐${prestigeLevel}` : ''}`}
+        color="text-blue-400"
       />
+
+      {/* Path Toggle */}
+      <div className="bg-white/5 rounded-lg p-2 border border-white/10">
+        <div className="flex items-center gap-1.5 text-purple-400 mb-1">
+          <span className="text-xs text-gray-400">Path</span>
+        </div>
+        <button
+          onClick={() => setLevelPath(levelPath === 'elf' ? 'human' : 'elf')}
+          className="w-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-purple-500/30 rounded-lg px-3 py-1 transition-all flex items-center justify-center gap-2"
+        >
+          <span className="text-base">{levelPath === 'elf' ? '🧝' : '⚔️'}</span>
+          <span className="text-sm font-bold text-white">{levelPath === 'elf' ? 'Elf' : 'Human'}</span>
+        </button>
+      </div>
       <StatCard
         icon={<span className="text-base">🍅</span>}
         label="Pomodoros"

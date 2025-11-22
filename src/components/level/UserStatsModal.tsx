@@ -72,8 +72,8 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
       </div>
 
       {/* Stats Grid with ScrollArea */}
-      <ScrollArea className="h-[60vh] sm:h-[400px]">
-        <div className="p-4">
+      <ScrollArea className="max-h-[60vh]">
+        <div className="p-4 pb-2">
           <div className="grid gap-2 grid-cols-2">
             {/* Row 1 */}
             <StatCard
@@ -82,12 +82,20 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
               value={`${level}${prestigeLevel > 0 ? ` ⭐${prestigeLevel}` : ''}`}
               color="text-blue-400"
             />
-            <StatCard
-              icon={<span className="text-base">{levelPath === 'elf' ? '🧝' : '⚔️'}</span>}
-              label=""
-              value={levelPath === 'elf' ? 'Elf' : 'Human'}
-              color="text-purple-400"
-            />
+
+            {/* Path Toggle */}
+            <div className="bg-white/5 rounded-lg p-2 border border-white/10">
+              <div className="flex items-center gap-1.5 text-purple-400 mb-1">
+                <span className="text-xs text-gray-400">Path</span>
+              </div>
+              <button
+                onClick={() => setLevelPath(levelPath === 'elf' ? 'human' : 'elf')}
+                className="w-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-purple-500/30 rounded-lg px-3 py-1 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="text-base">{levelPath === 'elf' ? '🧝' : '⚔️'}</span>
+                <span className="text-sm font-bold text-white">{levelPath === 'elf' ? 'Elf' : 'Human'}</span>
+              </button>
+            </div>
 
             {/* Row 2 */}
             <StatCard
