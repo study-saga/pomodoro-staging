@@ -226,7 +226,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             open={showStatsPopover}
             onOpenChange={setShowStatsPopover}
             trigger={
-              <div className="cursor-pointer space-y-2.5" onClick={(e) => e.stopPropagation()}>
+              <div className="cursor-pointer space-y-2.5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
