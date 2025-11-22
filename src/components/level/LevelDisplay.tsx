@@ -1,4 +1,5 @@
 import { memo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useAuth } from '../../contexts/AuthContext';
@@ -135,9 +136,27 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           </div>
           <div className={`w-full bg-gray-700/50 rounded-full overflow-hidden ${isMobile ? 'h-2' : 'h-2'}`}>
             <div
-              className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-500 ease-out"
+              className="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full relative overflow-hidden"
               style={{ width: `${progress}%` }}
-            />
+            >
+              {/* Soft Glow Wave - Sweeps left to right */}
+              <motion.div
+                className="absolute top-0 left-0 h-full w-[80px] pointer-events-none"
+                style={{
+                  background: 'radial-gradient(ellipse at center, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 25%, rgba(255,255,255,0.4) 50%, transparent 80%)',
+                  filter: 'blur(3px) brightness(1.3)',
+                }}
+                animate={{
+                  x: ['-100%', '250%'],
+                  opacity: [0, 1, 1, 1, 0]
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              />
+            </div>
           </div>
         </div>
 
