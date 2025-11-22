@@ -156,64 +156,64 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   return (
     <>
-      {/* Level UI Container */}
-      <div className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
-        {/* Confetti - contained inside Level UI */}
-        {showConfetti && (
-          <div className="absolute inset-0 overflow-hidden pointer-events-none z-50">
-            {confettiParticles.map((particle) => (
-              <motion.div
-                key={particle.id}
-                className="absolute"
-                style={{
-                  width: `${particle.width}px`,
-                  height: `${particle.height}px`,
-                  left: `${particle.x}%`,
-                  top: '-8px',
-                  backgroundColor: particle.color,
-                  borderRadius: '2px',
-                }}
-                initial={{
-                  y: 0,
-                  x: 0,
-                  opacity: 1,
-                  rotateZ: 0,
-                  rotateX: 0,
-                  scale: 1,
-                }}
-                animate={{
-                  y: isMobile ? 200 : 280,
-                  x: [0, particle.wobbleAmount, -particle.wobbleAmount, 0],
-                  opacity: [1, 1, 1, 1, 0],
-                  rotateZ: particle.rotation * 3,
-                  rotateX: [0, particle.rotateX * 2],
-                  scale: [1, 0.9, 0.7],
-                }}
-                transition={{
-                  duration: particle.duration,
-                  delay: particle.delay,
-                  ease: [0.4, 0.0, 0.6, 1],
-                  x: {
-                    duration: particle.duration,
-                    ease: 'easeInOut',
-                  },
-                  opacity: {
-                    duration: particle.duration,
-                    times: [0, 0.2, 0.8, 0.9, 1],
-                    ease: 'easeOut',
-                  }
-                }}
-              />
-            ))}
-          </div>
-        )}
+      {/* UserStatsPopover - Moved outside container to avoid clipping */}
+      <UserStatsPopover
+        open={showStatsPopover}
+        onOpenChange={setShowStatsPopover}
+        trigger={
+          <div className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
+            {/* Confetti - contained inside Level UI */}
+            {showConfetti && (
+              <div className="absolute inset-0 overflow-hidden pointer-events-none z-50">
+                {confettiParticles.map((particle) => (
+                  <motion.div
+                    key={particle.id}
+                    className="absolute"
+                    style={{
+                      width: `${particle.width}px`,
+                      height: `${particle.height}px`,
+                      left: `${particle.x}%`,
+                      top: '-8px',
+                      backgroundColor: particle.color,
+                      borderRadius: '2px',
+                    }}
+                    initial={{
+                      y: 0,
+                      x: 0,
+                      opacity: 1,
+                      rotateZ: 0,
+                      rotateX: 0,
+                      scale: 1,
+                    }}
+                    animate={{
+                      y: isMobile ? 200 : 280,
+                      x: [0, particle.wobbleAmount, -particle.wobbleAmount, 0],
+                      opacity: [1, 1, 1, 1, 0],
+                      rotateZ: particle.rotation * 3,
+                      rotateX: [0, particle.rotateX * 2],
+                      scale: [1, 0.9, 0.7],
+                    }}
+                    transition={{
+                      duration: particle.duration,
+                      delay: particle.delay,
+                      ease: [0.4, 0.0, 0.6, 1],
+                      x: {
+                        duration: particle.duration,
+                        ease: 'easeInOut',
+                      },
+                      opacity: {
+                        duration: particle.duration,
+                        times: [0, 0.2, 0.8, 0.9, 1],
+                        ease: 'easeOut',
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            )}
 
-        <div className={isMobile ? 'space-y-2.5' : 'space-y-3'}>
-          {/* Clickable area for stats - Header + XP Bar only */}
-          <UserStatsPopover
-            open={showStatsPopover}
-            onOpenChange={setShowStatsPopover}
-            trigger={
+            <div className={isMobile ? 'space-y-2.5' : 'space-y-3'}>
+              {/* Clickable area for stats - Header + XP Bar only */}
               <div className="cursor-pointer space-y-2.5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -266,8 +266,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                   </div>
                 </div>
               </div>
-            }
-          />
 
         {/* Role Buff Icons - Ordered: Permanent first, then by expiration */}
         <div className="flex gap-2">
@@ -384,38 +382,40 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         )}
 
 
-        {import.meta.env.DEV && (
-          <div className="space-y-1">
-            <button
-              onClick={() => addXP(50)} // Adds 50 XP
-              className="w-full px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
-            >
-              Add 50 XP (Dev)
-            </button>
-            <div className="flex gap-1">
-              <select
-                value={selectedDay}
-                onChange={(e) => setSelectedDay(Number(e.target.value))}
-                className="px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:outline-none focus:border-pink-500"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((day) => (
-                  <option key={day} value={day}>
-                    Day {day}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={simulateNextDay}
-                className="flex-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
-              >
-                <Gift className="w-3 h-3" />
-                Daily Gift
-              </button>
+            {import.meta.env.DEV && (
+              <div className="space-y-1">
+                <button
+                  onClick={() => addXP(50)} // Adds 50 XP
+                  className="w-full px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                >
+                  Add 50 XP (Dev)
+                </button>
+                <div className="flex gap-1">
+                  <select
+                    value={selectedDay}
+                    onChange={(e) => setSelectedDay(Number(e.target.value))}
+                    className="px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:outline-none focus:border-pink-500"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((day) => (
+                      <option key={day} value={day}>
+                        Day {day}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={simulateNextDay}
+                    className="flex-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
+                  >
+                    <Gift className="w-3 h-3" />
+                    Daily Gift
+                  </button>
+                </div>
+              </div>
+            )}
             </div>
           </div>
-        )}
-        </div>
-      </div>
+        }
+      />
 
       {/* "LEVEL UP!" text - appears to the right of Level UI */}
       <AnimatePresence>
