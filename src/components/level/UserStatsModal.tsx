@@ -88,13 +88,30 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
               <div className="flex items-center gap-1.5 text-purple-400 mb-1">
                 <span className="text-xs text-gray-400">Path</span>
               </div>
-              <button
-                onClick={() => setLevelPath(levelPath === 'elf' ? 'human' : 'elf')}
-                className="w-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-purple-500/30 rounded-lg px-3 py-1 transition-all flex items-center justify-center gap-2"
-              >
-                <span className="text-base">{levelPath === 'elf' ? '🧝' : '⚔️'}</span>
-                <span className="text-sm font-bold text-white">{levelPath === 'elf' ? 'Elf' : 'Human'}</span>
-              </button>
+              <div className="flex gap-1 bg-gray-800/50 rounded-lg p-0.5">
+                <button
+                  onClick={() => setLevelPath('human')}
+                  className={`flex-1 py-1 px-2 rounded-md transition-all flex items-center justify-center gap-1 ${
+                    levelPath === 'human'
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <span className="text-sm">⚔️</span>
+                  <span className="text-xs font-semibold">Human</span>
+                </button>
+                <button
+                  onClick={() => setLevelPath('elf')}
+                  className={`flex-1 py-1 px-2 rounded-md transition-all flex items-center justify-center gap-1 ${
+                    levelPath === 'elf'
+                      ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <span className="text-sm">🧝</span>
+                  <span className="text-xs font-semibold">Elf</span>
+                </button>
+              </div>
             </div>
 
             {/* Row 2 */}
