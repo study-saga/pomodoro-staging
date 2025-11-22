@@ -512,7 +512,20 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       <UserStatsPopover
         open={showStatsPopover}
         onOpenChange={setShowStatsPopover}
-        trigger={<button style={{ display: 'none' }} aria-hidden="true" />}
+        trigger={
+          <button
+            style={{
+              position: 'fixed',
+              top: '1rem',
+              left: '1rem',
+              width: '1px',
+              height: '1px',
+              opacity: 0,
+              pointerEvents: 'none'
+            }}
+            aria-hidden="true"
+          />
+        }
       />
 
       {/* Buff Tooltips - Portaled outside container */}
