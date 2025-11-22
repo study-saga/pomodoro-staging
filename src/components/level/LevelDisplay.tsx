@@ -221,12 +221,12 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         )}
 
         <div className={isMobile ? 'space-y-2.5' : 'space-y-3'}>
-          {/* UserStatsPopover - Only wraps clickable header section */}
+          {/* UserStatsPopover - Wraps only header + XP bar */}
           <UserStatsPopover
             open={showStatsPopover}
             onOpenChange={setShowStatsPopover}
             trigger={
-              <div className="cursor-pointer space-y-2.5">
+              <div className="cursor-pointer space-y-2.5" onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
