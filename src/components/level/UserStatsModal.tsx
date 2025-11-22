@@ -74,9 +74,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
       {/* Stats Grid with ScrollArea */}
       <ScrollArea className="h-[60vh] sm:h-[400px]">
         <div className="p-4">
-          <div className={`grid gap-2 ${
-            isMobile ? 'grid-cols-1' : 'grid-cols-2'
-          }`}>
+          <div className="grid gap-2 grid-cols-2">
             {/* Row 1 */}
             <StatCard
               icon={<Target className="w-4 h-4" />}
