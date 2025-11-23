@@ -220,12 +220,12 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
     <AnimatePresence>
       {show && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-          {/* Background overlay */}
+          {/* Background overlay with purple tint */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm pointer-events-none"
+            className="absolute inset-0 bg-gradient-to-b from-black/60 via-purple-900/20 to-black/70 backdrop-blur-sm pointer-events-none"
           />
 
           {/* Main container */}
@@ -241,7 +241,7 @@ export function DailyGiftGrid({ show, onClose, currentDay }: DailyGiftGridProps)
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-4xl font-bold text-white text-center mb-8"
+              className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 text-center mb-8 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]"
             >
               Daily Gift
             </motion.h2>
@@ -276,12 +276,13 @@ function GiftCard({ gift, index }: GiftCardProps) {
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay: index * 0.05, type: 'spring', stiffness: 300 }}
+      transition={{ delay: index * 0.05, type: 'spring', stiffness: 400, damping: 15, bounce: 0.3 }}
+      whileHover={{ scale: 1.05, rotate: 2 }}
       className={`
         relative aspect-square rounded-2xl
         transition-all duration-300
         ${gift.isSelected
-          ? 'ring-4 ring-white ring-offset-2 ring-offset-transparent'
+          ? 'ring-4 ring-purple-400 ring-offset-2 ring-offset-black shadow-[0_0_20px_rgba(168,85,247,0.6)]'
           : ''
         }
       `}
@@ -289,14 +290,14 @@ function GiftCard({ gift, index }: GiftCardProps) {
       {/* Card background with gradient */}
       <div
         className={`
-          absolute inset-0 rounded-2xl
+          absolute inset-0 rounded-2xl border border-white/10
           transition-all duration-300
           ${isSpecialRevealed
             ? 'bg-gradient-to-br from-red-400 via-red-500 to-rose-500'
-            : 'bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800'
+            : 'bg-gradient-to-br from-purple-600/40 via-purple-700/50 to-pink-700/40'
           }
           ${gift.isSelected && !isSpecialRevealed
-            ? 'bg-gradient-to-br from-slate-500 via-slate-600 to-slate-700'
+            ? 'bg-gradient-to-br from-purple-500/50 via-pink-600/50 to-purple-600/50'
             : ''
           }
         `}
@@ -304,7 +305,7 @@ function GiftCard({ gift, index }: GiftCardProps) {
 
       {/* Gray overlay for already claimed rewards */}
       {isAlreadyClaimed && (
-        <div className="absolute inset-0 rounded-2xl bg-gray-800/50 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gray-800/60 via-gray-700/50 to-gray-900/60 backdrop-blur-sm border border-white/5" />
       )}
 
       {/* Glow effect for special gift */}
@@ -320,7 +321,7 @@ function GiftCard({ gift, index }: GiftCardProps) {
               repeat: Infinity,
               ease: 'easeInOut'
             }}
-            className="absolute inset-0 rounded-2xl bg-red-500/50 blur-xl"
+            className="absolute inset-0 rounded-2xl bg-gradient-radial from-red-400/70 via-rose-500/50 to-transparent blur-2xl"
           />
           <motion.div
             animate={{
@@ -334,6 +335,25 @@ function GiftCard({ gift, index }: GiftCardProps) {
             className="absolute inset-0 rounded-2xl bg-gradient-to-br from-red-300 via-red-500 to-rose-600 opacity-50"
           />
         </>
+      )}
+
+      {/* Shine animation for unclaimed gifts */}
+      {!gift.isRevealed && !isAlreadyClaimed && (
+        <motion.div
+          className="absolute inset-0 rounded-2xl opacity-20"
+          animate={{
+            backgroundImage: [
+              'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%)',
+            ],
+            backgroundPosition: ['-200% 0', '200% 0'],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+          style={{ backgroundSize: '200% 100%' }}
+        />
       )}
 
       {/* Card content */}
@@ -353,7 +373,7 @@ function GiftCard({ gift, index }: GiftCardProps) {
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="text-white text-xl font-bold"
+            className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-amber-400 text-2xl font-extrabold drop-shadow-[0_0_8px_rgba(252,211,77,0.6)]"
           >
             {gift.value}
           </motion.span>
@@ -389,16 +409,33 @@ function GiftCard({ gift, index }: GiftCardProps) {
           </div>
         )}
 
-        {/* Current day gift boxes show gift emoji */}
+        {/* Current day gift boxes show gift emoji with golden glow */}
         {gift.type === 'gift' && gift.isRevealed && gift.isSelected && (
-          <motion.span
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', stiffness: 200 }}
-            className="text-5xl"
-          >
-            {gift.value}
-          </motion.span>
+          <div className="relative">
+            <motion.div
+              className="absolute inset-0 blur-2xl"
+              animate={{
+                opacity: [0.4, 0.7, 0.4],
+                scale: [1, 1.2, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              style={{
+                background: 'radial-gradient(circle, rgba(252,211,77,0.6) 0%, transparent 70%)',
+              }}
+            />
+            <motion.span
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 200 }}
+              className="text-5xl relative z-10"
+            >
+              {gift.value}
+            </motion.span>
+          </div>
         )}
       </div>
     </motion.div>
