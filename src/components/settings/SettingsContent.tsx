@@ -33,7 +33,7 @@ function StatCard({ icon, label, value, color }: StatCardProps) {
 
 
 interface SettingsContentProps {
-  activeTab: 'timer' | 'appearance' | 'sounds' | 'music' | 'progress' | 'whats-new';
+  activeTab: 'timer' | 'appearance' | 'sounds' | 'notifications' | 'music' | 'progress' | 'whats-new';
   isMobile: boolean;
 
   // Timer settings
@@ -307,72 +307,6 @@ export function SettingsContent(props: SettingsContentProps) {
                 className="w-5 h-5 rounded"
               />
             </div>
-
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-white">Enable sound notifications</label>
-              <input
-                type="checkbox"
-                checked={tempSoundEnabled}
-                onChange={(e) => setTempSoundEnabled(e.target.checked)}
-                className="w-5 h-5 rounded"
-              />
-            </div>
-
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-white">Enable leveling system</label>
-              <input
-                type="checkbox"
-                checked={tempLevelSystemEnabled}
-                onChange={(e) => setTempLevelSystemEnabled(e.target.checked)}
-                className="w-5 h-5 rounded"
-              />
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-white font-bold text-lg mb-3">🔔 Notifications</h3>
-            <p className="text-gray-400 text-sm mb-3">
-              Enable browser notifications to get notified when your timer completes.
-            </p>
-            {(typeof window !== 'undefined' && 'Notification' in window) ? (
-              <>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-white text-sm">Status:</span>
-                  <span className={`text-sm font-medium ${
-                    notificationPermission === 'granted' ? 'text-green-400' :
-                    notificationPermission === 'denied' ? 'text-red-400' :
-                    'text-yellow-400'
-                  }`}>
-                    {notificationPermission === 'granted' ? '✓ Enabled' :
-                     notificationPermission === 'denied' ? '✗ Blocked' :
-                     '⚠ Not enabled'}
-                  </span>
-                </div>
-                {notificationPermission === 'default' && (
-                  <button
-                    onClick={async () => {
-                      const permission = await Notification.requestPermission();
-                      if (permission === 'granted') {
-                        // Trigger re-render to show updated status
-                        window.dispatchEvent(new Event('notificationPermissionChange'));
-                      }
-                    }}
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Enable Notifications
-                  </button>
-                )}
-                {notificationPermission === 'denied' && (
-                  <p className="text-red-400 text-xs">
-                    Notifications are blocked. Please enable them in your browser settings.
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="text-gray-400 text-sm">
-                Notifications are not supported in this browser.
-              </p>
-            )}
           </div>
         </motion.div>
       )}
@@ -428,6 +362,20 @@ export function SettingsContent(props: SettingsContentProps) {
           transition={{ duration: 0.2 }}
           className="space-y-4"
         >
+          <div>
+            <h3 className="text-white font-bold text-lg mb-4">Sound Settings</h3>
+
+            <div className="flex items-center justify-between mb-4">
+              <label className="text-white">Enable sound notifications</label>
+              <input
+                type="checkbox"
+                checked={tempSoundEnabled}
+                onChange={(e) => setTempSoundEnabled(e.target.checked)}
+                className="w-5 h-5 rounded"
+              />
+            </div>
+          </div>
+
           <div>
             <h3 className="text-white font-bold text-lg mb-4">Volume Controls</h3>
 
@@ -504,6 +452,66 @@ export function SettingsContent(props: SettingsContentProps) {
         </motion.div>
       )}
 
+      {activeTab === 'notifications' && (
+        <motion.div
+          key="notifications"
+          role="tabpanel"
+          id="notifications-panel"
+          aria-labelledby="notifications-tab"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 20 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-4"
+        >
+          <div>
+            <h3 className="text-white font-bold text-lg mb-3">🔔 Browser Notifications</h3>
+            <p className="text-gray-400 text-sm mb-3">
+              Enable browser notifications to get notified when your timer completes.
+            </p>
+            {(typeof window !== 'undefined' && 'Notification' in window) ? (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white text-sm">Status:</span>
+                  <span className={`text-sm font-medium ${
+                    notificationPermission === 'granted' ? 'text-green-400' :
+                    notificationPermission === 'denied' ? 'text-red-400' :
+                    'text-yellow-400'
+                  }`}>
+                    {notificationPermission === 'granted' ? '✓ Enabled' :
+                     notificationPermission === 'denied' ? '✗ Blocked' :
+                     '⚠ Not enabled'}
+                  </span>
+                </div>
+                {notificationPermission === 'default' && (
+                  <button
+                    onClick={async () => {
+                      const permission = await Notification.requestPermission();
+                      if (permission === 'granted') {
+                        // Trigger re-render to show updated status
+                        window.dispatchEvent(new Event('notificationPermissionChange'));
+                      }
+                    }}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Enable Notifications
+                  </button>
+                )}
+                {notificationPermission === 'denied' && (
+                  <p className="text-red-400 text-xs">
+                    Notifications are blocked. Please enable them in your browser settings.
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-gray-400 text-sm">
+                Notifications are not supported in this browser.
+              </p>
+            )}
+          </div>
+        </motion.div>
+      )}
+
       {activeTab === 'music' && (
         <motion.div
           key="music"
@@ -554,6 +562,20 @@ export function SettingsContent(props: SettingsContentProps) {
           transition={{ duration: 0.2 }}
           className="space-y-8"
         >
+          <div>
+            <h3 className="text-white font-bold text-lg mb-4">Level System</h3>
+
+            <div className="flex items-center justify-between mb-4">
+              <label className="text-white">Enable leveling system</label>
+              <input
+                type="checkbox"
+                checked={tempLevelSystemEnabled}
+                onChange={(e) => setTempLevelSystemEnabled(e.target.checked)}
+                className="w-5 h-5 rounded"
+              />
+            </div>
+          </div>
+
           <div>
             <h3 className="text-white font-bold text-lg mb-4">Hero Stats</h3>
             <div className="grid grid-cols-2 gap-2">

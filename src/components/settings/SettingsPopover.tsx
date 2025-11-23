@@ -1,6 +1,6 @@
 import { memo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings as SettingsIcon, X } from 'lucide-react';
+import { Settings as SettingsIcon, X, Palette, Volume2, Music, BarChart, Sparkles, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -28,7 +28,7 @@ import {
 export const SettingsPopover = memo(function SettingsPopover() {
   const { appUser } = useAuth();
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'music' | 'progress' | 'whats-new'>('timer');
+  const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'notifications' | 'music' | 'progress' | 'whats-new'>('timer');
   const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameLoading, setUsernameLoading] = useState(false);
@@ -77,19 +77,43 @@ export const SettingsPopover = memo(function SettingsPopover() {
     }
   }, [open]);
 
-  // Handle Escape key to close modal
+  // Handle keyboard shortcuts
   useEffect(() => {
     if (!open) return;
 
-    const handleEscape = (e: KeyboardEvent) => {
+    const handleKeyboard = (e: KeyboardEvent) => {
+      // Escape to close
       if (e.key === 'Escape') {
         setOpen(false);
+        return;
+      }
+
+      // Cmd/Ctrl+S to save
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+        return;
+      }
+
+      // Number keys 1-7 to jump to tabs
+      const numKey = parseInt(e.key);
+      if (numKey >= 1 && numKey <= tabs.length) {
+        setActiveTab(tabs[numKey - 1].id as typeof activeTab);
+        return;
+      }
+
+      // Arrow keys to navigate tabs
+      const currentIndex = tabs.findIndex(t => t.id === activeTab);
+      if (e.key === 'ArrowDown' && currentIndex < tabs.length - 1) {
+        setActiveTab(tabs[currentIndex + 1].id as typeof activeTab);
+      } else if (e.key === 'ArrowUp' && currentIndex > 0) {
+        setActiveTab(tabs[currentIndex - 1].id as typeof activeTab);
       }
     };
 
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [open]);
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, [open, activeTab]);
 
   const handleRoleChange = (newRole: 'elf' | 'human') => {
     setLevelPath(newRole);
@@ -169,6 +193,19 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const [tempBackground, setTempBackground] = useState(background);
   const [tempLevelSystemEnabled, setTempLevelSystemEnabled] = useState(levelSystemEnabled);
   const [usernameInput, setUsernameInput] = useState(username);
+
+  // Check for unsaved changes
+  const hasUnsavedChanges =
+    JSON.stringify(tempTimers) !== JSON.stringify(timers) ||
+    tempPomodorosBeforeLongBreak !== pomodorosBeforeLongBreak ||
+    tempAutoStartBreaks !== autoStartBreaks ||
+    tempAutoStartPomodoros !== autoStartPomodoros ||
+    tempSoundEnabled !== soundEnabled ||
+    tempVolume !== volume ||
+    tempMusicVolume !== musicVolume ||
+    JSON.stringify(tempAmbientVolumes) !== JSON.stringify(ambientVolumes) ||
+    tempBackground !== background ||
+    tempLevelSystemEnabled !== levelSystemEnabled;
 
   // Reset temporary state when modal opens
   useEffect(() => {
@@ -323,12 +360,13 @@ export const SettingsPopover = memo(function SettingsPopover() {
   };
 
   const tabs = [
-    { id: 'timer', label: 'General' },
-    { id: 'appearance', label: 'Appearance' },
-    { id: 'sounds', label: 'Sounds' },
-    { id: 'music', label: 'Music' },
-    { id: 'progress', label: 'Progress' },
-    { id: 'whats-new', label: "What's New" },
+    { id: 'timer', label: 'Timer', icon: SettingsIcon },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'sounds', label: 'Sounds', icon: Volume2 },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'music', label: 'Music', icon: Music },
+    { id: 'progress', label: 'Progress', icon: BarChart },
+    { id: 'whats-new', label: "What's New", icon: Sparkles },
   ] as const;
 
   // Trigger button component
@@ -375,37 +413,46 @@ export const SettingsPopover = memo(function SettingsPopover() {
                   </button>
                 </div>
 
-                {/* Tabs */}
-                <div
-                  role="tablist"
-                  aria-label="Settings categories"
-                  className="flex gap-1 px-4 pt-4 border-b border-white/10 shrink-0 overflow-x-auto scroll-smooth"
-                >
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      role="tab"
-                      aria-selected={activeTab === tab.id}
-                      aria-controls={`${tab.id}-panel`}
-                      id={`${tab.id}-tab`}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`px-3 py-2 text-sm font-medium transition-colors relative whitespace-nowrap ${
-                        activeTab === tab.id
-                          ? 'text-white'
-                          : 'text-gray-400 hover:text-gray-300'
-                      }`}
-                    >
-                      {tab.label}
-                      {activeTab === tab.id && (
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />
-                      )}
-                    </button>
-                  ))}
-                </div>
+                {/* Sidebar + Content Layout */}
+                <div className="flex flex-1 overflow-hidden">
+                  {/* Vertical Sidebar */}
+                  <div
+                    role="tablist"
+                    aria-label="Settings categories"
+                    className="w-[140px] border-r border-white/10 shrink-0 py-2"
+                  >
+                    {tabs.map((tab, index) => {
+                      const Icon = tab.icon;
+                      const isWhatsNew = tab.id === 'whats-new';
+                      return (
+                        <button
+                          key={tab.id}
+                          role="tab"
+                          aria-selected={activeTab === tab.id}
+                          aria-controls={`${tab.id}-panel`}
+                          id={`${tab.id}-tab`}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`w-full px-4 py-3 text-sm font-medium transition-colors flex items-center gap-3 relative ${
+                            isWhatsNew ? 'mt-2 pt-5 border-t border-white/10' : ''
+                          } ${
+                            activeTab === tab.id
+                              ? 'text-white bg-white/5'
+                              : 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+                          }`}
+                        >
+                          {activeTab === tab.id && (
+                            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-purple-500" />
+                          )}
+                          <Icon size={18} className="shrink-0" />
+                          <span className="truncate">{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                {/* Content - Scrollable */}
-                <ScrollArea className="flex-1 overflow-y-auto">
-                  <div className="p-4">
+                  {/* Content - Scrollable */}
+                  <ScrollArea className="flex-1 overflow-y-auto">
+                    <div className="p-4">
                     <SettingsContent
                       activeTab={activeTab}
                       isMobile={false}
@@ -454,22 +501,35 @@ export const SettingsPopover = memo(function SettingsPopover() {
                       firstLoginDate={firstLoginDate}
                     />
                   </div>
-                </ScrollArea>
+                  </ScrollArea>
+                </div>
 
                 {/* Footer */}
-                <div className="flex gap-3 p-4 border-t border-white/10 shrink-0">
-                  <button
-                    onClick={handleReset}
-                    className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors"
-                  >
-                    Reset
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="flex-1 px-4 py-2 bg-white text-black font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    Save
-                  </button>
+                <div className="border-t border-white/10 shrink-0">
+                  {hasUnsavedChanges && (
+                    <div className="px-4 pt-3 pb-1">
+                      <p className="text-xs text-yellow-400">⚠ Unsaved changes</p>
+                    </div>
+                  )}
+                  <div className="flex gap-3 p-4 pt-2">
+                    <button
+                      onClick={handleReset}
+                      className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors"
+                    >
+                      Reset
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={!hasUnsavedChanges}
+                      className={`flex-1 px-4 py-2 font-medium rounded-lg transition-colors ${
+                        hasUnsavedChanges
+                          ? 'bg-white text-black hover:bg-gray-200'
+                          : 'bg-white/20 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      Save
+                    </button>
+                  </div>
                 </div>
               </div>
             </PopoverBody>
@@ -522,26 +582,30 @@ export const SettingsPopover = memo(function SettingsPopover() {
                     aria-label="Settings categories"
                     className="flex gap-1 overflow-x-auto scroll-smooth snap-x snap-mandatory px-4 pt-4 border-b border-white/10 shrink-0"
                   >
-                    {tabs.map((tab) => (
-                      <button
-                        key={tab.id}
-                        role="tab"
-                        aria-selected={activeTab === tab.id}
-                        aria-controls={`${tab.id}-panel`}
-                        id={`${tab.id}-tab`}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`px-3 py-2 text-sm whitespace-nowrap snap-start font-medium transition-colors relative ${
-                          activeTab === tab.id
-                            ? 'text-white'
-                            : 'text-gray-400 hover:text-gray-300'
-                        }`}
-                      >
-                        {tab.label}
-                        {activeTab === tab.id && (
-                          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />
-                        )}
-                      </button>
-                    ))}
+                    {tabs.map((tab) => {
+                      const Icon = tab.icon;
+                      return (
+                        <button
+                          key={tab.id}
+                          role="tab"
+                          aria-selected={activeTab === tab.id}
+                          aria-controls={`${tab.id}-panel`}
+                          id={`${tab.id}-tab`}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`px-3 py-2 text-sm whitespace-nowrap snap-start font-medium transition-colors relative flex items-center gap-2 ${
+                            activeTab === tab.id
+                              ? 'text-white'
+                              : 'text-gray-400 hover:text-gray-300'
+                          }`}
+                        >
+                          <Icon size={16} />
+                          {tab.label}
+                          {activeTab === tab.id && (
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* Content - Scrollable */}
@@ -598,19 +662,31 @@ export const SettingsPopover = memo(function SettingsPopover() {
                   </ScrollArea>
 
                   {/* Footer */}
-                  <div className="flex gap-3 p-4 border-t border-white/10 shrink-0">
-                    <button
-                      onClick={handleReset}
-                      className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors"
-                    >
-                      Reset
-                    </button>
-                    <button
-                      onClick={handleSave}
-                      className="flex-1 px-4 py-2 bg-white text-black font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      Save
-                    </button>
+                  <div className="border-t border-white/10 shrink-0">
+                    {hasUnsavedChanges && (
+                      <div className="px-4 pt-3 pb-1">
+                        <p className="text-xs text-yellow-400">⚠ Unsaved changes</p>
+                      </div>
+                    )}
+                    <div className="flex gap-3 p-4 pt-2">
+                      <button
+                        onClick={handleReset}
+                        className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors"
+                      >
+                        Reset
+                      </button>
+                      <button
+                        onClick={handleSave}
+                        disabled={!hasUnsavedChanges}
+                        className={`flex-1 px-4 py-2 font-medium rounded-lg transition-colors ${
+                          hasUnsavedChanges
+                            ? 'bg-white text-black hover:bg-gray-200'
+                            : 'bg-white/20 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        Save
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               </div>
