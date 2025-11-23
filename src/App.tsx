@@ -18,7 +18,6 @@ import { canClaimDailyGift } from './lib/userSyncAuth';
 
 function AppContent() {
   const { authenticated, loading, error, appUser } = useAuth();
-  const consecutiveLoginDays = useSettingsStore((state) => state.consecutiveLoginDays);
   const settingsSyncComplete = useSettingsStore((state) => state.settingsSyncComplete);
 
   // Enable cross-device settings sync
@@ -133,7 +132,6 @@ function AppContent() {
       <DailyGiftGrid
         show={showDailyGift}
         onClose={() => setShowDailyGift(false)}
-        currentDay={consecutiveLoginDays}
       />
 
       {/* Top Right Buttons - Discord & Settings */}
