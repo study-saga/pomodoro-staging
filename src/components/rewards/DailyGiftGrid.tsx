@@ -138,7 +138,9 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
               appUser.id,
               appUser.discord_id,
               currentGift.xpAmount,
-              isBoostGift
+              isBoostGift,
+              currentGift.boostDuration || 24,
+              currentGift.boostMultiplier || 1.25
             );
 
             if (result.success) {
@@ -153,7 +155,8 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
                 console.log(`[DailyGift] ✓ Pomodoro boost activated until ${new Date(result.boostExpiresAt)}`);
                 useSettingsStore.setState({
                   pomodoroBoostActive: true,
-                  pomodoroBoostExpiresAt: result.boostExpiresAt
+                  pomodoroBoostExpiresAt: result.boostExpiresAt,
+                  pomodoroBoostMultiplier: result.boostMultiplier || 1.25
                 });
               }
             } else if (result.alreadyClaimed) {

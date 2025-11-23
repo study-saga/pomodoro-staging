@@ -8,6 +8,7 @@ import { LevelDisplay } from './components/level/LevelDisplay';
 import { SettingsPopover } from './components/settings/SettingsPopover';
 import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCounter';
 import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
+import { ActiveBoostIndicator } from './components/buffs/ActiveBoostIndicator';
 import { LoginScreen } from './components/auth/LoginScreen';
 import DiscordButton from './components/DiscordButton';
 import { useSettingsSync } from './hooks/useSettingsSync';
@@ -133,6 +134,9 @@ function AppContent() {
         show={showDailyGift}
         onClose={() => setShowDailyGift(false)}
       />
+
+      {/* Active Boost Indicator */}
+      <ActiveBoostIndicator />
 
       {/* Top Right Buttons - Discord & Settings */}
       <div className="fixed top-4 right-4 z-40 flex items-center gap-2">

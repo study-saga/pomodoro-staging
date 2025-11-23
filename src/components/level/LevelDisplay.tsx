@@ -18,6 +18,7 @@ import buffBoost from '../../assets/buff-boost.svg';
 import { UserStatsPopover } from './UserStatsPopover';
 import { UserStatsModal } from './UserStatsModal';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
+import { useActiveEventBuffs } from '../../hooks/useActiveEventBuffs';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
@@ -51,6 +52,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   const { isMobile } = useDeviceType();
   const { appUser } = useAuth();
+  const { activeBuffs } = useActiveEventBuffs();
 
   const xpNeeded = getXPNeeded(level);
   const levelName = getLevelName(level, levelPath);
@@ -481,6 +483,32 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               />
             </div>
           )}
+
+          {/* 5. Event Buffs (Date-based, stackable) */}
+          {activeBuffs.map((buff) => {
+            const buffId = `event-${buff.id}`;
+            const boostPercentage = ((buff.xpMultiplier - 1) * 100).toFixed(0);
+
+            return (
+              <div
+                key={buff.id}
+                className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-500/40 text-xl`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveBuffTooltip(activeBuffTooltip === buffId ? null : buffId);
+                }}
+                onMouseEnter={() => {
+                  if (!isMobile) {
+                    setHoveredBuff(buffId);
+                  }
+                }}
+                onMouseLeave={() => !isMobile && setHoveredBuff(null)}
+                title={`${buff.title}: ${buff.description} (+${boostPercentage}% XP)`}
+              >
+                {buff.emoji}
+              </div>
+            );
+          })}
         </div>
 
         {/* Prestige Stars */}

@@ -587,7 +587,9 @@ export async function claimDailyGift(
   userId: string,
   discordId: string,
   xpAmount: number,
-  activateBoost: boolean = false
+  activateBoost: boolean = false,
+  boostDurationHours: number = 24,
+  boostMultiplier: number = 1.25
 ): Promise<{
   success: boolean
   message: string
@@ -595,9 +597,10 @@ export async function claimDailyGift(
   newXp?: number
   boostActivated?: boolean
   boostExpiresAt?: number
+  boostMultiplier?: number
   alreadyClaimed?: boolean
 }> {
-  console.log(`[User Sync] Claiming daily gift for user ${userId} (XP: ${xpAmount}, Boost: ${activateBoost})`)
+  console.log(`[User Sync] Claiming daily gift for user ${userId} (XP: ${xpAmount}, Boost: ${activateBoost}, Multiplier: ${boostMultiplier})`)
 
   // Determine authentication mode by checking for Supabase session
   const { data: { session } } = await supabase.auth.getSession()
@@ -611,7 +614,9 @@ export async function claimDailyGift(
     const result = await supabase.rpc('claim_daily_gift', {
       p_user_id: userId,
       p_xp_amount: xpAmount,
-      p_activate_boost: activateBoost
+      p_activate_boost: activateBoost,
+      p_boost_duration_hours: boostDurationHours,
+      p_boost_multiplier: boostMultiplier
     })
 
     data = result.data
@@ -624,7 +629,9 @@ export async function claimDailyGift(
       p_user_id: userId,
       p_discord_id: discordId,
       p_xp_amount: xpAmount,
-      p_activate_boost: activateBoost
+      p_activate_boost: activateBoost,
+      p_boost_duration_hours: boostDurationHours,
+      p_boost_multiplier: boostMultiplier
     })
 
     data = result.data
@@ -642,6 +649,9 @@ export async function claimDailyGift(
     console.log('[User Sync] Daily gift already claimed today')
   } else {
     console.log(`[User Sync] Daily gift claimed successfully - ${result.xp_awarded} XP awarded`)
+    if (result.boost_activated) {
+      console.log(`[User Sync] Boost activated: ${result.boost_multiplier}x until ${new Date(result.boost_expires_at)}`)
+    }
   }
 
   // Convert boost_expires_at to milliseconds timestamp
@@ -671,8 +681,9 @@ export async function claimDailyGift(
     message: result.message,
     xpAwarded: result.xp_awarded,
     newXp: result.new_xp,
-    boostActivated: result.boost_activated,
+    boostActivated: result.boost_activated || false,
     boostExpiresAt: boostExpiresAtMs,
+    boostMultiplier: result.boost_multiplier,
     alreadyClaimed: result.already_claimed || false
   }
 }

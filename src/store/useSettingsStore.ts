@@ -5,6 +5,7 @@ import { DEFAULT_SETTINGS, USERNAME_EDIT_COOLDOWN, USERNAME_EDIT_COST, getDefaul
 import { MAX_LEVEL, getXPNeeded } from '../data/levels';
 import { getMilestoneForDay, type MilestoneReward } from '../data/milestones';
 import { calculateRoleXP } from '../data/roleSystem';
+import { getStackedMultiplier, getActiveBuffs } from '../data/eventBuffsData';
 
 // Helper to detect device type
 const getIsMobile = () => {
@@ -161,7 +162,23 @@ export const useSettingsStore = create<SettingsStore>()(
           console.log('[XP] Role buffs applied:', roleResult.bonuses.join(', '));
         }
 
-        const xpGained = Math.floor(baseXP * boostMultiplier);
+        // Apply event buff multipliers (date-based, stackable)
+        const eventBuffMultiplier = getStackedMultiplier(new Date());
+        const activeEventBuffs = getActiveBuffs(new Date());
+
+        if (eventBuffMultiplier > 1 && activeEventBuffs.length > 0) {
+          console.log(
+            '[XP] Event buffs active:',
+            activeEventBuffs.map((b) => `${b.title} (x${b.xpMultiplier})`).join(', ')
+          );
+          console.log('[XP] Stacked event buff multiplier:', eventBuffMultiplier.toFixed(3));
+        }
+
+        // Calculate final XP with all multipliers stacked
+        // Order: base XP → daily boost → event buffs
+        const xpWithBoost = baseXP * boostMultiplier;
+        const xpWithEventBuffs = xpWithBoost * eventBuffMultiplier;
+        const xpGained = Math.floor(xpWithEventBuffs);
         let newXP = state.xp + xpGained;
         let newLevel = state.level;
         let newPrestigeLevel = state.prestigeLevel;
