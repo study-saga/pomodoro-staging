@@ -160,11 +160,15 @@ dateRule: {
 \`\`\`typescript
 dateRule: {
   type: 'dateRange',
-  startDate: 'YYYY-MM-DD',
-  endDate: 'YYYY-MM-DD',
+  startDate: 'YYYY-MM-DD',  // Inclusive: Start at 00:00:00
+  endDate: 'YYYY-MM-DD',    // Inclusive: Ends at 23:59:59.999
   yearlyRecur: true | false  // Optional, default: false
 }
 \`\`\`
+
+**Important:** Date ranges are **fully inclusive** - both startDate and endDate are included in the buff window.
+- `startDate: '2025-12-22'` → Buff starts Dec 22 at 00:00:00
+- `endDate: '2025-12-25'` → Buff ends Dec 25 at 23:59:59.999 (includes entire day)
 
 **Examples:**
 
@@ -357,24 +361,24 @@ Final XP: 100 × 1.875 = 187.5 → 187 XP (rounded down)
 
 ## Advanced: durationHours
 
-**Optional feature** to expire buffs after N hours instead of full day(s).
+**Optional feature** to expire buffs after N hours, allowing buffs to span across multiple calendar days.
 
 ### When to Use
 
-- **Time-limited flash sales** (48-hour events)
-- **Hourly promotions** (midnight launches)
-- **Precise control** over buff windows
+- **Time-limited flash sales** (48-hour events starting at a specific date)
+- **Multi-day events** that don't align with midnight boundaries
+- **Precise hourly control** over buff windows
 
 ### How It Works
 
 Without `durationHours`:
 - Buff active for entire day(s) matching `dateRule`
-- Example: `specificDate: '2025-12-31'` → active all day Dec 31
+- Example: `specificDate: '2025-12-31'` → active all day Dec 31 (00:00 - 23:59:59)
 
 With `durationHours`:
-- Buff starts at 00:00 of matched date
-- Expires after N hours
-- Example: `durationHours: 12` → active 00:00-12:00 only
+- Buff starts at 00:00 of the date matching `dateRule`
+- Expires after N hours (can span multiple calendar days)
+- Example: `durationHours: 48` starting Dec 28 → active Dec 28 00:00 through Dec 29 23:59 (full 48 hours)
 
 ### Configuration
 
@@ -385,24 +389,29 @@ With `durationHours`:
 }
 \`\`\`
 
-### Start Time Rules
+### Start Time & Spanning Behavior
 
-| Rule Type | Buff Start Time |
-|-----------|-----------------|
-| specificDate | Specified date at 00:00 |
-| dateRange | startDate at 00:00 |
-| dayOfWeek | Matched day at 00:00 |
-| monthDay | Matched day at 00:00 |
-| cycle | Matched day at 00:00 |
+| Rule Type | Buff Start Time | Spanning Behavior |
+|-----------|-----------------|-------------------|
+| specificDate | Specified date at 00:00 | Spans into following days if durationHours > 24 |
+| dateRange | startDate at 00:00 | Spans from start into following days |
+| dayOfWeek | Matched day at 00:00 | Can span into next day (e.g., Friday evening → Saturday morning) |
+| monthDay | Matched day at 00:00 | Spans into following days if needed |
+| cycle | Matched day at 00:00 | Spans across cycle if durationHours > 24 |
 
-**Example:**
+**Example - Weekend boost starting Friday evening:**
 
 \`\`\`typescript
 {
   dateRule: { type: 'dayOfWeek', days: [5] },  // Friday
-  durationHours: 36  // Friday 00:00 - Saturday 11:59
+  durationHours: 36  // Friday 00:00 - Saturday 11:59 (spans 2 days)
 }
 \`\`\`
+
+**How Spanning Works:**
+- Buff activates when `dateRule` matches
+- Once active, buff remains active for full `durationHours` regardless of calendar day changes
+- Example: 48-hour buff starting Dec 28 stays active through Dec 29, even though Dec 29 doesn't match the `dateRule`
 
 ### Alternative: Use dateRange Instead
 

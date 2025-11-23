@@ -12,45 +12,45 @@ import type {
  * Pure functions to check if a buff is active on a given date
  */
 export function isBuffActiveOnDate(buff: EventBuff, date: Date = new Date()): boolean {
-  // First check if the date rule matches
-  const ruleMatches = evaluateDateRule(buff.dateRule, date);
-  if (!ruleMatches) return false;
+  // If no durationHours, just check if date rule matches (day-level behavior)
+  if (!buff.durationHours) {
+    return evaluateDateRule(buff.dateRule, date);
+  }
 
-  // If no durationHours specified, use day-level behavior
-  if (!buff.durationHours) return true;
+  // With durationHours: Find the buff start time and check if we're within the duration window
+  // The dateRule determines WHEN the buff starts, but durationHours can span multiple days
+  const buffStartTime = findBuffStartTime(buff.dateRule, date);
+  if (!buffStartTime) return false;
 
-  // Calculate buff start time based on rule type
-  const buffStartTime = getBuffStartTime(buff.dateRule, date);
   const buffEndTime = new Date(buffStartTime.getTime() + buff.durationHours * 60 * 60 * 1000);
 
-  // Check if current time is within duration window
+  // Check if current time is within the duration window
   return date >= buffStartTime && date < buffEndTime;
 }
 
 /**
- * Get buff start time based on rule type
- * Returns the datetime when the buff becomes active
+ * Find the buff start time by checking if the dateRule matched recently
+ * Returns the start time if the buff should be active, or null if not
  */
-function getBuffStartTime(rule: DateRule, currentDate: Date): Date {
-  switch (rule.type) {
-    case 'specificDate': {
-      const ruleDate = parseISO(rule.date);
-      return new Date(ruleDate.getFullYear(), ruleDate.getMonth(), ruleDate.getDate(), 0, 0, 0, 0);
-    }
+function findBuffStartTime(rule: DateRule, currentDate: Date): Date | null {
+  // Check if the rule matches today - if so, start is today at 00:00
+  if (evaluateDateRule(rule, currentDate)) {
+    return new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 0, 0, 0, 0);
+  }
 
-    case 'dateRange': {
-      const startDate = parseISO(rule.startDate);
-      return new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0);
-    }
+  // For durationHours spanning multiple days, check if rule matched in recent past
+  // Look back up to 7 days (reasonable max for durationHours use case)
+  for (let daysBack = 1; daysBack <= 7; daysBack++) {
+    const checkDate = new Date(currentDate);
+    checkDate.setDate(checkDate.getDate() - daysBack);
 
-    case 'dayOfWeek':
-    case 'monthDay':
-    case 'cycle':
-    default: {
-      // For recurring rules, use the current matched day at 00:00
-      return new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 0, 0, 0, 0);
+    if (evaluateDateRule(rule, checkDate)) {
+      // Rule matched on this past date - return that start time
+      return new Date(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate(), 0, 0, 0, 0);
     }
   }
+
+  return null;
 }
 
 function evaluateDateRule(rule: DateRule, date: Date): boolean {
@@ -87,11 +87,15 @@ function evaluateDateRange(rule: DateRangeRule, date: Date): boolean {
   let startDate = parseISO(rule.startDate);
   let endDate = parseISO(rule.endDate);
 
+  // Normalize to start/end of day for inclusive date range
+  startDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0);
+  endDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
+
   if (rule.yearlyRecur) {
     // For yearly recurring, ignore year and just check month/day
     const currentYear = date.getFullYear();
-    startDate = new Date(currentYear, startDate.getMonth(), startDate.getDate());
-    endDate = new Date(currentYear, endDate.getMonth(), endDate.getDate());
+    startDate = new Date(currentYear, startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0);
+    endDate = new Date(currentYear, endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
 
     // Handle wrap-around (e.g., Dec 25 - Jan 5)
     if (endDate < startDate) {
@@ -110,10 +114,14 @@ function evaluateMonthDay(rule: MonthDayRule, date: Date): boolean {
     return isSameDay(date, targetDate);
   }
 
+  // Normalize to start/end of day for inclusive range
   const start = new Date(targetDate);
   const end = new Date(targetDate);
   start.setDate(start.getDate() - daysAround);
   end.setDate(end.getDate() + daysAround);
+
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
 
   return date >= start && date <= end;
 }
