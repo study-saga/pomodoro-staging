@@ -12,8 +12,14 @@
 --
 -- Changes:
 --   - Add critical_success BOOLEAN column to completed_pomodoros
---   - Add first_login_date DATE column to users (backfilled with created_at)
+--   - Add first_login_date DATE column to users (backfilled with last_login or created_at)
 --   - Update atomic_save_completed_pomodoro to accept p_critical_success param
+--
+-- Migration Overlap Note:
+--   This migration overlaps with 20251121000000 (role buffs) and 20251123000000
+--   (first_login_date). Kept separate for git history clarity and incremental
+--   deployment tracking. All migrations are idempotent and safe to run multiple
+--   times or out of order.
 --
 -- Safety: Backward compatible, zero downtime, idempotent
 -- Applied: 2025-11-23 02:00:00 UTC
@@ -39,9 +45,10 @@ ADD COLUMN IF NOT EXISTS first_login_date DATE;
 COMMENT ON COLUMN public.users.first_login_date IS
   'Date of first login (YYYY-MM-DD), used for "Since" display in stats';
 
--- Backfill existing users with created_at date
+-- Backfill existing users with most accurate date:
+-- Use last_login_date if exists (actual login), else created_at (account creation)
 UPDATE public.users
-SET first_login_date = created_at::DATE
+SET first_login_date = COALESCE(last_login_date, created_at::DATE)
 WHERE first_login_date IS NULL;
 
 -- Set default for new users
@@ -59,7 +66,10 @@ CREATE INDEX IF NOT EXISTS idx_users_first_login_date ON public.users(first_logi
 DROP FUNCTION IF EXISTS public.atomic_save_completed_pomodoro(UUID, TEXT, INTEGER, INTEGER, TEXT, TEXT);
 
 -- Create new version (7 parameters - adds p_critical_success)
-CREATE FUNCTION public.atomic_save_completed_pomodoro(
+-- BUSINESS LOGIC NOTE: p_critical_success should ONLY be TRUE for human role
+-- when 25% crit chance triggers (2x XP). Elf role should ALWAYS pass FALSE.
+-- This is enforced at application level, not in database constraints.
+CREATE OR REPLACE FUNCTION public.atomic_save_completed_pomodoro(
   p_user_id UUID,
   p_discord_id TEXT,
   p_duration_minutes INTEGER,
