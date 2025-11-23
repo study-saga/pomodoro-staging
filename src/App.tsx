@@ -19,7 +19,6 @@ import { showGameToast } from './components/ui/GameToast';
 
 function AppContent() {
   const { authenticated, loading, error, appUser } = useAuth();
-  const addXP = useSettingsStore((state) => state.addXP);
   const consecutiveLoginDays = useSettingsStore((state) => state.consecutiveLoginDays);
   const settingsSyncComplete = useSettingsStore((state) => state.settingsSyncComplete);
 
@@ -42,8 +41,7 @@ function AppContent() {
 
         if (result.success) {
           // Server validated and awarded XP - update local state
-          const minutes = result.xpAwarded / 2;
-          addXP(minutes);
+          useSettingsStore.getState().addDailyGiftXP(result.xpAwarded);
 
           // Update consecutive days in store
           useSettingsStore.setState({
@@ -65,7 +63,7 @@ function AppContent() {
         console.error('[Daily Gift] Failed to claim:', error);
         setDailyGiftClaimed(true); // Prevent retry loop
       });
-  }, [settingsSyncComplete, appUser?.id, appUser?.discord_id, dailyGiftClaimed, addXP]);
+  }, [settingsSyncComplete, appUser?.id, appUser?.discord_id, dailyGiftClaimed]);
 
   // Loading state
   if (loading) {
