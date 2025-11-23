@@ -3,6 +3,7 @@ import { memo, useState } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { X, Target, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import { calculateDaysSinceDate } from '../../lib/dateUtils';
 
 interface UserStatsModalProps {
   onClose: () => void;
@@ -44,18 +45,9 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
     }
   }
 
-  // Calculate days since first login (using UTC to avoid timezone issues)
-  let daysSinceFirstLogin = 0;
-  let formattedFirstLoginDate = '';
-  if (firstLoginDate) {
-    const firstDate = new Date(firstLoginDate);
-    const today = new Date();
-    // Use UTC dates for consistent day calculation across timezones
-    const firstDateUTC = Date.UTC(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate());
-    const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
-    daysSinceFirstLogin = Math.floor((todayUTC - firstDateUTC) / (1000 * 60 * 60 * 24));
-    formattedFirstLoginDate = firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  }
+  // Calculate days since first login using shared helper (keeps modal & popover in sync)
+  const { daysSince: daysSinceFirstLogin, formattedDate: formattedFirstLoginDate } =
+    calculateDaysSinceDate(firstLoginDate);
 
   return (
     <>

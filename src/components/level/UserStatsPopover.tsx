@@ -11,6 +11,7 @@ import {
   PopoverContent,
   PopoverBody,
 } from '../ui/popover';
+import { calculateDaysSinceDate } from '../../lib/dateUtils';
 
 interface UserStatsPopoverProps {
   trigger: React.ReactNode;
@@ -61,15 +62,9 @@ export const UserStatsPopover = memo(function UserStatsPopover({
     }
   }
 
-  // Calculate days since first login
-  let daysSinceFirstLogin = 0;
-  let formattedFirstLoginDate = '';
-  if (firstLoginDate) {
-    const firstDate = new Date(firstLoginDate);
-    const today = new Date();
-    daysSinceFirstLogin = Math.floor((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
-    formattedFirstLoginDate = firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  }
+  // Calculate days since first login using shared helper (keeps modal & popover in sync)
+  const { daysSince: daysSinceFirstLogin, formattedDate: formattedFirstLoginDate } =
+    calculateDaysSinceDate(firstLoginDate);
 
   // Calculate tooltip position when shown
   useEffect(() => {
