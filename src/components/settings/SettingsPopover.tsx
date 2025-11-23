@@ -300,7 +300,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
           },
           cancel: {
             label: 'Cancel',
-            onClick: () => {}
+            onClick: () => { }
           }
         });
       } else if (errorMessage.includes('cooldown')) {
@@ -390,7 +390,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
             {trigger}
           </PopoverTrigger>
           <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[540px] p-0 max-h-[85vh] z-[100]"
+            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[594px] p-0 max-h-[85vh] z-[100]"
             align="end"
             side="bottom"
             sideOffset={8}
@@ -432,13 +432,11 @@ export const SettingsPopover = memo(function SettingsPopover() {
                           aria-controls={`${tab.id}-panel`}
                           id={`${tab.id}-tab`}
                           onClick={() => setActiveTab(tab.id)}
-                          className={`w-full px-4 py-3 text-sm font-medium transition-colors flex items-center gap-3 relative ${
-                            isWhatsNew ? 'mt-2 pt-5 border-t border-white/10' : ''
-                          } ${
-                            activeTab === tab.id
+                          className={`w-full px-4 py-3 text-sm font-medium transition-colors flex items-center gap-3 relative ${isWhatsNew ? 'mt-2 pt-5 border-t border-white/10' : ''
+                            } ${activeTab === tab.id
                               ? 'text-white bg-white/5'
                               : 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
-                          }`}
+                            }`}
                         >
                           {activeTab === tab.id && (
                             <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-purple-500" />
@@ -452,55 +450,55 @@ export const SettingsPopover = memo(function SettingsPopover() {
 
                   {/* Content - Scrollable */}
                   <ScrollArea className="flex-1 overflow-y-auto max-w-full">
-                    <div className="p-6 max-w-full">
-                    <SettingsContent
-                      activeTab={activeTab}
-                      isMobile={false}
-                      tempTimers={tempTimers}
-                      setTempTimers={setTempTimers}
-                      tempPomodorosBeforeLongBreak={tempPomodorosBeforeLongBreak}
-                      setTempPomodorosBeforeLongBreak={setTempPomodorosBeforeLongBreak}
-                      tempAutoStartBreaks={tempAutoStartBreaks}
-                      setTempAutoStartBreaks={setTempAutoStartBreaks}
-                      tempAutoStartPomodoros={tempAutoStartPomodoros}
-                      setTempAutoStartPomodoros={setTempAutoStartPomodoros}
-                      tempSoundEnabled={tempSoundEnabled}
-                      setTempSoundEnabled={setTempSoundEnabled}
-                      tempVolume={tempVolume}
-                      setTempVolume={setTempVolume}
-                      tempLevelSystemEnabled={tempLevelSystemEnabled}
-                      setTempLevelSystemEnabled={setTempLevelSystemEnabled}
-                      notificationPermission={notificationPermission}
-                      tempBackground={tempBackground}
-                      setTempBackground={setTempBackground}
-                      filteredBackgrounds={filteredBackgrounds}
-                      tempMusicVolume={tempMusicVolume}
-                      setTempMusicVolume={setTempMusicVolume}
-                      tempAmbientVolumes={tempAmbientVolumes}
-                      setTempAmbientVolumes={setTempAmbientVolumes}
-                      totalTracks={totalTracks}
-                      setShowMusicCredits={setShowMusicCredits}
-                      level={level}
-                      xp={xp}
-                      prestigeLevel={prestigeLevel}
-                      totalPomodoros={totalPomodoros}
-                      totalStudyMinutes={totalStudyMinutes}
-                      levelPath={levelPath}
-                      handleRoleChange={handleRoleChange}
-                      usernameInput={usernameInput}
-                      setUsernameInput={setUsernameInput}
-                      usernameError={usernameError}
-                      setUsernameError={setUsernameError}
-                      usernameLoading={usernameLoading}
-                      handleSaveUsername={handleSaveUsername}
-                      resetProgress={resetProgress}
-                      totalUniqueDays={totalUniqueDays}
-                      consecutiveLoginDays={consecutiveLoginDays}
-                      pomodoroBoostActive={pomodoroBoostActive}
-                      pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
-                      firstLoginDate={firstLoginDate}
-                    />
-                  </div>
+                    <div className="p-6 w-full max-w-full overflow-hidden min-w-0">
+                      <SettingsContent
+                        activeTab={activeTab}
+                        isMobile={false}
+                        tempTimers={tempTimers}
+                        setTempTimers={setTempTimers}
+                        tempPomodorosBeforeLongBreak={tempPomodorosBeforeLongBreak}
+                        setTempPomodorosBeforeLongBreak={setTempPomodorosBeforeLongBreak}
+                        tempAutoStartBreaks={tempAutoStartBreaks}
+                        setTempAutoStartBreaks={setTempAutoStartBreaks}
+                        tempAutoStartPomodoros={tempAutoStartPomodoros}
+                        setTempAutoStartPomodoros={setTempAutoStartPomodoros}
+                        tempSoundEnabled={tempSoundEnabled}
+                        setTempSoundEnabled={setTempSoundEnabled}
+                        tempVolume={tempVolume}
+                        setTempVolume={setTempVolume}
+                        tempLevelSystemEnabled={tempLevelSystemEnabled}
+                        setTempLevelSystemEnabled={setTempLevelSystemEnabled}
+                        notificationPermission={notificationPermission}
+                        tempBackground={tempBackground}
+                        setTempBackground={setTempBackground}
+                        filteredBackgrounds={filteredBackgrounds}
+                        tempMusicVolume={tempMusicVolume}
+                        setTempMusicVolume={setTempMusicVolume}
+                        tempAmbientVolumes={tempAmbientVolumes}
+                        setTempAmbientVolumes={setTempAmbientVolumes}
+                        totalTracks={totalTracks}
+                        setShowMusicCredits={setShowMusicCredits}
+                        level={level}
+                        xp={xp}
+                        prestigeLevel={prestigeLevel}
+                        totalPomodoros={totalPomodoros}
+                        totalStudyMinutes={totalStudyMinutes}
+                        levelPath={levelPath}
+                        handleRoleChange={handleRoleChange}
+                        usernameInput={usernameInput}
+                        setUsernameInput={setUsernameInput}
+                        usernameError={usernameError}
+                        setUsernameError={setUsernameError}
+                        usernameLoading={usernameLoading}
+                        handleSaveUsername={handleSaveUsername}
+                        resetProgress={resetProgress}
+                        totalUniqueDays={totalUniqueDays}
+                        consecutiveLoginDays={consecutiveLoginDays}
+                        pomodoroBoostActive={pomodoroBoostActive}
+                        pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
+                        firstLoginDate={firstLoginDate}
+                      />
+                    </div>
                   </ScrollArea>
                 </div>
 
@@ -521,11 +519,10 @@ export const SettingsPopover = memo(function SettingsPopover() {
                     <button
                       onClick={handleSave}
                       disabled={!hasUnsavedChanges}
-                      className={`flex-1 px-4 py-2 font-medium rounded-lg transition-colors ${
-                        hasUnsavedChanges
+                      className={`flex-1 px-4 py-2 font-medium rounded-lg transition-colors ${hasUnsavedChanges
                           ? 'bg-white text-black hover:bg-gray-200'
                           : 'bg-white/20 text-gray-500 cursor-not-allowed'
-                      }`}
+                        }`}
                     >
                       Save
                     </button>
@@ -592,11 +589,10 @@ export const SettingsPopover = memo(function SettingsPopover() {
                           aria-controls={`${tab.id}-panel`}
                           id={`${tab.id}-tab`}
                           onClick={() => setActiveTab(tab.id)}
-                          className={`px-3 py-2 text-sm whitespace-nowrap snap-start font-medium transition-colors relative flex items-center gap-2 ${
-                            activeTab === tab.id
+                          className={`px-3 py-2 text-sm whitespace-nowrap snap-start font-medium transition-colors relative flex items-center gap-2 ${activeTab === tab.id
                               ? 'text-white'
                               : 'text-gray-400 hover:text-gray-300'
-                          }`}
+                            }`}
                         >
                           <Icon size={16} />
                           {tab.label}
@@ -610,7 +606,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
 
                   {/* Content - Scrollable */}
                   <ScrollArea className="flex-1 overflow-y-auto">
-                    <div className="p-6">
+                    <div className="p-4">
                       <SettingsContent
                         activeTab={activeTab}
                         isMobile={true}
@@ -678,11 +674,10 @@ export const SettingsPopover = memo(function SettingsPopover() {
                       <button
                         onClick={handleSave}
                         disabled={!hasUnsavedChanges}
-                        className={`flex-1 px-4 py-2 font-medium rounded-lg transition-colors ${
-                          hasUnsavedChanges
+                        className={`flex-1 px-4 py-2 font-medium rounded-lg transition-colors ${hasUnsavedChanges
                             ? 'bg-white text-black hover:bg-gray-200'
                             : 'bg-white/20 text-gray-500 cursor-not-allowed'
-                        }`}
+                          }`}
                       >
                         Save
                       </button>

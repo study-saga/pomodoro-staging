@@ -1,35 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { AMBIENT_SOUNDS } from '../../data/constants';
-import {
-  ROLE_EMOJI_ELF,
-  ROLE_EMOJI_HUMAN,
-} from '../../data/levels';
 import { Badge } from '../ui/badge';
 import { changelog, type ChangelogEntry } from '../../data/changelog';
-import { toast } from 'sonner';
-import { useAuth } from '../../contexts/AuthContext';
-import { resetUserProgress } from '../../lib/userSyncAuth';
-
-// Copied from UserStatsPopover.tsx
-interface StatCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  color: string;
-}
-
-function StatCard({ icon, label, value, color }: StatCardProps) {
-  return (
-    <div className="bg-white/5 rounded-lg p-4 border border-white/10 hover:border-white/20 transition-colors min-w-0">
-      <div className={`flex items-center gap-2 ${color} mb-2`}>
-        {icon}
-        <span className="text-xs text-gray-400 uppercase tracking-wide">{label}</span>
-      </div>
-      <p className="text-lg font-bold text-white text-left">{value}</p>
-    </div>
-  );
-}
+import { ProgressTab } from './ProgressTab';
 
 
 interface SettingsContentProps {
@@ -93,7 +67,6 @@ interface SettingsContentProps {
 }
 
 export function SettingsContent(props: SettingsContentProps) {
-  const { appUser } = useAuth();
   const {
     activeTab,
     isMobile,
@@ -121,6 +94,9 @@ export function SettingsContent(props: SettingsContentProps) {
     setTempAmbientVolumes,
     totalTracks,
     setShowMusicCredits,
+    level,
+    xp,
+    prestigeLevel,
     totalPomodoros,
     totalStudyMinutes,
     levelPath,
@@ -138,27 +114,6 @@ export function SettingsContent(props: SettingsContentProps) {
     pomodoroBoostExpiresAt,
     firstLoginDate,
   } = props;
-
-    // Logic from UserStatsPopover
-    const avgSessionLength = totalPomodoros > 0
-    ? Math.round(totalStudyMinutes / totalPomodoros)
-    : 0;
-  const studyHours = Math.floor(totalStudyMinutes / 60);
-  const studyMins = totalStudyMinutes % 60;
-  let boostTimeRemaining = '';
-  if (pomodoroBoostActive && pomodoroBoostExpiresAt) {
-    const timeLeft = pomodoroBoostExpiresAt - Date.now();
-    if (timeLeft > 0) {
-      const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
-      const minsLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-      boostTimeRemaining = `${hoursLeft}h ${minsLeft}m`;
-    }
-  }
-  let formattedFirstLoginDate = '';
-  if (firstLoginDate) {
-    const firstDate = new Date(firstLoginDate);
-    formattedFirstLoginDate = firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  }
 
   return (
     <AnimatePresence mode="wait">
@@ -551,189 +506,29 @@ export function SettingsContent(props: SettingsContentProps) {
       )}
 
       {activeTab === 'progress' && (
-        <motion.div
-          key="progress"
-          role="tabpanel"
-          id="progress-panel"
-          aria-labelledby="progress-tab"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
-          transition={{ duration: 0.2 }}
-          className="space-y-8 overflow-hidden"
-        >
-          <div>
-            <h3 className="text-white font-bold text-lg mb-4">Level System</h3>
-
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-white">Enable leveling system</label>
-              <input
-                type="checkbox"
-                checked={tempLevelSystemEnabled}
-                onChange={(e) => setTempLevelSystemEnabled(e.target.checked)}
-                className="w-5 h-5 rounded"
-              />
-            </div>
-          </div>
-
-          <div className="max-w-full overflow-hidden">
-            <h3 className="text-white font-bold text-lg mb-4">Hero Stats</h3>
-
-            {/* Featured Role Card */}
-            <label className="w-full max-w-full bg-gradient-to-r from-purple-600/20 to-purple-600/10 rounded-xl p-4 border border-purple-500/30 mb-4 cursor-pointer block hover:border-purple-500/50 transition-colors">
-              <input
-                type="checkbox"
-                className="opacity-0 w-0 h-0 peer"
-                checked={levelPath === 'human'}
-                onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
-              />
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <span className="text-5xl flex-shrink-0">
-                    {levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}
-                  </span>
-                  <div>
-                    <p className="text-2xl font-bold text-white">
-                      {levelPath === 'elf' ? 'Elf' : 'Human'}
-                    </p>
-                    <p className="text-sm text-gray-400">
-                      {levelPath === 'elf' ? 'Consistency & Focus' : 'High Risk, High Reward'}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-gray-400 text-sm">Tap to switch</div>
-              </div>
-            </label>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-3 w-full max-w-full">
-              <StatCard
-                icon={<span className="text-base">🍅</span>}
-                label="Pomodoros"
-                value={totalPomodoros.toLocaleString()}
-                color="text-red-400"
-              />
-              <StatCard
-                icon={<Clock className="w-5 h-5" />}
-                label="Study Time"
-                value={studyHours > 0 ? `${studyHours}h ${studyMins}m` : `${studyMins}m`}
-                color="text-green-400"
-              />
-              <StatCard
-                icon={<Calendar className="w-5 h-5" />}
-                label="Active Days"
-                value={`${totalUniqueDays}`}
-                color="text-cyan-400"
-              />
-              <StatCard
-                icon={<Flame className="w-5 h-5" />}
-                label="Login Streak"
-                value={`${consecutiveLoginDays} days`}
-                color="text-orange-400"
-              />
-              <StatCard
-                icon={<BarChart className="w-5 h-5" />}
-                label="Avg Session"
-                value={`${avgSessionLength}m`}
-                color="text-purple-400"
-              />
-              {firstLoginDate && (
-                <StatCard
-                    icon={<Calendar className="w-5 h-5" />}
-                    label="Since"
-                    value={formattedFirstLoginDate}
-                    color="text-pink-400"
-                />
-              )}
-              {pomodoroBoostActive && boostTimeRemaining && (
-                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-4 col-span-full">
-                  <div className="flex items-center gap-2 text-purple-300 mb-1">
-                    <Zap className="w-5 h-5" />
-                    <span className="text-sm font-semibold">+25% XP Boost Active</span>
-                  </div>
-                  <p className="text-xs text-purple-400">
-                    Expires in {boostTimeRemaining}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-white font-bold text-lg mb-2">Username</h3>
-            <p className="text-gray-400 text-sm mb-4">
-              Change your display name. Free once per week, or costs 50 XP if changed earlier.
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={usernameInput}
-                onChange={(e) => {
-                  setUsernameInput(e.target.value.slice(0, 20));
-                  setUsernameError(null); // Clear error when typing
-                }}
-                maxLength={20}
-                disabled={usernameLoading}
-                className="flex-1 bg-white/10 text-white px-4 py-2 rounded-lg border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="User"
-              />
-              <button
-                onClick={handleSaveUsername}
-                disabled={usernameLoading}
-                className="px-6 py-2 bg-white text-black font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {usernameLoading ? 'Saving...' : 'Update'}
-              </button>
-            </div>
-            {usernameError && (
-              <p className="text-red-400 text-sm mt-2">
-                ⚠ {usernameError}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <h3 className="text-white font-bold text-lg mb-2">Reset Progress</h3>
-            <p className="text-gray-400 text-sm mb-4">
-              This will reset all your progress including level, XP, prestige, and stats.
-              This action cannot be undone.
-            </p>
-            <button
-              onClick={() => {
-                toast('Reset All Progress?', {
-                  description: 'This action cannot be undone. All your XP, levels, prestige, and stats will be lost permanently.',
-                  duration: 10000,
-                  action: {
-                    label: 'Reset Everything',
-                    onClick: async () => {
-                      try {
-                        // Reset server state if user is authenticated
-                        if (appUser?.id && appUser?.discord_id) {
-                          await resetUserProgress(appUser.id, appUser.discord_id);
-                        }
-
-                        // Reset local state
-                        resetProgress();
-
-                        toast.success('All progress has been reset');
-                      } catch (error) {
-                        console.error('Failed to reset progress:', error);
-                        toast.error('Failed to reset progress in database');
-                      }
-                    }
-                  },
-                  cancel: {
-                    label: 'Cancel',
-                    onClick: () => {}
-                  }
-                });
-              }}
-              className="px-4 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors"
-            >
-              Reset All Progress
-            </button>
-          </div>
-        </motion.div>
+        <ProgressTab
+          level={level}
+          xp={xp}
+          prestigeLevel={prestigeLevel}
+          levelPath={levelPath}
+          tempLevelSystemEnabled={tempLevelSystemEnabled}
+          setTempLevelSystemEnabled={setTempLevelSystemEnabled}
+          handleRoleChange={handleRoleChange}
+          totalPomodoros={totalPomodoros}
+          totalStudyMinutes={totalStudyMinutes}
+          totalUniqueDays={totalUniqueDays}
+          consecutiveLoginDays={consecutiveLoginDays}
+          firstLoginDate={firstLoginDate}
+          pomodoroBoostActive={pomodoroBoostActive}
+          pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
+          usernameInput={usernameInput}
+          setUsernameInput={setUsernameInput}
+          usernameError={usernameError}
+          setUsernameError={setUsernameError}
+          usernameLoading={usernameLoading}
+          handleSaveUsername={handleSaveUsername}
+          resetProgress={resetProgress}
+        />
       )}
 
       {activeTab === 'whats-new' && (
