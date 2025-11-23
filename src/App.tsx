@@ -14,8 +14,7 @@ import { useSettingsSync } from './hooks/useSettingsSync';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { getEnvironment } from './lib/environment';
-import { claimDailyGiftXP } from './lib/userSyncAuth';
-import { showGameToast } from './components/ui/GameToast';
+import { canClaimDailyGift } from './lib/userSyncAuth';
 
 function AppContent() {
   const { authenticated, loading, error, appUser } = useAuth();
@@ -29,38 +28,26 @@ function AppContent() {
   const [showDailyGift, setShowDailyGift] = useState(false);
   const [dailyGiftClaimed, setDailyGiftClaimed] = useState(false);
 
-  // Claim daily gift with server-side validation (prevents XP exploit)
+  // Check if daily gift available (actual claim happens in DailyGiftGrid to prevent double-claiming)
   useEffect(() => {
     // Wait for settings sync to complete (has DB state)
     if (!settingsSyncComplete || !appUser?.id || dailyGiftClaimed) return;
 
-    // Attempt to claim daily gift from server
-    claimDailyGiftXP(appUser.id, appUser.discord_id)
-      .then((result) => {
-        setDailyGiftClaimed(true);
+    // Check if gift available (doesn't claim, just checks eligibility)
+    canClaimDailyGift(appUser.id, appUser.discord_id)
+      .then((canClaim) => {
+        setDailyGiftClaimed(true); // Prevent re-checking
 
-        if (result.success) {
-          // Server validated and awarded XP - update local state
-          useSettingsStore.getState().addDailyGiftXP(result.xpAwarded);
-
-          // Update consecutive days in store
-          useSettingsStore.setState({
-            consecutiveLoginDays: result.consecutiveDays
-          });
-
-          // Show daily gift modal
+        if (canClaim) {
+          // Show daily gift modal - DailyGiftGrid will handle actual claim
           setShowDailyGift(true);
-
-          // Show XP toast
-          showGameToast(`+${result.xpAwarded} XP Collected! 🎉`);
-          console.log('[Daily Gift] Claimed successfully:', result);
+          console.log('[Daily Gift] Gift available, showing modal');
         } else {
-          // Already claimed today - server rejected
           console.log('[Daily Gift] Already claimed today');
         }
       })
       .catch((error) => {
-        console.error('[Daily Gift] Failed to claim:', error);
+        console.error('[Daily Gift] Failed to check gift status:', error);
         setDailyGiftClaimed(true); // Prevent retry loop
       });
   }, [settingsSyncComplete, appUser?.id, appUser?.discord_id, dailyGiftClaimed]);
