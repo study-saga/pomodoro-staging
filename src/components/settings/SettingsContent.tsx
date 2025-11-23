@@ -21,7 +21,7 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value, color }: StatCardProps) {
   return (
-    <div className="bg-white/5 rounded-lg p-2 border border-white/10">
+    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
       <div className={`flex items-center gap-1.5 ${color} mb-0.5`}>
         {icon}
         <span className="text-xs text-gray-400">{label}</span>
@@ -324,7 +324,7 @@ export function SettingsContent(props: SettingsContentProps) {
           className="space-y-4"
         >
           <h3 className="text-white font-bold text-lg">Background</h3>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-4">
             {filteredBackgrounds.map((bg) => (
               <button
                 key={bg.id}
@@ -424,7 +424,7 @@ export function SettingsContent(props: SettingsContentProps) {
 
           <div>
             <h3 className="text-white font-bold text-sm mb-3">🔊 Ambient Sounds</h3>
-            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-x-4 gap-y-3`}>
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
               {AMBIENT_SOUNDS.map((sound) => (
                 <div key={sound.id}>
                   <div className="flex items-center justify-between mb-1.5">
@@ -578,7 +578,7 @@ export function SettingsContent(props: SettingsContentProps) {
 
           <div>
             <h3 className="text-white font-bold text-lg mb-4">Hero Stats</h3>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
                 <label className="bg-white/5 rounded-lg border border-white/10 cursor-pointer relative overflow-hidden flex items-center justify-center">
                   <input
                     type="checkbox"

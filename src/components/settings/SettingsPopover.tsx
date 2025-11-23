@@ -390,7 +390,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
             {trigger}
           </PopoverTrigger>
           <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[480px] p-0 max-h-[85vh] z-[100]"
+            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[540px] p-0 max-h-[85vh] z-[100]"
             align="end"
             side="bottom"
             sideOffset={8}
@@ -419,7 +419,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
                   <div
                     role="tablist"
                     aria-label="Settings categories"
-                    className="w-[140px] border-r border-white/10 shrink-0 py-2"
+                    className="w-[160px] border-r border-white/10 shrink-0 py-2"
                   >
                     {tabs.map((tab, index) => {
                       const Icon = tab.icon;
@@ -452,7 +452,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
 
                   {/* Content - Scrollable */}
                   <ScrollArea className="flex-1 overflow-y-auto">
-                    <div className="p-4">
+                    <div className="p-6">
                     <SettingsContent
                       activeTab={activeTab}
                       isMobile={false}
@@ -610,7 +610,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
 
                   {/* Content - Scrollable */}
                   <ScrollArea className="flex-1 overflow-y-auto">
-                    <div className="p-4">
+                    <div className="p-6">
                       <SettingsContent
                         activeTab={activeTab}
                         isMobile={true}
