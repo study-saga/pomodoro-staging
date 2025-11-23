@@ -264,14 +264,28 @@ export function SettingsContent(props: SettingsContentProps) {
 
             <div className="flex items-center justify-between mb-4">
               <label className="text-white">Pomodoros before long break</label>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={tempPomodorosBeforeLongBreak}
-                onChange={(e) => setTempPomodorosBeforeLongBreak(Number(e.target.value))}
-                className="w-16 bg-white/10 text-white text-center px-2 py-1 rounded border border-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setTempPomodorosBeforeLongBreak(Math.max(1, tempPomodorosBeforeLongBreak - 1))}
+                  className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={tempPomodorosBeforeLongBreak}
+                  onChange={(e) => setTempPomodorosBeforeLongBreak(Number(e.target.value))}
+                  className="w-16 bg-white/10 text-white text-center px-2 py-1 rounded border border-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <button
+                  onClick={() => setTempPomodorosBeforeLongBreak(Math.min(10, tempPomodorosBeforeLongBreak + 1))}
+                  className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
+                >
+                  +
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between mb-4">
@@ -313,31 +327,6 @@ export function SettingsContent(props: SettingsContentProps) {
                 className="w-5 h-5 rounded"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-white font-medium mb-2">
-              Alarm Bell Volume - {tempVolume}%
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={tempVolume}
-              onChange={(e) => setTempVolume(Number(e.target.value))}
-              className="w-full h-2 bg-gray-700 rounded-full appearance-none cursor-pointer
-                [&::-webkit-slider-thumb]:appearance-none
-                [&::-webkit-slider-thumb]:w-4
-                [&::-webkit-slider-thumb]:h-4
-                [&::-webkit-slider-thumb]:rounded-full
-                [&::-webkit-slider-thumb]:bg-blue-500
-                [&::-webkit-slider-thumb]:cursor-pointer
-                [&::-moz-range-thumb]:w-4
-                [&::-moz-range-thumb]:h-4
-                [&::-moz-range-thumb]:rounded-full
-                [&::-moz-range-thumb]:bg-blue-500
-                [&::-moz-range-thumb]:border-0"
-            />
           </div>
 
           <div>
@@ -444,7 +433,7 @@ export function SettingsContent(props: SettingsContentProps) {
 
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-white text-sm">🔊 Main Volume</label>
+                <label className="text-white text-sm">🔔 Bell Notification Volume</label>
                 <span className="text-white text-sm">{tempVolume}%</span>
               </div>
               <input
