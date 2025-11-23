@@ -82,6 +82,13 @@ export const UserStatsPopover = memo(function UserStatsPopover({
     }
   }, [showSinceTooltip]);
 
+  // Reset tooltip state when popover closes to prevent stuck tooltips
+  useEffect(() => {
+    if (!open && showSinceTooltip) {
+      setShowSinceTooltip(false);
+    }
+  }, [open, showSinceTooltip]);
+
   // Stats grid content (shared between mobile and desktop)
   const statsContent = (
     <div className="grid grid-cols-2 gap-2">

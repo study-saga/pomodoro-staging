@@ -33,9 +33,12 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameLoading, setUsernameLoading] = useState(false);
   const [showMusicCredits, setShowMusicCredits] = useState(false);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
-    'Notification' in window ? Notification.permission : 'default'
-  );
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() => {
+    if (typeof window === 'undefined' || typeof Notification === 'undefined') {
+      return 'default';
+    }
+    return Notification.permission;
+  });
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 

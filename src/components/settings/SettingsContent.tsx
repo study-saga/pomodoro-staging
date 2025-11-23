@@ -8,6 +8,8 @@ import {
 import { Badge } from '../ui/badge';
 import { changelog, type ChangelogEntry } from '../../data/changelog';
 import { toast } from 'sonner';
+import { useAuth } from '../../contexts/AuthContext';
+import { resetUserProgress } from '../../lib/userSyncAuth';
 
 // Copied from UserStatsPopover.tsx
 interface StatCardProps {
@@ -91,6 +93,7 @@ interface SettingsContentProps {
 }
 
 export function SettingsContent(props: SettingsContentProps) {
+  const { appUser } = useAuth();
   const {
     activeTab,
     isMobile,
@@ -342,7 +345,7 @@ export function SettingsContent(props: SettingsContentProps) {
             <p className="text-gray-400 text-sm mb-3">
               Enable browser notifications to get notified when your timer completes.
             </p>
-            {('Notification' in window) ? (
+            {(typeof window !== 'undefined' && 'Notification' in window) ? (
               <>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white text-sm">Status:</span>
@@ -683,6 +686,11 @@ export function SettingsContent(props: SettingsContentProps) {
                     label: 'Reset Everything',
                     onClick: async () => {
                       try {
+                        // Reset server state if user is authenticated
+                        if (appUser?.id && appUser?.discord_id) {
+                          await resetUserProgress(appUser.id, appUser.discord_id);
+                        }
+
                         // Reset local state
                         resetProgress();
 
