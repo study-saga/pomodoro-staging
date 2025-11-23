@@ -55,7 +55,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const xpNeeded = getXPNeeded(level);
   const levelName = getLevelName(level, levelPath);
   const roleEmoji = levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN;
-  const progress = (xp / xpNeeded) * 100;
+  const progress = Math.min(Math.max((xp / xpNeeded) * 100, 0), 100); // Clamp to 0-100%
 
   // Generate confetti particles
   const confettiParticles = useMemo(() => {
@@ -163,38 +163,38 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   // Update tooltip position based on buff ref with viewport boundary checks
   const updateTooltipPosition = (buffId: string, ref: React.RefObject<HTMLDivElement | null>) => {
-    if (ref.current) {
-      const rect = ref.current.getBoundingClientRect();
-      const tooltipHeight = 80; // Estimated tooltip height
-      const tooltipWidth = 180; // Min width from className
-      const padding = 12; // Safe padding from viewport edges
+    if (typeof window === 'undefined' || !ref.current) return;
 
-      let top = rect.bottom + 8;
-      let left = rect.left + rect.width / 2;
+    const rect = ref.current.getBoundingClientRect();
+    const tooltipHeight = 80; // Estimated tooltip height
+    const tooltipWidth = 180; // Min width from className
+    const padding = 12; // Safe padding from viewport edges
 
-      // Check bottom overflow - if tooltip goes below viewport, position above icon
-      if (top + tooltipHeight > window.innerHeight - padding) {
-        top = rect.top - tooltipHeight - 8;
-      }
+    let top = rect.bottom + 8;
+    let left = rect.left + rect.width / 2;
 
-      // Check top overflow - ensure minimum distance from top
-      if (top < padding) {
-        top = padding;
-      }
-
-      // Check horizontal overflow
-      const halfWidth = tooltipWidth / 2;
-      if (left - halfWidth < padding) {
-        left = halfWidth + padding;
-      } else if (left + halfWidth > window.innerWidth - padding) {
-        left = window.innerWidth - halfWidth - padding;
-      }
-
-      setTooltipPositions(prev => ({
-        ...prev,
-        [buffId]: { top, left }
-      }));
+    // Check bottom overflow - if tooltip goes below viewport, position above icon
+    if (top + tooltipHeight > window.innerHeight - padding) {
+      top = rect.top - tooltipHeight - 8;
     }
+
+    // Check top overflow - ensure minimum distance from top
+    if (top < padding) {
+      top = padding;
+    }
+
+    // Check horizontal overflow
+    const halfWidth = tooltipWidth / 2;
+    if (left - halfWidth < padding) {
+      left = halfWidth + padding;
+    } else if (left + halfWidth > window.innerWidth - padding) {
+      left = window.innerWidth - halfWidth - padding;
+    }
+
+    setTooltipPositions(prev => ({
+      ...prev,
+      [buffId]: { top, left }
+    }));
   };
 
   // Handle buff icon click on mobile
@@ -334,7 +334,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               </div>
               <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
                 {appUser?.avatar && <AvatarImage src={appUser.avatar} />}
-                <AvatarFallback>{username.slice(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback>{username?.slice(0, 2).toUpperCase() || '??'}</AvatarFallback>
               </Avatar>
             </div>
 
