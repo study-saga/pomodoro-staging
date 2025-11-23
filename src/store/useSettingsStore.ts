@@ -281,6 +281,7 @@ export const useSettingsStore = create<SettingsStore>()(
             await saveCompletedPomodoro(appUser.id, appUser.discord_id, {
               duration_minutes: minutes,
               xp_earned: xpGained,
+              critical_success: criticalSuccess,
             });
 
             console.log('[addXP] ✓ XP synced to database');

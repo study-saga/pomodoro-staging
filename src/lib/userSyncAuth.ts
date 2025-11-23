@@ -302,6 +302,7 @@ export async function saveCompletedPomodoro(
   data: {
     duration_minutes: number
     xp_earned: number
+    critical_success?: boolean
     task_name?: string
     notes?: string
   }
@@ -316,6 +317,7 @@ export async function saveCompletedPomodoro(
       p_discord_id: discordId,
       p_duration_minutes: data.duration_minutes,
       p_xp_earned: data.xp_earned,
+      p_critical_success: data.critical_success || false,
       p_task_name: data.task_name || null,
       p_notes: data.notes || null
     }

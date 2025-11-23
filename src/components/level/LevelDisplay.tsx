@@ -52,8 +52,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const { isMobile } = useDeviceType();
   const { appUser } = useAuth();
 
-  if (!levelSystemEnabled) return null;
-
   const xpNeeded = getXPNeeded(level);
   const levelName = getLevelName(level, levelPath);
   const roleEmoji = levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN;
@@ -254,6 +252,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       document.removeEventListener('keydown', handleEscape);
     };
   }, [isMobile, activeBuffTooltip]);
+
+  if (!levelSystemEnabled) return null;
 
   return (
     <>

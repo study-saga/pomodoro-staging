@@ -5,9 +5,6 @@ import { PomodoroTimer } from './components/timer/PomodoroTimer';
 import { MusicPlayer } from './components/music/MusicPlayer';
 import { AmbientSoundsPlayer } from './components/music/AmbientSoundsPlayer';
 import { LevelDisplay } from './components/level/LevelDisplay';
-// import { RoleSwitch } from './components/level/RoleSwitch';
-// import { RoleSwitchComparison } from './components/level/RoleSwitchComparison';
-
 import { SettingsPopover } from './components/settings/SettingsPopover';
 import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCounter';
 import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
@@ -130,11 +127,6 @@ function AppContent() {
 
       {/* Level Display (Top Left) */}
       <LevelDisplay onOpenDailyGift={() => setShowDailyGift(true)} />
-
-      {/* Role Switch Comparison (Below Level Display) */}
-      {/* <RoleSwitchComparison /> */}
-
-
 
       {/* Online Presence Counter (Top Right, below settings button) */}
       <div className="fixed top-20 right-4 z-10">
