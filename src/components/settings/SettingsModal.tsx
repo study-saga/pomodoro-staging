@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Settings as SettingsIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -145,6 +145,9 @@ export function SettingsModal() {
   // Filter backgrounds based on viewport orientation (portrait vs landscape)
   const targetOrientation = isPortrait ? 'vertical' : 'horizontal';
   const filteredBackgrounds = BACKGROUNDS.filter(bg => bg.orientation === targetOrientation);
+
+  // Cache level name to avoid redundant calculations (used twice for dynamic font sizing)
+  const levelNameLabel = useMemo(() => getLevelName(level, levelPath), [level, levelPath]);
 
   // Temporary state for settings (only applied on Save)
   const [tempTimers, setTempTimers] = useState(timers);
@@ -811,10 +814,10 @@ export function SettingsModal() {
                     <p
                       className="text-white font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full"
                       style={{
-                        fontSize: getLevelName(level, levelPath).length > 18 ? '0.85rem' : getLevelName(level, levelPath).length > 14 ? '0.95rem' : getLevelName(level, levelPath).length > 11 ? '1.1rem' : '1.25rem'
+                        fontSize: levelNameLabel.length > 18 ? '0.85rem' : levelNameLabel.length > 14 ? '0.95rem' : levelNameLabel.length > 11 ? '1.1rem' : '1.25rem'
                       }}
                     >
-                      {level} - {getLevelName(level, levelPath)}
+                      {level} - {levelNameLabel}
                     </p>
                   </div>
                   <div className="bg-white/5 rounded-lg p-3">

@@ -745,6 +745,11 @@ export async function resetUserProgress(
       throw new Error(`Failed to reset progress: ${error.message}`)
     }
 
+    if (!data) {
+      console.error('[User Sync] No data returned from reset_user_progress')
+      throw new Error('Failed to reset progress: No data returned')
+    }
+
     console.log('[User Sync] Progress reset successfully (web mode)')
     return data as AppUser
   } else {
@@ -758,6 +763,11 @@ export async function resetUserProgress(
     if (error) {
       console.error('[User Sync] Error resetting progress:', error)
       throw new Error(`Failed to reset progress: ${error.message}`)
+    }
+
+    if (!data) {
+      console.error('[User Sync] No data returned from reset_user_progress_discord')
+      throw new Error('Failed to reset progress: No data returned')
     }
 
     console.log('[User Sync] Progress reset successfully (Discord Activity mode)')

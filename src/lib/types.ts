@@ -34,6 +34,7 @@ export interface AppUser {
   consecutive_login_days: number
   total_login_days: number
   last_login_date: string | null
+  first_login_date: string | null
 
   // Boost tracking (SERVER-CONTROLLED - read-only from client)
   pomodoro_boost_active: boolean

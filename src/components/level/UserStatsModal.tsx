@@ -24,6 +24,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
   } = useSettingsStore();
 
   const [showSinceTooltip, setShowSinceTooltip] = useState(false);
+  // Average session length: total minutes divided by pomodoro count
   const avgSessionLength = totalPomodoros > 0
     ? Math.round(totalStudyMinutes / totalPomodoros)
     : 0;
@@ -32,7 +33,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
   const studyHours = Math.floor(totalStudyMinutes / 60);
   const studyMins = totalStudyMinutes % 60;
 
-  // Calculate boost time remaining
+  // Calculate boost time remaining (verified correct: pomodoroBoostExpiresAt is timestamp)
   let boostTimeRemaining = '';
   if (pomodoroBoostActive && pomodoroBoostExpiresAt) {
     const timeLeft = pomodoroBoostExpiresAt - Date.now();
@@ -43,13 +44,16 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
     }
   }
 
-  // Calculate days since first login
+  // Calculate days since first login (using UTC to avoid timezone issues)
   let daysSinceFirstLogin = 0;
   let formattedFirstLoginDate = '';
   if (firstLoginDate) {
     const firstDate = new Date(firstLoginDate);
     const today = new Date();
-    daysSinceFirstLogin = Math.floor((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Use UTC dates for consistent day calculation across timezones
+    const firstDateUTC = Date.UTC(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate());
+    const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    daysSinceFirstLogin = Math.floor((todayUTC - firstDateUTC) / (1000 * 60 * 60 * 24));
     formattedFirstLoginDate = firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
@@ -152,9 +156,19 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
             {/* Since Date */}
             {firstLoginDate && (
               <div
-                className="relative bg-white/5 rounded-lg p-2 border border-white/10 cursor-help"
+                role="button"
+                tabIndex={0}
+                aria-expanded={showSinceTooltip}
+                aria-label={`Account created ${formattedFirstLoginDate}, ${daysSinceFirstLogin} ${daysSinceFirstLogin === 1 ? 'day' : 'days'} ago`}
+                className="relative bg-white/5 rounded-lg p-2 border border-white/10 cursor-help focus:outline-none focus:ring-2 focus:ring-pink-400/50"
                 onMouseEnter={() => setShowSinceTooltip(true)}
                 onMouseLeave={() => setShowSinceTooltip(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setShowSinceTooltip(!showSinceTooltip);
+                  }
+                }}
               >
                 <div className="flex items-center gap-1.5 text-pink-400 mb-0.5">
                   <Calendar className="w-4 h-4" />
@@ -164,7 +178,11 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
 
                 {/* Tooltip */}
                 {showSinceTooltip && (
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 z-50 shadow-xl whitespace-nowrap">
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 z-50 shadow-xl whitespace-nowrap"
+                  >
                     <p className="text-xs text-gray-200 text-center">
                       I was there, Gandalf.<br />
                       I was there {daysSinceFirstLogin} {daysSinceFirstLogin === 1 ? 'day' : 'days'} ago!

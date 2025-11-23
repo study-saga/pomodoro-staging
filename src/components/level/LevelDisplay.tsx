@@ -98,11 +98,28 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   const slingshotActive = isSlingshotActive();
 
-  // Calculate boost time remaining
+  // Calculate boost time remaining with defensive fallbacks
   const getBoostTimeRemaining = () => {
     if (!pomodoroBoostActive || !pomodoroBoostExpiresAt) return '';
+
+    // Defensive: validate timestamp (must be number, not NaN, and reasonable)
+    if (typeof pomodoroBoostExpiresAt !== 'number' ||
+        isNaN(pomodoroBoostExpiresAt) ||
+        pomodoroBoostExpiresAt < 0 ||
+        pomodoroBoostExpiresAt > Date.now() + 365 * 24 * 60 * 60 * 1000) { // max 1 year in future
+      console.warn('[LevelDisplay] Invalid boost expiry timestamp, deactivating:', pomodoroBoostExpiresAt);
+      useSettingsStore.setState({ pomodoroBoostActive: false, pomodoroBoostExpiresAt: null });
+      return '';
+    }
+
     const timeLeft = pomodoroBoostExpiresAt - Date.now();
-    if (timeLeft <= 0) return '';
+
+    // Auto-deactivate if expired
+    if (timeLeft <= 0) {
+      useSettingsStore.setState({ pomodoroBoostActive: false, pomodoroBoostExpiresAt: null });
+      return '';
+    }
+
     const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
     const minsLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
     return `${hoursLeft}h ${minsLeft}m`;

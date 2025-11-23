@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import SkeletonArcher from '../SkeletonArcher';
 
 interface LevelUpCelebrationProps {
@@ -19,8 +19,8 @@ export function LevelUpCelebration({ show, level, levelName }: LevelUpCelebratio
     }
   }, [show]);
 
-  // Generate confetti particles
-  const confettiParticles = Array.from({ length: 90 }, (_, i) => {
+  // Generate confetti particles (memoized to prevent regeneration on every render)
+  const confettiParticles = useMemo(() => Array.from({ length: 90 }, (_, i) => {
     const sizes = [
       { w: 6, h: 3 },   // small
       { w: 10, h: 5 },  // medium
@@ -39,7 +39,7 @@ export function LevelUpCelebration({ show, level, levelName }: LevelUpCelebratio
       width: size.w,
       height: size.h,
     };
-  });
+  }), []);
 
   return (
     <AnimatePresence>
