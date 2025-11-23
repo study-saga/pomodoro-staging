@@ -52,7 +52,7 @@ Edit `/src/data/eventBuffsData.ts`
 
 Copy an existing buff and customize:
 
-\`\`\`typescript
+```typescript
 {
   id: 'new_years_day_2026',           // Unique ID (kebab-case)
   title: 'New Year's Day',             // Display name
@@ -64,7 +64,7 @@ Copy an existing buff and customize:
     date: '2026-01-01'                 // Jan 1, 2026 only
   },
 }
-\`\`\`
+```
 
 ### Step 3: Save & Test
 
@@ -87,12 +87,12 @@ Event buffs support 5 date rule types for flexible scheduling.
 
 **Configuration:**
 
-\`\`\`typescript
+```typescript
 dateRule: {
   type: 'dayOfWeek',
   days: [0, 6]  // Array of days (0=Sunday, 6=Saturday)
 }
-\`\`\`
+```
 
 **Day Numbers:**
 - 0 = Sunday
@@ -105,7 +105,7 @@ dateRule: {
 
 **Examples:**
 
-\`\`\`typescript
+```typescript
 // Weekends only
 { type: 'dayOfWeek', days: [0, 6] }
 
@@ -117,7 +117,7 @@ dateRule: {
 
 // Every Monday (start-of-week motivation)
 { type: 'dayOfWeek', days: [1] }
-\`\`\`
+```
 
 ---
 
@@ -127,16 +127,16 @@ dateRule: {
 
 **Configuration:**
 
-\`\`\`typescript
+```typescript
 dateRule: {
   type: 'specificDate',
   date: 'YYYY-MM-DD'  // ISO date format
 }
-\`\`\`
+```
 
 **Examples:**
 
-\`\`\`typescript
+```typescript
 // New Year's Eve 2025
 { type: 'specificDate', date: '2025-12-31' }
 
@@ -145,7 +145,7 @@ dateRule: {
 
 // Founder's birthday
 { type: 'specificDate', date: '2025-07-04' }
-\`\`\`
+```
 
 **Note:** Does NOT recur yearly unless combined with `yearlyRecur` in a `dateRange`.
 
@@ -157,14 +157,14 @@ dateRule: {
 
 **Configuration:**
 
-\`\`\`typescript
+```typescript
 dateRule: {
   type: 'dateRange',
   startDate: 'YYYY-MM-DD',  // Inclusive: Start at 00:00:00
   endDate: 'YYYY-MM-DD',    // Inclusive: Ends at 23:59:59.999
   yearlyRecur: true | false  // Optional, default: false
 }
-\`\`\`
+```
 
 **Important:** Date ranges are **fully inclusive** - both startDate and endDate are included in the buff window.
 - `startDate: '2025-12-22'` → Buff starts Dec 22 at 00:00:00
@@ -172,7 +172,7 @@ dateRule: {
 
 **Examples:**
 
-\`\`\`typescript
+```typescript
 // Christmas week 2025 (non-recurring)
 {
   type: 'dateRange',
@@ -196,7 +196,7 @@ dateRule: {
   endDate: '2025-11-27',
   yearlyRecur: true
 }
-\`\`\`
+```
 
 **yearlyRecur Behavior:**
 - `true`: Repeats every year on same month/day
@@ -211,18 +211,18 @@ dateRule: {
 
 **Configuration:**
 
-\`\`\`typescript
+```typescript
 dateRule: {
   type: 'monthDay',
   month: 1-12,           // Month number
   day: 1-31,             // Day of month
   daysAround: number     // Optional: extend range
 }
-\`\`\`
+```
 
 **Examples:**
 
-\`\`\`typescript
+```typescript
 // Valentine's Day (single day)
 {
   type: 'monthDay',
@@ -252,7 +252,7 @@ dateRule: {
   month: 1,  // Applies to ALL months
   day: 1
 }
-\`\`\`
+```
 
 **daysAround Math:**
 - `daysAround: 3` on Feb 14 → Feb 11-17 (7 days total)
@@ -266,18 +266,18 @@ dateRule: {
 
 **Configuration:**
 
-\`\`\`typescript
+```typescript
 dateRule: {
   type: 'cycle',
   startDate: 'YYYY-MM-DD',  // Reference start date
   intervalDays: number,      // Repeat every N days
   durationDays: number       // Active for N days each cycle
 }
-\`\`\`
+```
 
 **Examples:**
 
-\`\`\`typescript
+```typescript
 // Bi-weekly power week (5 days on, 9 days off)
 {
   type: 'cycle',
@@ -301,7 +301,7 @@ dateRule: {
   intervalDays: 29,          // Lunar month
   durationDays: 1            // One day only
 }
-\`\`\`
+```
 
 **How It Works:**
 1. Calculates days since `startDate`
@@ -309,13 +309,13 @@ dateRule: {
 3. Active if position < `durationDays`
 
 **Visual Timeline Example:**
-\`\`\`
+```
 intervalDays: 14, durationDays: 5
 
 Day:  1 2 3 4 5 6 7 8 9 10 11 12 13 14 | 15 16 17 18 19 20 21 22 23 24 25 26 27 28 |
 Buff: ✓ ✓ ✓ ✓ ✓ ✗ ✗ ✗ ✗ ✗  ✗  ✗  ✗  ✗  | ✓  ✓  ✓  ✓  ✓  ✗  ✗  ✗  ✗  ✗  ✗  ✗  ✗  ✗  |
       |<---- 5 days ---->|                 |<---- repeats ---->|
-\`\`\`
+```
 
 ---
 
@@ -334,7 +334,7 @@ Buff: ✓ ✓ ✓ ✓ ✓ ✗ ✗ ✗ ✗ ✗  ✗  ✗  ✗  ✗  | ✓  ✓  �
 
 **Multiple active buffs MULTIPLY together (not add):**
 
-\`\`\`typescript
+```typescript
 // Example: Saturday during Thanksgiving
 Active buffs:
 - Weekend Warrior: 1.25x
@@ -345,7 +345,7 @@ Total multiplier: 1.25 × 1.5 = 1.875x (+87.5% XP)
 XP calculation:
 Base XP: 100
 Final XP: 100 × 1.875 = 187.5 → 187 XP (rounded down)
-\`\`\`
+```
 
 **Stacking Examples:**
 
@@ -382,12 +382,12 @@ With `durationHours`:
 
 ### Configuration
 
-\`\`\`typescript
+```typescript
 {
   dateRule: { type: 'specificDate', date: '2025-11-28' },
   durationHours: 48  // Active Nov 28 00:00 - Nov 29 23:59 (48 hours)
 }
-\`\`\`
+```
 
 ### Start Time & Spanning Behavior
 
@@ -401,12 +401,12 @@ With `durationHours`:
 
 **Example - Weekend boost starting Friday evening:**
 
-\`\`\`typescript
+```typescript
 {
   dateRule: { type: 'dayOfWeek', days: [5] },  // Friday
   durationHours: 36  // Friday 00:00 - Saturday 11:59 (spans 2 days)
 }
-\`\`\`
+```
 
 **How Spanning Works:**
 - Buff activates when `dateRule` matches
@@ -417,7 +417,7 @@ With `durationHours`:
 
 For most cases, explicit `dateRange` is clearer than `durationHours`:
 
-\`\`\`typescript
+```typescript
 // AVOID: specificDate + durationHours
 {
   dateRule: { type: 'specificDate', date: '2025-11-28' },
@@ -432,7 +432,7 @@ For most cases, explicit `dateRange` is clearer than `durationHours`:
     endDate: '2025-11-29'
   }
 }
-\`\`\`
+```
 
 ---
 
@@ -440,7 +440,7 @@ For most cases, explicit `dateRange` is clearer than `durationHours`:
 
 ### Pattern 1: Weekend Boost
 
-\`\`\`typescript
+```typescript
 {
   id: 'weekend_warrior',
   title: 'Weekend Warrior',
@@ -452,11 +452,11 @@ For most cases, explicit `dateRange` is clearer than `durationHours`:
     days: [0, 6]  // Saturday & Sunday
   }
 }
-\`\`\`
+```
 
 ### Pattern 2: Holiday Week
 
-\`\`\`typescript
+```typescript
 {
   id: 'christmas_2025',
   title: 'Christmas Week',
@@ -470,11 +470,11 @@ For most cases, explicit `dateRange` is clearer than `durationHours`:
     yearlyRecur: true  // Repeats every year
   }
 }
-\`\`\`
+```
 
 ### Pattern 3: Exam Season
 
-\`\`\`typescript
+```typescript
 {
   id: 'finals_fall_2025',
   title: 'Finals Week Focus',
@@ -488,11 +488,11 @@ For most cases, explicit `dateRange` is clearer than `durationHours`:
     yearlyRecur: false  // One-time event
   }
 }
-\`\`\`
+```
 
 ### Pattern 4: Monthly Power Week
 
-\`\`\`typescript
+```typescript
 {
   id: 'first_week_boost',
   title: 'Month Kickstart',
@@ -506,11 +506,11 @@ For most cases, explicit `dateRange` is clearer than `durationHours`:
     durationDays: 7     // First 7 days
   }
 }
-\`\`\`
+```
 
 ### Pattern 5: Yearly Birthday
 
-\`\`\`typescript
+```typescript
 {
   id: 'founders_birthday',
   title: 'Founder's Birthday',
@@ -524,7 +524,7 @@ For most cases, explicit `dateRange` is clearer than `durationHours`:
     daysAround: 0  // Single day only
   }
 }
-\`\`\`
+```
 
 ---
 
@@ -535,14 +535,14 @@ For most cases, explicit `dateRange` is clearer than `durationHours`:
 **Check 1: Date Rule Matches Today**
 
 Test in browser console:
-\`\`\`javascript
+```javascript
 import { isBuffActiveOnDate } from './src/config/buffActivationRules';
 import { EVENT_BUFFS } from './src/data/eventBuffsData';
 
 const buff = EVENT_BUFFS.find(b => b.id === 'your_buff_id');
 const today = new Date();
 console.log(isBuffActiveOnDate(buff, today));  // Should return true
-\`\`\`
+```
 
 **Check 2: Date Format Correct**
 
@@ -551,23 +551,23 @@ console.log(isBuffActiveOnDate(buff, today));  // Should return true
 
 **Check 3: yearlyRecur for Yearly Events**
 
-\`\`\`typescript
+```typescript
 // ❌ Won't work in 2026
 { type: 'dateRange', startDate: '2025-12-25', endDate: '2025-12-28' }
 
 // ✅ Works every year
 { type: 'dateRange', startDate: '2025-12-25', endDate: '2025-12-28', yearlyRecur: true }
-\`\`\`
+```
 
 **Check 4: daysAround Math**
 
-\`\`\`typescript
+```typescript
 // daysAround: 3 on day 14 = days 11-17 (7 days total)
 { month: 2, day: 14, daysAround: 3 }  // Feb 11-17
 
 // For full month Dec (31 days), use:
 { month: 12, day: 16, daysAround: 15 }  // Dec 1-31
-\`\`\`
+```
 
 ### Buff Icon Not Showing
 
@@ -582,13 +582,13 @@ console.log(isBuffActiveOnDate(buff, today));  // Should return true
 
 **Check:** Stacking vs expected behavior
 
-\`\`\`typescript
+```typescript
 // If Weekend (1.25x) + Holiday (1.5x) both active:
 Expected: 1.25 × 1.5 = 1.875x (NOT 2.75x)
 
 // XP calculation:
 100 base XP × 1.875 = 187.5 → 187 XP (rounds down)
-\`\`\`
+```
 
 **Verify:**
 1. Complete a pomodoro
@@ -612,7 +612,7 @@ Expected: 1.25 × 1.5 = 1.875x (NOT 2.75x)
 
 ### Helper Functions
 
-\`\`\`typescript
+```typescript
 // Get all active buffs on given date
 getActiveBuffs(date?: Date): EventBuff[]
 
@@ -624,11 +624,11 @@ isBuffActiveOnDate(buff: EventBuff, date?: Date): boolean
 
 // Find buff by ID
 getBuffById(buffId: string): EventBuff | undefined
-\`\`\`
+```
 
 ### React Hook
 
-\`\`\`typescript
+```typescript
 import { useActiveEventBuffs } from '@/hooks/useActiveEventBuffs';
 
 function MyComponent() {
@@ -641,7 +641,7 @@ function MyComponent() {
     </div>
   );
 }
-\`\`\`
+```
 
 ---
 
