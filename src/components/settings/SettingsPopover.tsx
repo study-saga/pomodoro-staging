@@ -414,7 +414,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
                 </div>
 
                 {/* Sidebar + Content Layout */}
-                <div className="flex flex-1 overflow-hidden">
+                <div className="flex flex-1 overflow-hidden min-w-0">
                   {/* Vertical Sidebar */}
                   <div
                     role="tablist"
@@ -451,8 +451,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                   </div>
 
                   {/* Content - Scrollable */}
-                  <ScrollArea className="flex-1 overflow-y-auto">
-                    <div className="p-6">
+                  <ScrollArea className="flex-1 overflow-y-auto max-w-full">
+                    <div className="p-6 max-w-full">
                     <SettingsContent
                       activeTab={activeTab}
                       isMobile={false}

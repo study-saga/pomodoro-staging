@@ -21,12 +21,12 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value, color }: StatCardProps) {
   return (
-    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-      <div className={`flex items-center gap-1.5 ${color} mb-0.5`}>
+    <div className="bg-white/5 rounded-lg p-4 border border-white/10 hover:border-white/20 transition-colors min-w-0">
+      <div className={`flex items-center gap-2 ${color} mb-2`}>
         {icon}
-        <span className="text-xs text-gray-400">{label}</span>
+        <span className="text-xs text-gray-400 uppercase tracking-wide">{label}</span>
       </div>
-      <p className="text-base font-bold text-white text-left">{value}</p>
+      <p className="text-lg font-bold text-white text-left">{value}</p>
     </div>
   );
 }
@@ -560,7 +560,7 @@ export function SettingsContent(props: SettingsContentProps) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
           transition={{ duration: 0.2 }}
-          className="space-y-8"
+          className="space-y-8 overflow-hidden"
         >
           <div>
             <h3 className="text-white font-bold text-lg mb-4">Level System</h3>
@@ -576,27 +576,37 @@ export function SettingsContent(props: SettingsContentProps) {
             </div>
           </div>
 
-          <div>
+          <div className="max-w-full overflow-hidden">
             <h3 className="text-white font-bold text-lg mb-4">Hero Stats</h3>
-            <div className="grid grid-cols-2 gap-3">
-                <label className="bg-white/5 rounded-lg border border-white/10 cursor-pointer relative overflow-hidden flex items-center justify-center">
-                  <input
-                    type="checkbox"
-                    className="opacity-0 w-0 h-0 peer"
-                    checked={levelPath === 'human'}
-                    onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
-                  />
-                  <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg transition-all duration-300 peer-checked:from-blue-600 peer-checked:to-blue-700"></span>
-                  <span className="relative text-4xl z-10 transition-transform duration-300">
+
+            {/* Featured Role Card */}
+            <label className="w-full max-w-full bg-gradient-to-r from-purple-600/20 to-purple-600/10 rounded-xl p-4 border border-purple-500/30 mb-4 cursor-pointer block hover:border-purple-500/50 transition-colors">
+              <input
+                type="checkbox"
+                className="opacity-0 w-0 h-0 peer"
+                checked={levelPath === 'human'}
+                onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
+              />
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <span className="text-5xl flex-shrink-0">
                     {levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}
                   </span>
-                </label>
-              <StatCard
-                icon={<span className="text-base">{levelPath === 'elf' ? '🧝' : '⚔️'}</span>}
-                label=""
-                value={levelPath === 'elf' ? 'Elf' : 'Human'}
-                color="text-purple-400"
-              />
+                  <div>
+                    <p className="text-2xl font-bold text-white">
+                      {levelPath === 'elf' ? 'Elf' : 'Human'}
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      {levelPath === 'elf' ? 'Consistency & Focus' : 'High Risk, High Reward'}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-gray-400 text-sm">Tap to switch</div>
+              </div>
+            </label>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-3 w-full max-w-full">
               <StatCard
                 icon={<span className="text-base">🍅</span>}
                 label="Pomodoros"
@@ -604,44 +614,44 @@ export function SettingsContent(props: SettingsContentProps) {
                 color="text-red-400"
               />
               <StatCard
-                icon={<Clock className="w-4 h-4" />}
+                icon={<Clock className="w-5 h-5" />}
                 label="Study Time"
                 value={studyHours > 0 ? `${studyHours}h ${studyMins}m` : `${studyMins}m`}
                 color="text-green-400"
               />
               <StatCard
-                icon={<Calendar className="w-4 h-4" />}
+                icon={<Calendar className="w-5 h-5" />}
                 label="Active Days"
                 value={`${totalUniqueDays}`}
                 color="text-cyan-400"
               />
               <StatCard
-                icon={<Flame className="w-4 h-4" />}
+                icon={<Flame className="w-5 h-5" />}
                 label="Login Streak"
                 value={`${consecutiveLoginDays} days`}
                 color="text-orange-400"
               />
               <StatCard
-                icon={<BarChart className="w-4 h-4" />}
+                icon={<BarChart className="w-5 h-5" />}
                 label="Avg Session"
                 value={`${avgSessionLength}m`}
                 color="text-purple-400"
               />
               {firstLoginDate && (
                 <StatCard
-                    icon={<Calendar className="w-4 h-4" />}
+                    icon={<Calendar className="w-5 h-5" />}
                     label="Since"
                     value={formattedFirstLoginDate}
                     color="text-pink-400"
                 />
               )}
               {pomodoroBoostActive && boostTimeRemaining && (
-                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-3 col-span-full">
-                  <div className="flex items-center gap-2 text-purple-300">
-                    <Zap className="w-4 h-4" />
+                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-4 col-span-full">
+                  <div className="flex items-center gap-2 text-purple-300 mb-1">
+                    <Zap className="w-5 h-5" />
                     <span className="text-sm font-semibold">+25% XP Boost Active</span>
                   </div>
-                  <p className="text-xs text-purple-400 mt-1">
+                  <p className="text-xs text-purple-400">
                     Expires in {boostTimeRemaining}
                   </p>
                 </div>
