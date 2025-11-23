@@ -219,6 +219,7 @@ export function calculateRoleXP(
   additionalContext?: {
     consecutiveDays?: number;
     prestigeLevel?: number;
+    /** Human only: positive = consecutive crits, negative = consecutive fails (absolute value) */
     consecutiveCrits?: number;
   }
 ): { xpGained: number; criticalSuccess: boolean; bonuses: string[] } {
@@ -292,14 +293,15 @@ export function calculateRoleXP(
 }
 
 /**
- * Get active buffs for a role based on current state
+ * Get active buffs for a role
+ * Currently returns all passive and proc-type buffs
+ * (Future: could add conditional logic based on game state)
  */
 export function getActiveBuffs(
   roleType: RoleType
 ): RoleBuff[] {
   const allBuffs = getRoleBuffs(roleType);
 
-  // For now, return all passive buffs
-  // In the future, can add logic to enable/disable based on conditions
+  // Return all passive and proc buffs (always active)
   return allBuffs.filter(buff => buff.type === 'passive' || buff.type === 'proc');
 }

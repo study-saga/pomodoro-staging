@@ -307,7 +307,7 @@ export async function saveCompletedPomodoro(
     notes?: string
   }
 ): Promise<string> {
-  console.log(`[User Sync] Saving pomodoro for user ${userId}`, '')
+  console.log(`[User Sync] Saving pomodoro for user ${userId}`)
 
   // Use atomic RPC function to save pomodoro and update stats in one transaction
   const { data: pomodoroId, error } = await supabase.rpc(
