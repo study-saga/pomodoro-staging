@@ -12,7 +12,7 @@
 --
 -- Changes:
 --   - Add critical_success BOOLEAN column to completed_pomodoros
---   - Add first_login_date DATE column to users (backfilled with last_login or created_at)
+--   - Add first_login_date DATE column to users (backfilled with created_at)
 --   - Update atomic_save_completed_pomodoro to accept p_critical_success param
 --
 -- Migration Overlap Note:
@@ -45,10 +45,10 @@ ADD COLUMN IF NOT EXISTS first_login_date DATE;
 COMMENT ON COLUMN public.users.first_login_date IS
   'Date of first login (YYYY-MM-DD), used for "Since" display in stats';
 
--- Backfill existing users with most accurate date:
--- Use last_login_date if exists (actual login), else created_at (account creation)
+-- Backfill existing users with account creation date
+-- Note: last_login_date is MOST RECENT login, not first, so use created_at
 UPDATE public.users
-SET first_login_date = COALESCE(last_login_date, created_at::DATE)
+SET first_login_date = created_at::DATE
 WHERE first_login_date IS NULL;
 
 -- Set default for new users
