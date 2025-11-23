@@ -282,7 +282,7 @@ function GiftCard({ gift, index }: GiftCardProps) {
         relative aspect-square rounded-2xl
         transition-all duration-300
         ${gift.isSelected
-          ? 'ring-4 ring-purple-400 ring-offset-2 ring-offset-black shadow-[0_0_20px_rgba(168,85,247,0.6)]'
+          ? 'ring-2 ring-purple-400/80 shadow-[0_0_20px_rgba(168,85,247,0.6)]'
           : ''
         }
       `}
@@ -363,9 +363,9 @@ function GiftCard({ gift, index }: GiftCardProps) {
           <span className="text-5xl opacity-80">🍅</span>
         )}
 
-        {/* Already claimed gifts show red tick */}
+        {/* Already claimed gifts show checkmark */}
         {isAlreadyClaimed && (
-          <img src="/tick.png" alt="claimed" className="w-12 h-12 opacity-60" />
+          <span className="text-4xl opacity-40">✓</span>
         )}
 
         {/* Current day XP gifts show the value */}
