@@ -49,6 +49,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const slingshotActiveRef = useRef<HTMLDivElement>(null);
   const boostRef = useRef<HTMLDivElement>(null);
   const slingshotInactiveRef = useRef<HTMLDivElement>(null);
+  const eventBuffRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const { isMobile } = useDeviceType();
   const { appUser } = useAuth();
@@ -487,23 +488,29 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
           {/* 5. Event Buffs (Date-based, stackable) */}
           {activeBuffs.map((buff) => {
             const buffId = `event-${buff.id}`;
-            const boostPercentage = ((buff.xpMultiplier - 1) * 100).toFixed(0);
 
             return (
               <div
                 key={buff.id}
+                ref={(el) => { eventBuffRefs.current[buffId] = el; }}
                 className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-500/40 text-xl`}
                 onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveBuffTooltip(activeBuffTooltip === buffId ? null : buffId);
+                  if (isMobile) {
+                    e.stopPropagation();
+                    const newActiveTooltip = activeBuffTooltip === buffId ? null : buffId;
+                    setActiveBuffTooltip(newActiveTooltip);
+                    if (newActiveTooltip) {
+                      updateTooltipPosition(buffId, { current: eventBuffRefs.current[buffId] });
+                    }
+                  }
                 }}
                 onMouseEnter={() => {
                   if (!isMobile) {
                     setHoveredBuff(buffId);
+                    updateTooltipPosition(buffId, { current: eventBuffRefs.current[buffId] });
                   }
                 }}
                 onMouseLeave={() => !isMobile && setHoveredBuff(null)}
-                title={`${buff.title}: ${buff.description} (+${boostPercentage}% XP)`}
               >
                 {buff.emoji}
               </div>
@@ -682,6 +689,36 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         </div>,
         document.body
       )}
+
+      {/* Event Buff Tooltips */}
+      {activeBuffs.map((buff) => {
+        const buffId = `event-${buff.id}`;
+        const isActive = isMobile ? activeBuffTooltip === buffId : hoveredBuff === buffId;
+
+        if (!tooltipPositions[buffId] || !isActive) return null;
+
+        return createPortal(
+          <div
+            key={buffId}
+            className="fixed transform -translate-x-1/2 pointer-events-none z-40 transition-opacity duration-200"
+            style={{
+              top: `${tooltipPositions[buffId].top}px`,
+              left: `${tooltipPositions[buffId].left}px`,
+              opacity: isMobile ? (activeBuffTooltip === buffId ? 1 : 0) : undefined,
+            }}
+          >
+            <div className="bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-lg px-3 py-2 shadow-lg min-w-[180px]">
+              <p className="text-xs font-semibold text-cyan-300 mb-0.5">
+                {buff.title}
+              </p>
+              <p className="text-[10px] text-gray-400">
+                {buff.description}
+              </p>
+            </div>
+          </div>,
+          document.body
+        );
+      })}
 
       {/* "LEVEL UP!" text - appears to the right of Level UI */}
       <AnimatePresence>

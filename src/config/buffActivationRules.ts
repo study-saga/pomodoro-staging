@@ -12,7 +12,45 @@ import type {
  * Pure functions to check if a buff is active on a given date
  */
 export function isBuffActiveOnDate(buff: EventBuff, date: Date = new Date()): boolean {
-  return evaluateDateRule(buff.dateRule, date);
+  // First check if the date rule matches
+  const ruleMatches = evaluateDateRule(buff.dateRule, date);
+  if (!ruleMatches) return false;
+
+  // If no durationHours specified, use day-level behavior
+  if (!buff.durationHours) return true;
+
+  // Calculate buff start time based on rule type
+  const buffStartTime = getBuffStartTime(buff.dateRule, date);
+  const buffEndTime = new Date(buffStartTime.getTime() + buff.durationHours * 60 * 60 * 1000);
+
+  // Check if current time is within duration window
+  return date >= buffStartTime && date < buffEndTime;
+}
+
+/**
+ * Get buff start time based on rule type
+ * Returns the datetime when the buff becomes active
+ */
+function getBuffStartTime(rule: DateRule, currentDate: Date): Date {
+  switch (rule.type) {
+    case 'specificDate': {
+      const ruleDate = parseISO(rule.date);
+      return new Date(ruleDate.getFullYear(), ruleDate.getMonth(), ruleDate.getDate(), 0, 0, 0, 0);
+    }
+
+    case 'dateRange': {
+      const startDate = parseISO(rule.startDate);
+      return new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0);
+    }
+
+    case 'dayOfWeek':
+    case 'monthDay':
+    case 'cycle':
+    default: {
+      // For recurring rules, use the current matched day at 00:00
+      return new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 0, 0, 0, 0);
+    }
+  }
 }
 
 function evaluateDateRule(rule: DateRule, date: Date): boolean {

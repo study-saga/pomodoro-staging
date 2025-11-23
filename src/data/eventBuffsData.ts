@@ -4,15 +4,75 @@ import { isBuffActiveOnDate } from '../config/buffActivationRules';
 /**
  * EVENT BUFFS DATABASE
  *
- * Edit this file to add/modify monthly event buffs!
- * No code changes needed - buffs auto-activate based on date rules.
+ * ===============================================
+ * QUICK START: Add a new event buff in 3 steps
+ * ===============================================
  *
- * HOW TO ADD A NEW BUFF:
- * 1. Copy an existing buff object
- * 2. Change id, title, description, emoji
- * 3. Set xpMultiplier (1.25 = +25%, 1.5 = +50%, 2.0 = double)
- * 4. Set dateRule (see examples below)
- * 5. Save file - buff is now live!
+ * 1. Copy an existing buff object below
+ * 2. Customize: id, title, description, emoji, xpMultiplier
+ * 3. Set dateRule (see DATE RULE TYPES below)
+ * 4. Save file - buff auto-activates on matching dates!
+ *
+ * ===============================================
+ * XP MULTIPLIER GUIDE
+ * ===============================================
+ *
+ * - 1.25 = +25% XP (weekend boost, small events)
+ * - 1.5  = +50% XP (holiday weeks, special events)
+ * - 1.75 = +75% XP (major events, limited-time)
+ * - 2.0  = +100% XP (double XP, premium events)
+ *
+ * STACKING: Multiple active buffs MULTIPLY together!
+ * Example: Weekend (1.25x) + Holiday (1.5x) = 1.875x total
+ *
+ * ===============================================
+ * DATE RULE TYPES (5 types)
+ * ===============================================
+ *
+ * 1. dayOfWeek - Recurring weekly (weekends, specific weekdays)
+ *    days: [0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday]
+ *    Example: { type: 'dayOfWeek', days: [0, 6] } // Weekends
+ *
+ * 2. specificDate - Single date only (one-time events)
+ *    date: 'YYYY-MM-DD'
+ *    Example: { type: 'specificDate', date: '2025-12-31' } // New Year's Eve
+ *
+ * 3. dateRange - Date range (holiday seasons, multi-day events)
+ *    startDate: 'YYYY-MM-DD', endDate: 'YYYY-MM-DD', yearlyRecur: boolean
+ *    Example: { type: 'dateRange', startDate: '2025-12-22', endDate: '2025-12-25' }
+ *
+ * 4. monthDay - Yearly recurring (birthdays, holidays)
+ *    month: 1-12, day: 1-31, daysAround: number (optional, extends range)
+ *    Example: { type: 'monthDay', month: 2, day: 14, daysAround: 3 } // Valentine's week
+ *
+ * 5. cycle - Repeating intervals (bi-weekly, monthly patterns)
+ *    startDate: 'YYYY-MM-DD', intervalDays: number, durationDays: number
+ *    Example: { type: 'cycle', startDate: '2025-11-01', intervalDays: 14, durationDays: 5 }
+ *
+ * ===============================================
+ * ADVANCED: durationHours (optional)
+ * ===============================================
+ *
+ * Expires buff after N hours from start time.
+ * Default: Buff lasts entire day(s) from dateRule.
+ *
+ * Example with durationHours:
+ * {
+ *   dateRule: { type: 'specificDate', date: '2025-11-28' },
+ *   durationHours: 48  // Active from Nov 28 00:00 for 48 hours
+ * }
+ *
+ * ===============================================
+ * VALIDATION RULES
+ * ===============================================
+ *
+ * - id: Unique string (no spaces, use kebab-case)
+ * - xpMultiplier: >= 1.0 (1.0 = no boost)
+ * - dateRange: endDate >= startDate
+ * - monthDay: month 1-12, day 1-31
+ * - dayOfWeek: days 0-6 only
+ *
+ * See docs/EVENT_BUFFS.md for full guide!
  */
 
 export const EVENT_BUFFS: EventBuff[] = [
@@ -54,10 +114,11 @@ export const EVENT_BUFFS: EventBuff[] = [
     description: '+75% XP - 48 hours only!',
     emoji: '🛍️',
     xpMultiplier: 1.75,
-    durationHours: 48,
     dateRule: {
-      type: 'specificDate',
-      date: '2025-11-28',
+      type: 'dateRange',
+      startDate: '2025-11-28',
+      endDate: '2025-11-29',
+      yearlyRecur: false,
     },
   },
 
@@ -73,7 +134,7 @@ export const EVENT_BUFFS: EventBuff[] = [
     dateRule: {
       type: 'monthDay',
       month: 12,
-      day: 15, // Centered around mid-December
+      day: 16, // Adjusted to create Dec 1 - Dec 31 window
       daysAround: 15, // Dec 1 - Dec 31
     },
   },
