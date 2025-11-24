@@ -155,7 +155,8 @@ export interface EventBuff {
   id: string; // Unique identifier (e.g., "weekend_warrior")
   title: string; // Display name (e.g., "Weekend Warrior")
   description: string; // Short description
-  emoji: string; // Visual representation (e.g., "💪")
+  emoji: string; // Visual representation (e.g., "💪") - fallback if no iconSrc
+  iconSrc?: string; // Optional: Custom SVG/image path (overrides emoji)
   xpMultiplier: number; // XP boost (1.5 = +50%)
   dateRule: DateRule; // When this buff is active
   durationHours?: number; // Optional: expires after N hours

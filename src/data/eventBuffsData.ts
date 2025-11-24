@@ -1,5 +1,6 @@
 import type { EventBuff } from '../types';
 import { isBuffActiveOnDate } from '../config/buffActivationRules';
+import buffElfSlingshot from '../assets/buff-elf-slingshot.svg';
 
 /**
  * EVENT BUFFS DATABASE
@@ -88,6 +89,24 @@ export const EVENT_BUFFS: EventBuff[] = [
     dateRule: {
       type: 'dayOfWeek',
       days: [0, 6], // Sunday and Saturday
+    },
+  },
+
+  // ============================================
+  // NOVEMBER 2025 - ELF COMEBACK EVENT
+  // ============================================
+  {
+    id: 'elf_comeback_nov_2025',
+    title: 'Elven Resurgence',
+    description: '+25% XP - The elves rise again! (Elf only)',
+    emoji: '🏹',
+    iconSrc: buffElfSlingshot, // Use custom SVG icon
+    xpMultiplier: 1.25,
+    dateRule: {
+      type: 'dateRange',
+      startDate: '2025-11-24',
+      endDate: '2025-11-30', // Through Sunday 11:59:59 PM
+      yearlyRecur: false,
     },
   },
 

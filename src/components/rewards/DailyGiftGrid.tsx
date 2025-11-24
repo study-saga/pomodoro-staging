@@ -214,13 +214,13 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-3xl font-bold text-white/90 text-center mb-6"
+              className="text-2xl sm:text-3xl font-bold text-white/90 text-center mb-4 sm:mb-6"
             >
               Daily Gift
             </motion.h2>
 
-            {/* Grid of gifts - 7 columns for calendar layout */}
-            <div className="grid grid-cols-7 gap-3 max-w-4xl">
+            {/* Grid of gifts - 6 cols mobile, 7 cols desktop */}
+            <div className="grid grid-cols-6 sm:grid-cols-7 gap-2 sm:gap-3 max-w-[90vw] sm:max-w-4xl">
               {gifts.map((gift, index) => (
                 <GiftCard
                   key={gift.day}
@@ -254,7 +254,7 @@ function GiftCard({ gift, index }: GiftCardProps) {
       className="relative aspect-square"
     >
       {/* Day number label */}
-      <div className="absolute top-1 left-1 text-[10px] font-medium text-white/40 z-10">
+      <div className="absolute top-0.5 left-0.5 sm:top-1 sm:left-1 text-[11px] sm:text-[10px] font-medium text-white/40 z-10">
         {gift.day}
       </div>
 
@@ -266,8 +266,8 @@ function GiftCard({ gift, index }: GiftCardProps) {
           ${isDisabled
             ? 'bg-white/[0.02] border border-white/5 opacity-30'
             : gift.isSelected
-            ? 'bg-white/10 border-2 border-purple-400/60 shadow-lg shadow-purple-500/20'
-            : 'bg-white/5 border border-white/10'
+              ? 'bg-white/10 border-2 border-purple-400/60 shadow-lg shadow-purple-500/20'
+              : 'bg-white/5 border border-white/10'
           }
           ${isBoostRevealed
             ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border-orange-400/40'
@@ -301,33 +301,33 @@ function GiftCard({ gift, index }: GiftCardProps) {
       <div className="relative h-full flex items-center justify-center">
         {/* Disabled/locked/out of month days */}
         {isDisabled && (
-          <span className="text-2xl opacity-20">{gift.emoji}</span>
+          <span className="text-xl sm:text-2xl opacity-20">{gift.emoji}</span>
         )}
 
         {/* Unrevealed gifts (future days in current month) */}
         {!gift.isRevealed && !isDisabled && (
-          <span className="text-3xl opacity-70">{gift.emoji}</span>
+          <span className="text-2xl sm:text-3xl opacity-70">{gift.emoji}</span>
         )}
 
         {/* Already claimed gifts show emoji + checkmark badge */}
         {isAlreadyClaimed && (
           <>
-            <span className="text-3xl opacity-40">{gift.emoji}</span>
-            <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-green-500/80 flex items-center justify-center">
-              <span className="text-white text-[10px] font-bold">✓</span>
+            <span className="text-2xl sm:text-3xl opacity-40">{gift.emoji}</span>
+            <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-green-500/80 flex items-center justify-center">
+              <span className="text-white text-[9px] sm:text-[10px] font-bold">✓</span>
             </div>
           </>
         )}
 
         {/* Current day - revealed */}
         {gift.isSelected && gift.isRevealed && (
-          <div className="flex flex-col items-center justify-center gap-1">
+          <div className="flex flex-col items-center justify-center gap-0.5 sm:gap-1">
             {/* XP rewards */}
             {gift.type === 'xp' && gift.xpAmount && (
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="text-xl font-bold text-amber-300"
+                className="text-base sm:text-xl font-bold text-amber-300"
               >
                 +{gift.xpAmount}xp
               </motion.span>
@@ -345,7 +345,7 @@ function GiftCard({ gift, index }: GiftCardProps) {
                     repeat: Infinity,
                     ease: 'easeInOut'
                   }}
-                  className="text-3xl"
+                  className="text-2xl sm:text-3xl"
                 >
                   {gift.emoji}
                 </motion.span>
@@ -354,7 +354,7 @@ function GiftCard({ gift, index }: GiftCardProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="text-white/80 text-[9px] font-medium text-center px-1 leading-tight"
+                    className="text-white/80 text-[8px] sm:text-[9px] font-medium text-center px-0.5 sm:px-1 leading-tight"
                   >
                     {gift.description}
                   </motion.p>
@@ -368,7 +368,7 @@ function GiftCard({ gift, index }: GiftCardProps) {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 200 }}
-                className="text-3xl"
+                className="text-2xl sm:text-3xl"
               >
                 {gift.emoji}
               </motion.span>

@@ -40,6 +40,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
     consecutiveLoginDays,
     pomodoroBoostActive,
     pomodoroBoostExpiresAt,
+    pomodoroBoostMultiplier,
     firstLoginDate,
   } = useSettingsStore();
 
@@ -152,7 +153,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
         />
         <div className="flex flex-row items-center justify-start gap-3 sm:gap-4">
           <span className="text-4xl sm:text-5xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">
-            {levelPath === 'elf' ? '🧝' : '⚔️'}
+            {levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}
           </span>
           <div className="flex flex-col items-start text-left">
             <p className="text-lg sm:text-xl font-bold text-white tracking-tight group-hover:text-purple-200 transition-colors">
@@ -217,17 +218,20 @@ export const UserStatsPopover = memo(function UserStatsPopover({
             <p className="text-base font-bold text-white">{formattedFirstLoginDate}</p>
           </div>
         )}
-        {pomodoroBoostActive && boostTimeRemaining && (
-          <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-3 col-span-full">
-            <div className="flex items-center gap-2 text-purple-300">
-              <Zap className="w-4 h-4" />
-              <span className="text-sm font-semibold">+25% XP Boost Active</span>
+        {pomodoroBoostActive && boostTimeRemaining && (() => {
+          const boostPercent = Math.round(((pomodoroBoostMultiplier || 1.25) - 1) * 100);
+          return (
+            <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-3 col-span-full">
+              <div className="flex items-center gap-2 text-purple-300">
+                <Zap className="w-4 h-4" />
+                <span className="text-sm font-semibold">+{boostPercent}% XP Boost Active</span>
+              </div>
+              <p className="text-xs text-purple-400 mt-1">
+                Expires in {boostTimeRemaining}
+              </p>
             </div>
-            <p className="text-xs text-purple-400 mt-1">
-              Expires in {boostTimeRemaining}
-            </p>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </>
   );

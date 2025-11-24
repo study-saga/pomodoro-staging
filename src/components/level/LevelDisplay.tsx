@@ -13,7 +13,6 @@ import {
 import { Gift } from 'lucide-react';
 import buffElf from '../../assets/buff-elf.svg';
 import buffHuman from '../../assets/buff-human.svg';
-import buffElfSlingshot from '../../assets/buff-elf-slingshot.svg';
 import buffBoost from '../../assets/buff-boost.svg';
 import { UserStatsPopover } from './UserStatsPopover';
 import { UserStatsModal } from './UserStatsModal';
@@ -46,14 +45,12 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const [tooltipPositions, setTooltipPositions] = useState<Record<string, { top: number; left: number }>>({});
   const prevLevelRef = useRef(level);
   const roleBuffRef = useRef<HTMLDivElement>(null);
-  const slingshotActiveRef = useRef<HTMLDivElement>(null);
   const boostRef = useRef<HTMLDivElement>(null);
-  const slingshotInactiveRef = useRef<HTMLDivElement>(null);
   const eventBuffRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const { isMobile } = useDeviceType();
   const { appUser } = useAuth();
-  const { activeBuffs } = useActiveEventBuffs();
+  const { activeBuffs } = useActiveEventBuffs(levelPath);
 
   const xpNeeded = getXPNeeded(level);
   const levelName = getLevelName(level, levelPath);
@@ -91,15 +88,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const levelBadge = levelName.split(' ')[0]; // Get emoji (first part before space)
   const levelTitle = levelName.split(' ').slice(1).join(' '); // Get text (everything after first space)
 
-  // Check if slingshot buff is active (Nov 22-23 onwards for elves)
-  const isSlingshotActive = () => {
-    if (levelPath !== 'elf') return false;
-    const today = new Date();
-    const activationDate = new Date('2025-11-22');
-    return today >= activationDate;
-  };
 
-  const slingshotActive = isSlingshotActive();
 
   // Calculate boost time remaining with defensive fallbacks
   const getBoostTimeRemaining = () => {
@@ -107,9 +96,9 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
     // Defensive: validate timestamp (must be number, not NaN, and reasonable)
     if (typeof pomodoroBoostExpiresAt !== 'number' ||
-        isNaN(pomodoroBoostExpiresAt) ||
-        pomodoroBoostExpiresAt < 0 ||
-        pomodoroBoostExpiresAt > Date.now() + 365 * 24 * 60 * 60 * 1000) { // max 1 year in future
+      isNaN(pomodoroBoostExpiresAt) ||
+      pomodoroBoostExpiresAt < 0 ||
+      pomodoroBoostExpiresAt > Date.now() + 365 * 24 * 60 * 60 * 1000) { // max 1 year in future
       console.warn('[LevelDisplay] Invalid boost expiry timestamp, deactivating:', pomodoroBoostExpiresAt);
       useSettingsStore.setState({ pomodoroBoostActive: false, pomodoroBoostExpiresAt: null });
       return '';
@@ -186,8 +175,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     if (typeof window === 'undefined' || !ref.current) return;
 
     const rect = ref.current.getBoundingClientRect();
-    const tooltipHeight = 80; // Estimated tooltip height
-    const tooltipWidth = 180; // Min width from className
+    const tooltipHeight = 90; // Estimated tooltip height (increased for larger text)
+    const tooltipWidth = 260; // Min width for event buffs (increased for larger text)
     const padding = 12; // Safe padding from viewport edges
 
     let top = rect.bottom + 8;
@@ -234,22 +223,20 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     if (!isMobile) {
       const updatePositions = () => {
         if (roleBuffRef.current) updateTooltipPosition('role-buff', roleBuffRef);
-        if (slingshotActiveRef.current) updateTooltipPosition('slingshot-active', slingshotActiveRef);
         if (boostRef.current) updateTooltipPosition('boost', boostRef);
-        if (slingshotInactiveRef.current) updateTooltipPosition('slingshot-inactive', slingshotInactiveRef);
       };
       updatePositions();
       window.addEventListener('resize', updatePositions);
       return () => window.removeEventListener('resize', updatePositions);
     }
-  }, [isMobile, levelPath, slingshotActive, pomodoroBoostActive]);
+  }, [isMobile, levelPath, pomodoroBoostActive]);
 
   // Close tooltips on click outside (mobile) or escape key
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (isMobile && activeBuffTooltip) {
         // Check if click is outside all buff icons
-        const isClickOnBuff = [roleBuffRef, slingshotActiveRef, boostRef, slingshotInactiveRef]
+        const isClickOnBuff = [roleBuffRef, boostRef]
           .some(ref => ref.current?.contains(e.target as Node));
 
         if (!isClickOnBuff) {
@@ -393,139 +380,110 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             </div>
           </div>
 
-        {/* Role Buff Icons - Ordered: Permanent first, then by expiration */}
-        <div className="flex gap-2">
-          {/* 1. Role Buff (Permanent - Always first) */}
-          <div
-            ref={roleBuffRef}
-            className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}
-            onClick={(e) => handleBuffClick(e, 'role-buff', roleBuffRef)}
-            onMouseEnter={() => {
-              if (!isMobile) {
-                setHoveredBuff('role-buff');
-                updateTooltipPosition('role-buff', roleBuffRef);
-              }
-            }}
-            onMouseLeave={() => !isMobile && setHoveredBuff(null)}
-          >
-            <img
-              src={levelPath === 'elf' ? buffElf : buffHuman}
-              alt={`${levelPath} buff`}
-              className="w-full h-full rounded-lg"
-              style={{ filter: 'drop-shadow(0 0 6px rgba(168, 85, 247, 0.5))' }}
-            />
-          </div>
-
-          {/* 2. Slingshot Buff (Permanent when active - Elf only, Nov 22+) */}
-          {levelPath === 'elf' && slingshotActive && (
+          {/* Role Buff Icons - Ordered: Permanent first, then by expiration */}
+          <div className="flex gap-2">
+            {/* 1. Role Buff (Permanent - Always first) */}
             <div
-              ref={slingshotActiveRef}
-              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500`}
-              onClick={(e) => handleBuffClick(e, 'slingshot-active', slingshotActiveRef)}
+              ref={roleBuffRef}
+              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}
+              onClick={(e) => handleBuffClick(e, 'role-buff', roleBuffRef)}
               onMouseEnter={() => {
                 if (!isMobile) {
-                  setHoveredBuff('slingshot-active');
-                  updateTooltipPosition('slingshot-active', slingshotActiveRef);
+                  setHoveredBuff('role-buff');
+                  updateTooltipPosition('role-buff', roleBuffRef);
                 }
               }}
               onMouseLeave={() => !isMobile && setHoveredBuff(null)}
             >
               <img
-                src={buffElfSlingshot}
-                alt="Elven Slingshot"
+                src={levelPath === 'elf' ? buffElf : buffHuman}
+                alt={`${levelPath} buff`}
                 className="w-full h-full rounded-lg"
-                style={{ filter: 'drop-shadow(0 0 6px rgba(34, 197, 94, 0.5))' }}
+                style={{ filter: 'drop-shadow(0 0 6px rgba(168, 85, 247, 0.5))' }}
               />
             </div>
-          )}
 
-          {/* 3. 24h Boost Buff (Time-limited - Shows remaining time) */}
-          {pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (
-            <div
-              ref={boostRef}
-              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500`}
-              onClick={(e) => handleBuffClick(e, 'boost', boostRef)}
-              onMouseEnter={() => {
-                if (!isMobile) {
-                  setHoveredBuff('boost');
-                  updateTooltipPosition('boost', boostRef);
-                }
-              }}
-              onMouseLeave={() => !isMobile && setHoveredBuff(null)}
-            >
-              <img
-                src={buffBoost}
-                alt="XP Boost"
-                className="w-full h-full rounded-lg"
-                style={{ filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.5))' }}
-              />
-            </div>
-          )}
 
-          {/* 4. Inactive Slingshot (Show at end when inactive) */}
-          {levelPath === 'elf' && !slingshotActive && (
-            <div
-              ref={slingshotInactiveRef}
-              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30`}
-              onClick={(e) => handleBuffClick(e, 'slingshot-inactive', slingshotInactiveRef)}
-              onMouseEnter={() => {
-                if (!isMobile) {
-                  setHoveredBuff('slingshot-inactive');
-                  updateTooltipPosition('slingshot-inactive', slingshotInactiveRef);
-                }
-              }}
-              onMouseLeave={() => !isMobile && setHoveredBuff(null)}
-            >
-              <img
-                src={buffElfSlingshot}
-                alt="Elven Slingshot"
-                className="w-full h-full rounded-lg"
-                style={{ filter: 'grayscale(100%) opacity(50%)' }}
-              />
-            </div>
-          )}
 
-          {/* 5. Event Buffs (Date-based, stackable) */}
-          {activeBuffs.map((buff) => {
-            const buffId = `event-${buff.id}`;
-
-            return (
+            {/* 3. 24h Boost Buff (Time-limited - Shows remaining time) */}
+            {pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (
               <div
-                key={buff.id}
-                ref={(el) => { eventBuffRefs.current[buffId] = el; }}
-                className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-500/40 text-xl`}
-                onClick={(e) => {
-                  if (isMobile) {
-                    e.stopPropagation();
-                    const newActiveTooltip = activeBuffTooltip === buffId ? null : buffId;
-                    setActiveBuffTooltip(newActiveTooltip);
-                    if (newActiveTooltip) {
-                      updateTooltipPosition(buffId, { current: eventBuffRefs.current[buffId] });
-                    }
-                  }
-                }}
+                ref={boostRef}
+                className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500`}
+                onClick={(e) => handleBuffClick(e, 'boost', boostRef)}
                 onMouseEnter={() => {
                   if (!isMobile) {
-                    setHoveredBuff(buffId);
-                    updateTooltipPosition(buffId, { current: eventBuffRefs.current[buffId] });
+                    setHoveredBuff('boost');
+                    updateTooltipPosition('boost', boostRef);
                   }
                 }}
                 onMouseLeave={() => !isMobile && setHoveredBuff(null)}
               >
-                {buff.emoji}
+                <img
+                  src={buffBoost}
+                  alt="XP Boost"
+                  className="w-full h-full rounded-lg"
+                  style={{ filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.5))' }}
+                />
               </div>
-            );
-          })}
-        </div>
+            )}
 
-        {/* Prestige Stars */}
-        {prestigeLevel > 0 && (
-          <div className="text-center pt-1">
-            <span className={`text-yellow-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-              {"⭐".repeat(Math.min(prestigeLevel, 5))}
-            </span>
+
+
+            {/* 3. Event Buffs (Date-based, stackable) */}
+            {activeBuffs.map((buff) => {
+              const buffId = `event-${buff.id}`;
+              const isElfBuff = buff.description.includes('(Elf only)');
+
+              return (
+                <div
+                  key={buff.id}
+                  ref={(el) => { eventBuffRefs.current[buffId] = el; }}
+                  className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden ${isElfBuff
+                    ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500'
+                    : 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-500/40'
+                    } ${!buff.iconSrc ? 'text-xl' : ''}`}
+                  onClick={(e) => {
+                    if (isMobile) {
+                      e.stopPropagation();
+                      const newActiveTooltip = activeBuffTooltip === buffId ? null : buffId;
+                      setActiveBuffTooltip(newActiveTooltip);
+                      if (newActiveTooltip) {
+                        updateTooltipPosition(buffId, { current: eventBuffRefs.current[buffId] });
+                      }
+                    }
+                  }}
+                  onMouseEnter={() => {
+                    if (!isMobile) {
+                      setHoveredBuff(buffId);
+                      updateTooltipPosition(buffId, { current: eventBuffRefs.current[buffId] });
+                    }
+                  }}
+                  onMouseLeave={() => !isMobile && setHoveredBuff(null)}
+                >
+                  {buff.iconSrc ? (
+                    <img
+                      src={buff.iconSrc}
+                      alt={buff.title}
+                      className="w-full h-full rounded-lg"
+                      style={{ filter: isElfBuff ? 'drop-shadow(0 0 6px rgba(34, 197, 94, 0.5))' : 'drop-shadow(0 0 6px rgba(6, 182, 212, 0.5))' }}
+                    />
+                  ) : (
+                    buff.emoji
+                  )}
+                </div>
+              );
+            })}
           </div>
-        )}
+
+          {/* Prestige Stars */}
+          {prestigeLevel > 0 && (
+            <div className="text-center pt-1">
+              <span className={`text-yellow-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                {"⭐".repeat(Math.min(prestigeLevel, 5))}
+              </span>
+            </div>
+          )}
 
 
           {import.meta.env.DEV && (
@@ -621,11 +579,11 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             opacity: isMobile ? (activeBuffTooltip === 'role-buff' ? 1 : 0) : undefined,
           }}
         >
-          <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-3 py-2 shadow-lg min-w-[180px]">
-            <p className="text-xs font-semibold text-purple-300 mb-0.5">
+          <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-4 py-2.5 shadow-lg min-w-[220px]">
+            <p className="text-sm font-semibold text-purple-300 mb-1">
               {levelPath === 'elf' ? 'Elf Consistency' : 'Human Risk/Reward'}
             </p>
-            <p className="text-[10px] text-gray-400">
+            <p className="text-xs text-gray-400 leading-relaxed">
               {levelPath === 'elf' ? '+0.5 XP per minute' : '25% chance to double XP'}
             </p>
           </div>
@@ -633,23 +591,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         document.body
       )}
 
-      {tooltipPositions['slingshot-active'] && levelPath === 'elf' && slingshotActive && (isMobile ? activeBuffTooltip === 'slingshot-active' : hoveredBuff === 'slingshot-active') && createPortal(
-        <div
-          className="fixed transform -translate-x-1/2 pointer-events-none z-40 transition-opacity duration-200"
-          style={{
-            top: `${tooltipPositions['slingshot-active'].top}px`,
-            left: `${tooltipPositions['slingshot-active'].left}px`,
-            opacity: isMobile ? (activeBuffTooltip === 'slingshot-active' ? 1 : 0) : undefined,
-          }}
-        >
-          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-green-500/30">
-            <p className="text-xs font-semibold text-green-300">
-              +25% XP Event
-            </p>
-          </div>
-        </div>,
-        document.body
-      )}
+
 
       {tooltipPositions['boost'] && pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (isMobile ? activeBuffTooltip === 'boost' : hoveredBuff === 'boost') && createPortal(
         <div
@@ -660,11 +602,11 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             opacity: isMobile ? (activeBuffTooltip === 'boost' ? 1 : 0) : undefined,
           }}
         >
-          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-yellow-500/30">
-            <p className="text-xs font-semibold mb-0.5 text-yellow-300">
+          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] border border-yellow-500/30">
+            <p className="text-sm font-semibold mb-1 text-yellow-300">
               🍅 +25% XP Boost
             </p>
-            <p className="text-[10px] text-gray-400">
+            <p className="text-xs text-gray-400 leading-relaxed">
               Expires in {boostTimeRemaining || getBoostTimeRemaining()}
             </p>
           </div>
@@ -672,28 +614,13 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         document.body
       )}
 
-      {tooltipPositions['slingshot-inactive'] && levelPath === 'elf' && !slingshotActive && (isMobile ? activeBuffTooltip === 'slingshot-inactive' : hoveredBuff === 'slingshot-inactive') && createPortal(
-        <div
-          className="fixed transform -translate-x-1/2 pointer-events-none z-40 transition-opacity duration-200"
-          style={{
-            top: `${tooltipPositions['slingshot-inactive'].top}px`,
-            left: `${tooltipPositions['slingshot-inactive'].left}px`,
-            opacity: isMobile ? (activeBuffTooltip === 'slingshot-inactive' ? 1 : 0) : undefined,
-          }}
-        >
-          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-3 py-2 shadow-lg min-w-[180px] border border-gray-500/30">
-            <p className="text-xs font-semibold text-gray-400">
-              +25% XP Event
-            </p>
-          </div>
-        </div>,
-        document.body
-      )}
+
 
       {/* Event Buff Tooltips */}
       {activeBuffs.map((buff) => {
         const buffId = `event-${buff.id}`;
         const isActive = isMobile ? activeBuffTooltip === buffId : hoveredBuff === buffId;
+        const isElfBuff = buff.description.includes('(Elf only)');
 
         if (!tooltipPositions[buffId] || !isActive) return null;
 
@@ -707,11 +634,13 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               opacity: isMobile ? (activeBuffTooltip === buffId ? 1 : 0) : undefined,
             }}
           >
-            <div className="bg-gray-900/95 backdrop-blur-xl border border-cyan-500/30 rounded-lg px-3 py-2 shadow-lg min-w-[180px]">
-              <p className="text-xs font-semibold text-cyan-300 mb-0.5">
+            <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
+              }`}>
+              <p className={`text-sm font-semibold mb-1 ${isElfBuff ? 'text-green-300' : 'text-cyan-300'
+                }`}>
                 {buff.title}
               </p>
-              <p className="text-[10px] text-gray-400">
+              <p className="text-xs text-gray-400 leading-relaxed">
                 {buff.description}
               </p>
             </div>

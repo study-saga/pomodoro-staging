@@ -27,6 +27,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
     consecutiveLoginDays,
     pomodoroBoostActive,
     pomodoroBoostExpiresAt,
+    pomodoroBoostMultiplier,
     firstLoginDate,
   } = useSettingsStore();
 
@@ -232,17 +233,22 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
             )}
 
             {/* Active Boost */}
-            {pomodoroBoostActive && boostTimeRemaining && (
-              <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-3">
-                <div className="flex items-center gap-2 text-purple-300">
-                  <Zap className="w-4 h-4" />
-                  <span className="text-sm font-semibold">+25% XP Boost Active</span>
+            {pomodoroBoostActive && boostTimeRemaining && (() => {
+              const boostPercent = Math.round(((pomodoroBoostMultiplier || 1.25) - 1) * 100);
+              return (
+                <div className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-orange-500/10 border border-orange-400/30">
+                  <Zap className="w-4 h-4 text-orange-400" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-orange-300">
+                      +{boostPercent}% XP Boost Active
+                    </span>
+                    <span className="text-xs text-orange-400/70">
+                      {boostTimeRemaining} remaining
+                    </span>
+                  </div>
                 </div>
-                <p className="text-xs text-purple-400 mt-1">
-                  Expires in {boostTimeRemaining}
-                </p>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       </ScrollArea>

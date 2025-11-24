@@ -141,9 +141,10 @@ export const useSettingsStore = create<SettingsStore>()(
             boostStillActive = false;
             console.log('[XP] Pomodoro boost expired');
           } else {
-            // Boost is still active
-            boostMultiplier = 1.25; // +25% XP
-            console.log('[XP] Applying +25% XP boost!');
+            // Boost is still active - use the actual multiplier from state
+            boostMultiplier = state.pomodoroBoostMultiplier || 1.25;
+            const boostPercent = Math.round((boostMultiplier - 1) * 100);
+            console.log(`[XP] Applying +${boostPercent}% XP boost!`);
           }
         }
 
