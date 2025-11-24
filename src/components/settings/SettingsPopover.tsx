@@ -421,7 +421,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
                     aria-label="Settings categories"
                     className="w-[160px] border-r border-white/10 shrink-0 py-2"
                   >
-                    {tabs.map((tab, index) => {
+                    {tabs.map((tab) => {
                       const Icon = tab.icon;
                       const isWhatsNew = tab.id === 'whats-new';
                       return (

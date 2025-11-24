@@ -1,14 +1,14 @@
- /**
- * Role System Configuration
- * Defines unique stats, buffs, and events for each role (Elf/Human)
- */
+/**
+* Role System Configuration
+* Defines unique stats, buffs, and events for each role (Elf/Human)
+*/
 
 export type RoleType = 'elf' | 'human';
 
 export interface RoleBuff {
   id: string;
   name: string;
-  description: string; 
+  description: string;
   icon: string;
   type: 'passive' | 'active' | 'proc'; // passive = always on, active = user triggered, proc = chance-based
 }
@@ -174,9 +174,16 @@ export function getRoleStats(roleType: RoleType): RoleStats {
   return ROLES[roleType].stats;
 }
 
+export interface RoleXPOptions {
+  consecutiveDays?: number;
+  prestigeLevel?: number;
+  consecutiveCrits?: number;
+}
+
 export function calculateRoleXP(
   roleType: RoleType,
-  baseMinutes: number
+  baseMinutes: number,
+  _options: RoleXPOptions = {}
 ): { xpGained: number; criticalSuccess: boolean; bonuses: string[] } {
   const role = getRoleConfig(roleType);
   const stats = role.stats;
