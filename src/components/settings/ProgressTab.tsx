@@ -103,13 +103,13 @@ export function ProgressTab(props: ProgressTabProps) {
       {/* Level System Toggle */}
       <div className="w-full max-w-full">
         <h3 className="text-white font-bold text-lg mb-4">Level System</h3>
-        <div className="flex items-center justify-between mb-4">
-          <label className="text-white">Enable leveling system</label>
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <label className="text-white flex-1 min-w-0 break-words">Enable leveling system</label>
           <input
             type="checkbox"
             checked={tempLevelSystemEnabled}
             onChange={(e) => setTempLevelSystemEnabled(e.target.checked)}
-            className="w-5 h-5 rounded"
+            className="w-5 h-5 rounded flex-shrink-0"
           />
         </div>
       </div>
@@ -119,7 +119,7 @@ export function ProgressTab(props: ProgressTabProps) {
         <h3 className="text-white font-bold text-lg mb-4">Hero Stats</h3>
 
         {/* Featured Role Card */}
-        <label className="w-full max-w-full bg-gradient-to-r from-purple-900/40 to-purple-900/20 rounded-xl p-6 border border-purple-500/30 mb-4 cursor-pointer block hover:border-purple-500/50 hover:from-purple-900/50 hover:to-purple-900/30 transition-all relative group">
+        <label className="w-full max-w-full bg-gradient-to-r from-purple-900/40 to-purple-900/20 rounded-xl p-4 sm:p-6 border border-purple-500/30 mb-4 cursor-pointer block hover:border-purple-500/50 hover:from-purple-900/50 hover:to-purple-900/30 transition-all relative group">
           <input
             type="checkbox"
             className="opacity-0 w-0 h-0 peer"

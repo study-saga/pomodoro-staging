@@ -520,8 +520,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                       onClick={handleSave}
                       disabled={!hasUnsavedChanges}
                       className={`flex-1 px-4 py-2 font-medium rounded-lg transition-colors ${hasUnsavedChanges
-                          ? 'bg-white text-black hover:bg-gray-200'
-                          : 'bg-white/20 text-gray-500 cursor-not-allowed'
+                        ? 'bg-white text-black hover:bg-gray-200'
+                        : 'bg-white/20 text-gray-500 cursor-not-allowed'
                         }`}
                     >
                       Save
@@ -543,7 +543,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
 
           <AnimatePresence>
             {open && (
-              <div className="fixed inset-0 flex items-center justify-center z-[100] p-4">
+              <div className="fixed inset-0 flex items-center justify-center z-[100] p-2">
                 {/* Backdrop */}
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -590,8 +590,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                           id={`${tab.id}-tab`}
                           onClick={() => setActiveTab(tab.id)}
                           className={`px-3 py-2 text-sm whitespace-nowrap snap-start font-medium transition-colors relative flex items-center gap-2 ${activeTab === tab.id
-                              ? 'text-white'
-                              : 'text-gray-400 hover:text-gray-300'
+                            ? 'text-white'
+                            : 'text-gray-400 hover:text-gray-300'
                             }`}
                         >
                           <Icon size={16} />
@@ -675,8 +675,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         onClick={handleSave}
                         disabled={!hasUnsavedChanges}
                         className={`flex-1 px-4 py-2 font-medium rounded-lg transition-colors ${hasUnsavedChanges
-                            ? 'bg-white text-black hover:bg-gray-200'
-                            : 'bg-white/20 text-gray-500 cursor-not-allowed'
+                          ? 'bg-white text-black hover:bg-gray-200'
+                          : 'bg-white/20 text-gray-500 cursor-not-allowed'
                           }`}
                       >
                         Save
