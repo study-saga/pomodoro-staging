@@ -712,10 +712,9 @@ export async function canClaimDailyGift(userId: string, discordId: string): Prom
     data = result.data
     error = result.error
   } else {
-    // Discord Activity Mode: Use discord_id
-    const result = await supabase.rpc('can_claim_daily_gift_discord', {
+    // Discord Activity Mode: Use same RPC as web mode (no separate function)
+    const result = await supabase.rpc('can_claim_daily_gift', {
       p_user_id: userId,
-      p_discord_id: discordId
     })
 
     data = result.data
