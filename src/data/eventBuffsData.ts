@@ -94,95 +94,95 @@ export const EVENT_BUFFS: EventBuff[] = [
   // ============================================
   // NOVEMBER 2025 BUFFS
   // ============================================
-  {
-    id: 'thanksgiving_2025',
-    title: 'Gratitude Bonus',
-    description: '+50% XP - Thanksgiving Week',
-    emoji: '🦃',
-    xpMultiplier: 1.5,
-    dateRule: {
-      type: 'dateRange',
-      startDate: '2025-11-20',
-      endDate: '2025-11-27',
-      yearlyRecur: false,
-    },
-  },
+  // {
+  //   id: 'thanksgiving_2025',
+  //   title: 'Gratitude Bonus',
+  //   description: '+50% XP - Thanksgiving Week',
+  //   emoji: '🦃',
+  //   xpMultiplier: 1.5,
+  //   dateRule: {
+  //     type: 'dateRange',
+  //     startDate: '2025-11-20',
+  //     endDate: '2025-11-27',
+  //     yearlyRecur: false,
+  //   },
+  // },
 
-  {
-    id: 'black_friday_2025',
-    title: 'Black Friday Blitz',
-    description: '+75% XP - 48 hours only!',
-    emoji: '🛍️',
-    xpMultiplier: 1.75,
-    dateRule: {
-      type: 'dateRange',
-      startDate: '2025-11-28',
-      endDate: '2025-11-29',
-      yearlyRecur: false,
-    },
-  },
+  // {
+  //   id: 'black_friday_2025',
+  //   title: 'Black Friday Blitz',
+  //   description: '+75% XP - 48 hours only!',
+  //   emoji: '🛍️',
+  //   xpMultiplier: 1.75,
+  //   dateRule: {
+  //     type: 'dateRange',
+  //     startDate: '2025-11-28',
+  //     endDate: '2025-11-29',
+  //     yearlyRecur: false,
+  //   },
+  // },
 
   // ============================================
   // DECEMBER 2025 - JANUARY 2026 (Holiday Season)
   // ============================================
-  {
-    id: 'december_festivities',
-    title: 'December Cheer',
-    description: '+30% XP all month',
-    emoji: '🎄',
-    xpMultiplier: 1.3,
-    dateRule: {
-      type: 'monthDay',
-      month: 12,
-      day: 16, // Adjusted to create Dec 1 - Dec 31 window
-      daysAround: 15, // Dec 1 - Dec 31
-    },
-  },
+  // {
+  //   id: 'december_festivities',
+  //   title: 'December Cheer',
+  //   description: '+30% XP all month',
+  //   emoji: '🎄',
+  //   xpMultiplier: 1.3,
+  //   dateRule: {
+  //     type: 'monthDay',
+  //     month: 12,
+  //     day: 16, // Adjusted to create Dec 1 - Dec 31 window
+  //     daysAround: 15, // Dec 1 - Dec 31
+  //   },
+  // },
 
-  {
-    id: 'christmas_special',
-    title: 'Christmas Magic',
-    description: 'Double XP! Dec 22-25',
-    emoji: '🎁',
-    xpMultiplier: 2.0,
-    dateRule: {
-      type: 'dateRange',
-      startDate: '2025-12-22',
-      endDate: '2025-12-25',
-      yearlyRecur: true, // Repeats every year
-    },
-  },
+  // {
+  //   id: 'christmas_special',
+  //   title: 'Christmas Magic',
+  //   description: 'Double XP! Dec 22-25',
+  //   emoji: '🎁',
+  //   xpMultiplier: 2.0,
+  //   dateRule: {
+  //     type: 'dateRange',
+  //     startDate: '2025-12-22',
+  //     endDate: '2025-12-25',
+  //     yearlyRecur: true, // Repeats every year
+  //   },
+  // },
 
-  {
-    id: 'new_years_energy',
-    title: 'New Year Energy',
-    description: '+50% XP - New Year week',
-    emoji: '🎊',
-    xpMultiplier: 1.5,
-    dateRule: {
-      type: 'dateRange',
-      startDate: '2025-12-26',
-      endDate: '2026-01-02',
-      yearlyRecur: false,
-    },
-  },
+  // {
+  //   id: 'new_years_energy',
+  //   title: 'New Year Energy',
+  //   description: '+50% XP - New Year week',
+  //   emoji: '🎊',
+  //   xpMultiplier: 1.5,
+  //   dateRule: {
+  //     type: 'dateRange',
+  //     startDate: '2025-12-26',
+  //     endDate: '2026-01-02',
+  //     yearlyRecur: false,
+  //   },
+  // },
 
   // ============================================
   // RECURRING EVENTS (Bi-weekly Study Pushes)
   // ============================================
-  {
-    id: 'study_surge_cycle',
-    title: 'Study Surge',
-    description: '+40% XP - 5-day power week',
-    emoji: '⚡',
-    xpMultiplier: 1.4,
-    dateRule: {
-      type: 'cycle',
-      startDate: '2025-11-01',
-      intervalDays: 14, // Every 2 weeks
-      durationDays: 5, // Active for 5 days
-    },
-  },
+  // {
+  //   id: 'study_surge_cycle',
+  //   title: 'Study Surge',
+  //   description: '+40% XP - 5-day power week',
+  //   emoji: '⚡',
+  //   xpMultiplier: 1.4,
+  //   dateRule: {
+  //     type: 'cycle',
+  //     startDate: '2025-11-01',
+  //     intervalDays: 14, // Every 2 weeks
+  //     durationDays: 5, // Active for 5 days
+  //   },
+  // },
 
   // ============================================
   // COMMENTED EXAMPLES (For Future Use)
