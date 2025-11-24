@@ -84,6 +84,12 @@ export const SettingsPopover = memo(function SettingsPopover() {
     if (!open) return;
 
     const handleKeyboard = (e: KeyboardEvent) => {
+      // Ignore keyboard shortcuts when typing in an input field
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
       // Escape to close
       if (e.key === 'Escape') {
         setOpen(false);
