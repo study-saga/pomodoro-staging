@@ -19,6 +19,42 @@ export interface ChangelogEntry {
 export const changelog: ChangelogEntry[] = [
   // ⬇️ ADD NEW UPDATES HERE (most recent first) ⬇️
   {
+    date: '2025-11-24',
+    title: 'Role Paths Added',
+    description: 'Choose between Human and Elf paths, each with unique buffs: Human gets 25% crit chance for 2x XP, Elf gets +0.5 XP per minute.',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-24',
+    title: 'Stats Dashboard',
+    description: 'New stats modal showing level, XP, pomodoros completed, study time, streak, and Discord avatar.',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-24',
+    title: 'Daily Gifts',
+    description: 'Daily rewards calendar with XP boost multipliers and bonuses.',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-24',
+    title: 'Enhanced Buff System',
+    description: 'Custom buff icons, hover tooltips (desktop) and tap interactions (mobile), always visible.',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-24',
+    title: 'Settings Redesign (What\'s New Tab)',
+    description: 'New "What\'s New" tab in Settings, redesigned progress tab, improved mobile experience.',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-24',
+    title: 'Level‑Up Celebrations',
+    description: 'Glowing XP bar animation, confetti explosions, mobile‑optimized effects.',
+    tags: ['feature'],
+  },
+  {
     date: '2025-11-21',
     title: 'Settings Redesign',
     description: 'We\'ve completely revamped the Settings menu! Enjoy a sleek new look with smooth animations and a more user-friendly layout that adapts beautifully to both desktop and mobile devices.',
