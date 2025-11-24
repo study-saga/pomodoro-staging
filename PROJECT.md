@@ -122,8 +122,37 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
 
 ## Version History
 
-**Last Updated**: 2025-11-19
-**Version**: 2.3.2 (Discord Daily Gift Fix)
+**Last Updated**: 2025-11-22
+**Version**: 2.3.3 (Role System + UI Improvements)
+
+**Major Changes in 2.3.3**:
+- **Added**: Role/Path system (Human vs Elf) with buff mechanics
+  - Human: 25% chance for 2x XP (risk/reward)
+  - Elf: +0.5 XP/min consistency bonus + streak bonuses
+  - Buffs stack multiplicatively with pomodoro boost (25%)
+  - Segmented toggle UI for path selection (desktop + mobile)
+- **Added**: User Stats modal/popover showing detailed account info
+  - Separate mobile (modal) and desktop (popover) components
+  - 2-column grid layout on mobile
+  - Stats: level, path, pomodoros, study time, streaks, Discord avatar
+- **Added**: Buff system with tooltips
+  - 4 new SVG buff icons (boost, elf-slingshot, elf, human)
+  - Mobile: tap to toggle tooltips, tap outside to close
+  - Desktop: hover tooltips with viewport boundary checks
+  - Portal rendering to prevent clipping
+- **Added**: Settings redesign
+  - Dual-pattern popover/modal for desktop/mobile
+  - "What's New" as 6th tab
+  - Progress tab redesign matching user stats style
+- **Enhanced**: Level UI improvements
+  - XP progress bar with glow wave animation
+  - Realistic paper confetti on level up
+  - Username truncation with ellipsis
+  - Mobile layout optimizations
+- **Fixed**: UserStatsPopover clipping - moved outside overflow-hidden container
+- **Fixed**: Mobile webkit border-radius flickering on buff icons
+- **Fixed**: Double XP save bug - removed duplicate database call
+- **Fixed**: OAuth redirect issues for local IP development
 
 **Major Changes in 2.3.2**:
 - **Fixed**: Daily gifts trigger on every refresh for Discord Activity users

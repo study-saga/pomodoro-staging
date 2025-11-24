@@ -2,11 +2,10 @@ import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useTimer } from 'react-timer-hook';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { BELL_SOUND } from '../../data/constants';
-import { saveCompletedPomodoro, saveCompletedBreak } from '../../lib/userSyncAuth';
+import { saveCompletedBreak } from '../../lib/userSyncAuth';
 import { useAuth } from '../../contexts/AuthContext';
 import type { TimerType } from '../../types';
 
-const XP_PER_MINUTE_POMODORO = 2;
 const XP_PER_MINUTE_BREAK = 1;
 
 export const PomodoroTimer = memo(function PomodoroTimer() {
@@ -272,37 +271,11 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     // Award XP based on timer type
     if (timerType === 'pomodoro') {
       const durationMinutes = timers.pomodoro;
-      const xpEarned = durationMinutes * XP_PER_MINUTE_POMODORO;
 
-      // Update local state immediately (for instant UI feedback)
-      // NOTE: addXP expects MINUTES, not XP amount (it calculates XP internally)
+      // Update local state and save to database
+      // NOTE: addXP expects MINUTES, not XP amount (it calculates XP internally and saves to DB)
       addXP(durationMinutes);
       setPomodoroCount((prev) => prev + 1);
-
-      // Save to database (async - don't block UI)
-      if (appUser?.id && appUser?.discord_id) {
-        console.log('[Timer] Saving pomodoro to database...', {
-          userId: appUser.id,
-          discordId: appUser.discord_id,
-          duration: durationMinutes,
-          xp: xpEarned
-        });
-
-        saveCompletedPomodoro(appUser.id, appUser.discord_id, {
-          duration_minutes: durationMinutes,
-          xp_earned: xpEarned,
-          task_name: undefined,
-          notes: undefined
-        })
-          .then(() => {
-            console.log('[Timer] ✓ Pomodoro saved to database successfully');
-          })
-          .catch((error) => {
-            console.error('[Timer] ✗ Failed to save pomodoro to database:', error);
-          });
-      } else {
-        console.warn('[Timer] Cannot save pomodoro - user not authenticated', { appUser });
-      }
     } else if (timerType === 'shortBreak' || timerType === 'longBreak') {
       // Award XP for breaks (1 XP per minute) - don't increment pomodoro count
       const durationMinutes = timerType === 'shortBreak' ? timers.shortBreak : timers.longBreak;

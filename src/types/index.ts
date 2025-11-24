@@ -48,10 +48,18 @@ export interface Settings {
   consecutiveLoginDays: number; // Current login streak (max 12)
   lastLoginDate: string | null; // Last login date (YYYY-MM-DD)
   lastDailyGiftDate: string | null; // Last date daily gift was claimed (YYYY-MM-DD)
+  firstLoginDate: string | null; // First login date (YYYY-MM-DD)
 
   // Active bonuses
   pomodoroBoostActive: boolean; // Whether ANY boost is active
   pomodoroBoostExpiresAt: number | null; // Timestamp when boost expires
+  pomodoroBoostMultiplier: number; // XP multiplier (1.25 = +25%, 1.5 = +50%)
+
+  // Role-specific stats
+  consecutiveCriticals: number; // Track consecutive crits for humans (negative = consecutive fails)
+  todayPomodoros: number; // Pomodoros completed today (for elf perfect day event)
+  comebackActive: boolean; // Human comeback buff active
+  comebackPomodoros: number; // Remaining pomodoros with comeback buff
 }
 
 export interface LevelData {
@@ -97,4 +105,59 @@ export interface UnlockedReward {
   unlock_id: string;
   milestone_id: string | null;
   unlocked_at: string;
+}
+
+// ============================================
+// EVENT BUFF SYSTEM
+// ============================================
+
+// Date activation rules (flexible scheduling)
+export interface DayOfWeekRule {
+  type: 'dayOfWeek';
+  days: (0 | 1 | 2 | 3 | 4 | 5 | 6)[]; // 0=Sunday, 6=Saturday
+}
+
+export interface SpecificDateRule {
+  type: 'specificDate';
+  date: string; // ISO date: YYYY-MM-DD
+}
+
+export interface DateRangeRule {
+  type: 'dateRange';
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  yearlyRecur?: boolean; // If true, repeats every year
+}
+
+export interface MonthDayRule {
+  type: 'monthDay';
+  month: number; // 1-12
+  day: number; // 1-31
+  daysAround?: number; // Optional: extend range (e.g., 3 = Dec 22-28)
+}
+
+export interface CycleRule {
+  type: 'cycle';
+  startDate: string; // YYYY-MM-DD - reference start date
+  intervalDays: number; // Repeat every N days
+  durationDays: number; // Buff active for N days each cycle
+}
+
+export type DateRule =
+  | DayOfWeekRule
+  | SpecificDateRule
+  | DateRangeRule
+  | MonthDayRule
+  | CycleRule;
+
+// Event Buff Configuration
+export interface EventBuff {
+  id: string; // Unique identifier (e.g., "weekend_warrior")
+  title: string; // Display name (e.g., "Weekend Warrior")
+  description: string; // Short description
+  emoji: string; // Visual representation (e.g., "💪") - fallback if no iconSrc
+  iconSrc?: string; // Optional: Custom SVG/image path (overrides emoji)
+  xpMultiplier: number; // XP boost (1.5 = +50%)
+  dateRule: DateRule; // When this buff is active
+  durationHours?: number; // Optional: expires after N hours
 }

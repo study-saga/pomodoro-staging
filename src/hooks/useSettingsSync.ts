@@ -321,7 +321,12 @@ export function useSettingsSync() {
       // Login tracking
       totalLoginDays: appUser.total_login_days,
       consecutiveLoginDays: appUser.consecutive_login_days,
-      lastLoginDate: appUser.last_login_date
+      lastLoginDate: appUser.last_login_date,
+      firstLoginDate: appUser.first_login_date || (appUser.created_at ? appUser.created_at.split('T')[0] : null),
+
+      // Boost tracking (Day 10 gift)
+      pomodoroBoostActive: appUser.pomodoro_boost_active || false,
+      pomodoroBoostExpiresAt: appUser.pomodoro_boost_expires_at || null
     })
 
     // CRITICAL: Set initial synced state from STORE (not from appUser)

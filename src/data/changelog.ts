@@ -18,27 +18,81 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   // ⬇️ ADD NEW UPDATES HERE (most recent first) ⬇️
-    {
+  {
+    date: '2025-11-24',
+    title: 'Role Paths Added',
+    description: 'Choose between Human and Elf paths, each with unique buffs: Human gets 25% crit chance for 2x XP, Elf gets +0.5 XP per minute.',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-24',
+    title: 'Stats Dashboard',
+    description: 'New stats modal showing level, XP, pomodoros completed, study time, streak, and Discord avatar.',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-24',
+    title: 'Daily Gifts',
+    description: 'Daily rewards calendar with XP boost multipliers and bonuses.',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-24',
+    title: 'Enhanced Buff System',
+    description: 'Custom buff icons, hover tooltips (desktop) and tap interactions (mobile), always visible.',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-24',
+    title: 'Settings Redesign (What\'s New Tab)',
+    description: 'New "What\'s New" tab in Settings, redesigned progress tab, improved mobile experience.',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-24',
+    title: 'Level‑Up Celebrations',
+    description: 'Glowing XP bar animation, confetti explosions, mobile‑optimized effects.',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-21',
+    title: 'Settings Redesign',
+    description: 'We\'ve completely revamped the Settings menu! Enjoy a sleek new look with smooth animations and a more user-friendly layout that adapts beautifully to both desktop and mobile devices.',
+    tags: ['improvement'],
+  },
+  {
+    date: '2025-11-21',
+    title: "What's New Section in Settings",
+    description: 'Our new \'What\'s New\' section is now built right into the Settings menu, making it easier to discover the latest features and updates.',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-11-21',
+    title: 'UI Improvements',
+    description: 'We\'ve made several visual improvements, including better layering for pop-up menus and smoother scrolling, especially on mobile devices.',
+    tags: ['fix'],
+  },
+  {
     date: '2025-11-18',
-    title: 'Music Player',
-    description: 'Improved the music player for better design on PC and Mobiles.',
+    title: 'Music Player Enhancements',
+    description: 'The music player has been updated with a fresh, improved design for both desktop and mobile.',
     tags: ['improvement'],
   },
   {
     date: '2025-11-18',
-    title: 'Browser Notifications',
-    description: 'Get notified when your timer completes, even when the tab is not in focus. Enable in Settings → General tab.',
+    title: 'Desktop Notifications',
+    description: 'Now you can get notifications right on your computer when your timer finishes, even if you\'re not on the app. Turn them on in the General settings.',
     tags: ['feature'],
   },
   {
     date: '2025-11-18',
-    title: 'User Settings Sync',
+    title: 'Seamless Settings Sync',
     description: 'All your settings, progress, and preferences now sync seamlessly across all your devices.',
     tags: ['feature'],
   },
   {
     date: '2025-11-17',
-    title: 'Discord Authentication Integration',
+    title: 'Discord Login',
     description: 'Sign in with Discord to save your progress and access your account from anywhere.',
     tags: ['feature'],
   },
@@ -56,7 +110,7 @@ export const changelog: ChangelogEntry[] = [
   },
   {
     date: '2025-11-16',
-    title: 'Device-Adaptive Backgrounds',
+    title: 'Smart Backgrounds',
     description: 'Backgrounds automatically adjust for mobile (vertical) and desktop (horizontal) devices.',
     tags: ['improvement'],
   },

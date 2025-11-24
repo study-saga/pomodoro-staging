@@ -34,6 +34,13 @@ export interface AppUser {
   consecutive_login_days: number
   total_login_days: number
   last_login_date: string | null
+  first_login_date: string | null
+
+  // Boost tracking (SERVER-CONTROLLED - read-only from client)
+  pomodoro_boost_active: boolean
+  pomodoro_boost_expires_at: number | null
+  pomodoro_boost_multiplier: number
+  last_daily_gift_date: string | null
 
   // Audio settings (CLIENT-CONTROLLED - read/write)
   sound_enabled: boolean

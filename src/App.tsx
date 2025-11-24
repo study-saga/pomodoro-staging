@@ -5,26 +5,20 @@ import { PomodoroTimer } from './components/timer/PomodoroTimer';
 import { MusicPlayer } from './components/music/MusicPlayer';
 import { AmbientSoundsPlayer } from './components/music/AmbientSoundsPlayer';
 import { LevelDisplay } from './components/level/LevelDisplay';
-import { LevelUpCelebration } from './components/level/LevelUpCelebration';
-import { SettingsModal } from './components/settings/SettingsModal';
+import { SettingsPopover } from './components/settings/SettingsPopover';
 import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCounter';
 import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
+import { ActiveBoostIndicator } from './components/buffs/ActiveBoostIndicator';
 import { LoginScreen } from './components/auth/LoginScreen';
 import DiscordButton from './components/DiscordButton';
-import WhatsNewButton from './components/WhatsNewButton';
-import { useLevelNotifications } from './hooks/useLevelNotifications';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { getEnvironment } from './lib/environment';
-import { claimDailyGiftXP } from './lib/userSyncAuth';
-import { showGameToast } from './components/ui/GameToast';
+import { canClaimDailyGift } from './lib/userSyncAuth';
 
 function AppContent() {
   const { authenticated, loading, error, appUser } = useAuth();
-  const { showLevelUp, levelUpData } = useLevelNotifications();
-  const addXP = useSettingsStore((state) => state.addXP);
-  const consecutiveLoginDays = useSettingsStore((state) => state.consecutiveLoginDays);
   const settingsSyncComplete = useSettingsStore((state) => state.settingsSyncComplete);
 
   // Enable cross-device settings sync
@@ -34,42 +28,29 @@ function AppContent() {
   const [showDailyGift, setShowDailyGift] = useState(false);
   const [dailyGiftClaimed, setDailyGiftClaimed] = useState(false);
 
-  // Claim daily gift with server-side validation (prevents XP exploit)
+  // Check if daily gift available (actual claim happens in DailyGiftGrid to prevent double-claiming)
   useEffect(() => {
     // Wait for settings sync to complete (has DB state)
     if (!settingsSyncComplete || !appUser?.id || dailyGiftClaimed) return;
 
-    // Attempt to claim daily gift from server
-    claimDailyGiftXP(appUser.id, appUser.discord_id)
-      .then((result) => {
-        setDailyGiftClaimed(true);
+    // Check if gift available (doesn't claim, just checks eligibility)
+    canClaimDailyGift(appUser.id, appUser.discord_id)
+      .then((canClaim) => {
+        setDailyGiftClaimed(true); // Prevent re-checking
 
-        if (result.success) {
-          // Server validated and awarded XP - update local state
-          const minutes = result.xpAwarded / 2;
-          addXP(minutes);
-
-          // Update consecutive days in store
-          useSettingsStore.setState({
-            consecutiveLoginDays: result.consecutiveDays
-          });
-
-          // Show daily gift modal
+        if (canClaim) {
+          // Show daily gift modal - DailyGiftGrid will handle actual claim
           setShowDailyGift(true);
-
-          // Show XP toast
-          showGameToast(`+${result.xpAwarded} XP Collected! 🎉`);
-          console.log('[Daily Gift] Claimed successfully:', result);
+          console.log('[Daily Gift] Gift available, showing modal');
         } else {
-          // Already claimed today - server rejected
           console.log('[Daily Gift] Already claimed today');
         }
       })
       .catch((error) => {
-        console.error('[Daily Gift] Failed to claim:', error);
+        console.error('[Daily Gift] Failed to check gift status:', error);
         setDailyGiftClaimed(true); // Prevent retry loop
       });
-  }, [settingsSyncComplete, appUser?.id, appUser?.discord_id, dailyGiftClaimed, addXP]);
+  }, [settingsSyncComplete, appUser?.id, appUser?.discord_id, dailyGiftClaimed]);
 
   // Loading state
   if (loading) {
@@ -148,25 +129,19 @@ function AppContent() {
       {/* Ambient Sounds Player (Hidden) */}
       <AmbientSoundsPlayer musicPlaying={musicPlaying} />
 
-      {/* Level Up Celebration */}
-      <LevelUpCelebration
-        show={showLevelUp}
-        level={levelUpData.level}
-        levelName={levelUpData.levelName}
-      />
-
       {/* Daily Gift Grid */}
       <DailyGiftGrid
         show={showDailyGift}
         onClose={() => setShowDailyGift(false)}
-        currentDay={consecutiveLoginDays}
       />
 
-      {/* Top Right Buttons - What's New, Discord & Settings */}
+      {/* Active Boost Indicator */}
+      <ActiveBoostIndicator />
+
+      {/* Top Right Buttons - Discord & Settings */}
       <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
-        <WhatsNewButton />
         <DiscordButton />
-        <SettingsModal />
+        <SettingsPopover />
       </div>
 
       {/* Toaster for notifications */}

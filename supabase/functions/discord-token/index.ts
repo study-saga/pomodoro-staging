@@ -8,7 +8,20 @@ serve(async (req) => {
   }
 
   try {
-    const { code } = await req.json()
+    let code: string
+    try {
+      const body = await req.json()
+      code = body.code
+    } catch (jsonError) {
+      console.error('[Discord Token] Invalid JSON in request body:', jsonError)
+      return new Response(
+        JSON.stringify({ error: 'Invalid request: Expected JSON body with code field' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
 
     if (!code) {
       return new Response(
@@ -22,7 +35,10 @@ serve(async (req) => {
 
     // Determine environment based on origin or use staging credentials if available
     const origin = req.headers.get('origin') || ''
-    const isStaging = origin.includes('vercel.app')
+    // Match staging domains more precisely to avoid false positives
+    const isStagingDomain = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?/.test(origin) ||
+                           origin.endsWith('.vercel.app')
+    const isStaging = isStagingDomain
 
     // Use staging credentials if available and request is from staging, otherwise use production
     const clientId = isStaging && Deno.env.get('DISCORD_CLIENT_ID_STAGING')
@@ -32,6 +48,18 @@ serve(async (req) => {
     const clientSecret = isStaging && Deno.env.get('DISCORD_CLIENT_SECRET_STAGING')
       ? Deno.env.get('DISCORD_CLIENT_SECRET_STAGING')!
       : Deno.env.get('DISCORD_CLIENT_SECRET')!
+
+    // Validate environment variables
+    if (!clientId || !clientSecret) {
+      console.error('[Discord Token] Missing Discord credentials:', { clientId: !!clientId, clientSecret: !!clientSecret, isStaging })
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error: Missing Discord credentials' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
 
     console.log('[Discord Token] Using', isStaging ? 'STAGING' : 'PRODUCTION', 'credentials for origin:', origin)
 

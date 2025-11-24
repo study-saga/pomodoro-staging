@@ -302,6 +302,7 @@ export async function saveCompletedPomodoro(
   data: {
     duration_minutes: number
     xp_earned: number
+    critical_success?: boolean
     task_name?: string
     notes?: string
   }
@@ -316,6 +317,7 @@ export async function saveCompletedPomodoro(
       p_discord_id: discordId,
       p_duration_minutes: data.duration_minutes,
       p_xp_earned: data.xp_earned,
+      p_critical_success: data.critical_success || false,
       p_task_name: data.task_name || null,
       p_notes: data.notes || null
     }
@@ -585,7 +587,9 @@ export async function claimDailyGift(
   userId: string,
   discordId: string,
   xpAmount: number,
-  activateBoost: boolean = false
+  activateBoost: boolean = false,
+  boostDurationHours: number = 24,
+  boostMultiplier: number = 1.25
 ): Promise<{
   success: boolean
   message: string
@@ -593,9 +597,10 @@ export async function claimDailyGift(
   newXp?: number
   boostActivated?: boolean
   boostExpiresAt?: number
+  boostMultiplier?: number
   alreadyClaimed?: boolean
 }> {
-  console.log(`[User Sync] Claiming daily gift for user ${userId} (XP: ${xpAmount}, Boost: ${activateBoost})`)
+  console.log(`[User Sync] Claiming daily gift for user ${userId} (XP: ${xpAmount}, Boost: ${activateBoost}, Multiplier: ${boostMultiplier})`)
 
   // Determine authentication mode by checking for Supabase session
   const { data: { session } } = await supabase.auth.getSession()
@@ -609,7 +614,9 @@ export async function claimDailyGift(
     const result = await supabase.rpc('claim_daily_gift', {
       p_user_id: userId,
       p_xp_amount: xpAmount,
-      p_activate_boost: activateBoost
+      p_activate_boost: activateBoost,
+      p_boost_duration_hours: boostDurationHours,
+      p_boost_multiplier: boostMultiplier
     })
 
     data = result.data
@@ -622,7 +629,9 @@ export async function claimDailyGift(
       p_user_id: userId,
       p_discord_id: discordId,
       p_xp_amount: xpAmount,
-      p_activate_boost: activateBoost
+      p_activate_boost: activateBoost,
+      p_boost_duration_hours: boostDurationHours,
+      p_boost_multiplier: boostMultiplier
     })
 
     data = result.data
@@ -640,15 +649,41 @@ export async function claimDailyGift(
     console.log('[User Sync] Daily gift already claimed today')
   } else {
     console.log(`[User Sync] Daily gift claimed successfully - ${result.xp_awarded} XP awarded`)
+    if (result.boost_activated) {
+      console.log(`[User Sync] Boost activated: ${result.boost_multiplier}x until ${new Date(result.boost_expires_at)}`)
+    }
   }
+
+  // Convert boost_expires_at to milliseconds timestamp
+  let boostExpiresAtMs: number | undefined = undefined;
+  if (result.boost_expires_at) {
+    if (typeof result.boost_expires_at === 'string') {
+      // ISO timestamp string - convert to milliseconds
+      boostExpiresAtMs = new Date(result.boost_expires_at).getTime();
+    } else if (typeof result.boost_expires_at === 'number') {
+      // Check if seconds or milliseconds
+      // If > 100000000000 (Nov 1973 in milliseconds), it's already in milliseconds
+      // Otherwise it's in seconds and needs conversion
+      boostExpiresAtMs = result.boost_expires_at > 100000000000
+        ? result.boost_expires_at
+        : result.boost_expires_at * 1000;
+    }
+  }
+
+  console.log('[User Sync] Boost expires at:', {
+    raw: result.boost_expires_at,
+    converted: boostExpiresAtMs,
+    activated: result.boost_activated
+  });
 
   return {
     success: result.success,
     message: result.message,
     xpAwarded: result.xp_awarded,
     newXp: result.new_xp,
-    boostActivated: result.boost_activated,
-    boostExpiresAt: result.boost_expires_at,
+    boostActivated: result.boost_activated || false,
+    boostExpiresAt: boostExpiresAtMs,
+    boostMultiplier: result.boost_multiplier,
     alreadyClaimed: result.already_claimed || false
   }
 }
@@ -693,6 +728,62 @@ export async function canClaimDailyGift(userId: string, discordId: string): Prom
   }
 
   return data as boolean
+}
+
+/**
+ * Reset user progress (XP, level, prestige, stats)
+ * Supports dual authentication modes (web + Discord Activity)
+ */
+export async function resetUserProgress(
+  userId: string,
+  discordId: string
+): Promise<AppUser> {
+  console.log(`[User Sync] Resetting progress for user ${userId}`)
+
+  // Determine authentication mode
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (session) {
+    // Web Mode: Use Supabase Auth
+    console.log('[User Sync] Using web mode for reset')
+
+    const { data, error } = await supabase.rpc('reset_user_progress', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('[User Sync] Error resetting progress:', error)
+      throw new Error(`Failed to reset progress: ${error.message}`)
+    }
+
+    if (!data) {
+      console.error('[User Sync] No data returned from reset_user_progress')
+      throw new Error('Failed to reset progress: No data returned')
+    }
+
+    console.log('[User Sync] Progress reset successfully (web mode)')
+    return data as AppUser
+  } else {
+    // Discord Activity Mode
+    console.log('[User Sync] Using Discord Activity mode for reset')
+
+    const { data, error } = await supabase.rpc('reset_user_progress_discord', {
+      p_discord_id: discordId
+    })
+
+    if (error) {
+      console.error('[User Sync] Error resetting progress:', error)
+      throw new Error(`Failed to reset progress: ${error.message}`)
+    }
+
+    if (!data) {
+      console.error('[User Sync] No data returned from reset_user_progress_discord')
+      throw new Error('Failed to reset progress: No data returned')
+    }
+
+    console.log('[User Sync] Progress reset successfully (Discord Activity mode)')
+    return data as AppUser
+  }
 }
 
 /**
