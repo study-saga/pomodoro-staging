@@ -1,37 +1,13 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { AMBIENT_SOUNDS } from '../../data/constants';
-import {
-  ROLE_EMOJI_ELF,
-  ROLE_EMOJI_HUMAN,
-} from '../../data/levels';
 import { Badge } from '../ui/badge';
 import { changelog, type ChangelogEntry } from '../../data/changelog';
-import { toast } from 'sonner';
-
-// Copied from UserStatsPopover.tsx
-interface StatCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  color: string;
-}
-
-function StatCard({ icon, label, value, color }: StatCardProps) {
-  return (
-    <div className="bg-white/5 rounded-lg p-2 border border-white/10">
-      <div className={`flex items-center gap-1.5 ${color} mb-0.5`}>
-        {icon}
-        <span className="text-xs text-gray-400">{label}</span>
-      </div>
-      <p className="text-base font-bold text-white text-left">{value}</p>
-    </div>
-  );
-}
+import { ProgressTab } from './ProgressTab';
 
 
 interface SettingsContentProps {
-  activeTab: 'timer' | 'appearance' | 'sounds' | 'music' | 'progress' | 'whats-new';
+  activeTab: 'timer' | 'appearance' | 'sounds' | 'notifications' | 'music' | 'progress' | 'whats-new';
   isMobile: boolean;
 
   // Timer settings
@@ -118,6 +94,9 @@ export function SettingsContent(props: SettingsContentProps) {
     setTempAmbientVolumes,
     totalTracks,
     setShowMusicCredits,
+    level,
+    xp,
+    prestigeLevel,
     totalPomodoros,
     totalStudyMinutes,
     levelPath,
@@ -135,27 +114,6 @@ export function SettingsContent(props: SettingsContentProps) {
     pomodoroBoostExpiresAt,
     firstLoginDate,
   } = props;
-
-    // Logic from UserStatsPopover
-    const avgSessionLength = totalPomodoros > 0
-    ? Math.round(totalStudyMinutes / totalPomodoros)
-    : 0;
-  const studyHours = Math.floor(totalStudyMinutes / 60);
-  const studyMins = totalStudyMinutes % 60;
-  let boostTimeRemaining = '';
-  if (pomodoroBoostActive && pomodoroBoostExpiresAt) {
-    const timeLeft = pomodoroBoostExpiresAt - Date.now();
-    if (timeLeft > 0) {
-      const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
-      const minsLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-      boostTimeRemaining = `${hoursLeft}h ${minsLeft}m`;
-    }
-  }
-  let formattedFirstLoginDate = '';
-  if (firstLoginDate) {
-    const firstDate = new Date(firstLoginDate);
-    formattedFirstLoginDate = firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  }
 
   return (
     <AnimatePresence mode="wait">
@@ -261,14 +219,28 @@ export function SettingsContent(props: SettingsContentProps) {
 
             <div className="flex items-center justify-between mb-4">
               <label className="text-white">Pomodoros before long break</label>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={tempPomodorosBeforeLongBreak}
-                onChange={(e) => setTempPomodorosBeforeLongBreak(Number(e.target.value))}
-                className="w-16 bg-white/10 text-white text-center px-2 py-1 rounded border border-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setTempPomodorosBeforeLongBreak(Math.max(1, tempPomodorosBeforeLongBreak - 1))}
+                  className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={tempPomodorosBeforeLongBreak}
+                  onChange={(e) => setTempPomodorosBeforeLongBreak(Number(e.target.value))}
+                  className="w-16 bg-white/10 text-white text-center px-2 py-1 rounded border border-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <button
+                  onClick={() => setTempPomodorosBeforeLongBreak(Math.min(10, tempPomodorosBeforeLongBreak + 1))}
+                  className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
+                >
+                  +
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between mb-4">
@@ -290,97 +262,6 @@ export function SettingsContent(props: SettingsContentProps) {
                 className="w-5 h-5 rounded"
               />
             </div>
-
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-white">Enable sound notifications</label>
-              <input
-                type="checkbox"
-                checked={tempSoundEnabled}
-                onChange={(e) => setTempSoundEnabled(e.target.checked)}
-                className="w-5 h-5 rounded"
-              />
-            </div>
-
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-white">Enable leveling system</label>
-              <input
-                type="checkbox"
-                checked={tempLevelSystemEnabled}
-                onChange={(e) => setTempLevelSystemEnabled(e.target.checked)}
-                className="w-5 h-5 rounded"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-white font-medium mb-2">
-              Alarm Bell Volume - {tempVolume}%
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={tempVolume}
-              onChange={(e) => setTempVolume(Number(e.target.value))}
-              className="w-full h-2 bg-gray-700 rounded-full appearance-none cursor-pointer
-                [&::-webkit-slider-thumb]:appearance-none
-                [&::-webkit-slider-thumb]:w-4
-                [&::-webkit-slider-thumb]:h-4
-                [&::-webkit-slider-thumb]:rounded-full
-                [&::-webkit-slider-thumb]:bg-blue-500
-                [&::-webkit-slider-thumb]:cursor-pointer
-                [&::-moz-range-thumb]:w-4
-                [&::-moz-range-thumb]:h-4
-                [&::-moz-range-thumb]:rounded-full
-                [&::-moz-range-thumb]:bg-blue-500
-                [&::-moz-range-thumb]:border-0"
-            />
-          </div>
-
-          <div>
-            <h3 className="text-white font-bold text-lg mb-3">🔔 Notifications</h3>
-            <p className="text-gray-400 text-sm mb-3">
-              Enable browser notifications to get notified when your timer completes.
-            </p>
-            {('Notification' in window) ? (
-              <>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-white text-sm">Status:</span>
-                  <span className={`text-sm font-medium ${
-                    notificationPermission === 'granted' ? 'text-green-400' :
-                    notificationPermission === 'denied' ? 'text-red-400' :
-                    'text-yellow-400'
-                  }`}>
-                    {notificationPermission === 'granted' ? '✓ Enabled' :
-                     notificationPermission === 'denied' ? '✗ Blocked' :
-                     '⚠ Not enabled'}
-                  </span>
-                </div>
-                {notificationPermission === 'default' && (
-                  <button
-                    onClick={async () => {
-                      const permission = await Notification.requestPermission();
-                      if (permission === 'granted') {
-                        // Trigger re-render to show updated status
-                        window.dispatchEvent(new Event('notificationPermissionChange'));
-                      }
-                    }}
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Enable Notifications
-                  </button>
-                )}
-                {notificationPermission === 'denied' && (
-                  <p className="text-red-400 text-xs">
-                    Notifications are blocked. Please enable them in your browser settings.
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="text-gray-400 text-sm">
-                Notifications are not supported in this browser.
-              </p>
-            )}
           </div>
         </motion.div>
       )}
@@ -398,7 +279,7 @@ export function SettingsContent(props: SettingsContentProps) {
           className="space-y-4"
         >
           <h3 className="text-white font-bold text-lg">Background</h3>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-4">
             {filteredBackgrounds.map((bg) => (
               <button
                 key={bg.id}
@@ -437,11 +318,25 @@ export function SettingsContent(props: SettingsContentProps) {
           className="space-y-4"
         >
           <div>
+            <h3 className="text-white font-bold text-lg mb-4">Sound Settings</h3>
+
+            <div className="flex items-center justify-between mb-4">
+              <label className="text-white">Enable sound notifications</label>
+              <input
+                type="checkbox"
+                checked={tempSoundEnabled}
+                onChange={(e) => setTempSoundEnabled(e.target.checked)}
+                className="w-5 h-5 rounded"
+              />
+            </div>
+          </div>
+
+          <div>
             <h3 className="text-white font-bold text-lg mb-4">Volume Controls</h3>
 
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-white text-sm">🔊 Main Volume</label>
+                <label className="text-white text-sm">🔔 Bell Notification Volume</label>
                 <span className="text-white text-sm">{tempVolume}%</span>
               </div>
               <input
@@ -484,7 +379,7 @@ export function SettingsContent(props: SettingsContentProps) {
 
           <div>
             <h3 className="text-white font-bold text-sm mb-3">🔊 Ambient Sounds</h3>
-            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-x-4 gap-y-3`}>
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
               {AMBIENT_SOUNDS.map((sound) => (
                 <div key={sound.id}>
                   <div className="flex items-center justify-between mb-1.5">
@@ -508,6 +403,66 @@ export function SettingsContent(props: SettingsContentProps) {
                 </div>
               ))}
             </div>
+          </div>
+        </motion.div>
+      )}
+
+      {activeTab === 'notifications' && (
+        <motion.div
+          key="notifications"
+          role="tabpanel"
+          id="notifications-panel"
+          aria-labelledby="notifications-tab"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 20 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-4"
+        >
+          <div>
+            <h3 className="text-white font-bold text-lg mb-3">🔔 Browser Notifications</h3>
+            <p className="text-gray-400 text-sm mb-3">
+              Enable browser notifications to get notified when your timer completes.
+            </p>
+            {(typeof window !== 'undefined' && 'Notification' in window) ? (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white text-sm">Status:</span>
+                  <span className={`text-sm font-medium ${
+                    notificationPermission === 'granted' ? 'text-green-400' :
+                    notificationPermission === 'denied' ? 'text-red-400' :
+                    'text-yellow-400'
+                  }`}>
+                    {notificationPermission === 'granted' ? '✓ Enabled' :
+                     notificationPermission === 'denied' ? '✗ Blocked' :
+                     '⚠ Not enabled'}
+                  </span>
+                </div>
+                {notificationPermission === 'default' && (
+                  <button
+                    onClick={async () => {
+                      const permission = await Notification.requestPermission();
+                      if (permission === 'granted') {
+                        // Trigger re-render to show updated status
+                        window.dispatchEvent(new Event('notificationPermissionChange'));
+                      }
+                    }}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Enable Notifications
+                  </button>
+                )}
+                {notificationPermission === 'denied' && (
+                  <p className="text-red-400 text-xs">
+                    Notifications are blocked. Please enable them in your browser settings.
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-gray-400 text-sm">
+                Notifications are not supported in this browser.
+              </p>
+            )}
           </div>
         </motion.div>
       )}
@@ -551,160 +506,29 @@ export function SettingsContent(props: SettingsContentProps) {
       )}
 
       {activeTab === 'progress' && (
-        <motion.div
-          key="progress"
-          role="tabpanel"
-          id="progress-panel"
-          aria-labelledby="progress-tab"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
-          transition={{ duration: 0.2 }}
-          className="space-y-8"
-        >
-          <div>
-            <h3 className="text-white font-bold text-lg mb-4">Hero Stats</h3>
-            <div className="grid grid-cols-2 gap-2">
-                <label className="bg-white/5 rounded-lg border border-white/10 cursor-pointer relative overflow-hidden flex items-center justify-center">
-                  <input
-                    type="checkbox"
-                    className="opacity-0 w-0 h-0 peer"
-                    checked={levelPath === 'human'}
-                    onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
-                  />
-                  <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg transition-all duration-300 peer-checked:from-blue-600 peer-checked:to-blue-700"></span>
-                  <span className="relative text-4xl z-10 transition-transform duration-300">
-                    {levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}
-                  </span>
-                </label>
-              <StatCard
-                icon={<span className="text-base">{levelPath === 'elf' ? '🧝' : '⚔️'}</span>}
-                label=""
-                value={levelPath === 'elf' ? 'Elf' : 'Human'}
-                color="text-purple-400"
-              />
-              <StatCard
-                icon={<span className="text-base">🍅</span>}
-                label="Pomodoros"
-                value={totalPomodoros.toLocaleString()}
-                color="text-red-400"
-              />
-              <StatCard
-                icon={<Clock className="w-4 h-4" />}
-                label="Study Time"
-                value={studyHours > 0 ? `${studyHours}h ${studyMins}m` : `${studyMins}m`}
-                color="text-green-400"
-              />
-              <StatCard
-                icon={<Calendar className="w-4 h-4" />}
-                label="Active Days"
-                value={`${totalUniqueDays}`}
-                color="text-cyan-400"
-              />
-              <StatCard
-                icon={<Flame className="w-4 h-4" />}
-                label="Login Streak"
-                value={`${consecutiveLoginDays} days`}
-                color="text-orange-400"
-              />
-              <StatCard
-                icon={<BarChart className="w-4 h-4" />}
-                label="Avg Session"
-                value={`${avgSessionLength}m`}
-                color="text-purple-400"
-              />
-              {firstLoginDate && (
-                <StatCard
-                    icon={<Calendar className="w-4 h-4" />}
-                    label="Since"
-                    value={formattedFirstLoginDate}
-                    color="text-pink-400"
-                />
-              )}
-              {pomodoroBoostActive && boostTimeRemaining && (
-                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-3 col-span-full">
-                  <div className="flex items-center gap-2 text-purple-300">
-                    <Zap className="w-4 h-4" />
-                    <span className="text-sm font-semibold">+25% XP Boost Active</span>
-                  </div>
-                  <p className="text-xs text-purple-400 mt-1">
-                    Expires in {boostTimeRemaining}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-white font-bold text-lg mb-2">Username</h3>
-            <p className="text-gray-400 text-sm mb-4">
-              Change your display name. Free once per week, or costs 50 XP if changed earlier.
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={usernameInput}
-                onChange={(e) => {
-                  setUsernameInput(e.target.value.slice(0, 20));
-                  setUsernameError(null); // Clear error when typing
-                }}
-                maxLength={20}
-                disabled={usernameLoading}
-                className="flex-1 bg-white/10 text-white px-4 py-2 rounded-lg border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="User"
-              />
-              <button
-                onClick={handleSaveUsername}
-                disabled={usernameLoading}
-                className="px-6 py-2 bg-white text-black font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {usernameLoading ? 'Saving...' : 'Update'}
-              </button>
-            </div>
-            {usernameError && (
-              <p className="text-red-400 text-sm mt-2">
-                ⚠ {usernameError}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <h3 className="text-white font-bold text-lg mb-2">Reset Progress</h3>
-            <p className="text-gray-400 text-sm mb-4">
-              This will reset all your progress including level, XP, prestige, and stats.
-              This action cannot be undone.
-            </p>
-            <button
-              onClick={() => {
-                toast('Reset All Progress?', {
-                  description: 'This action cannot be undone. All your XP, levels, prestige, and stats will be lost permanently.',
-                  duration: 10000,
-                  action: {
-                    label: 'Reset Everything',
-                    onClick: async () => {
-                      try {
-                        // Reset local state
-                        resetProgress();
-
-                        toast.success('All progress has been reset');
-                      } catch (error) {
-                        console.error('Failed to reset progress:', error);
-                        toast.error('Failed to reset progress in database');
-                      }
-                    }
-                  },
-                  cancel: {
-                    label: 'Cancel',
-                    onClick: () => {}
-                  }
-                });
-              }}
-              className="px-4 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors"
-            >
-              Reset All Progress
-            </button>
-          </div>
-        </motion.div>
+        <ProgressTab
+          level={level}
+          xp={xp}
+          prestigeLevel={prestigeLevel}
+          levelPath={levelPath}
+          tempLevelSystemEnabled={tempLevelSystemEnabled}
+          setTempLevelSystemEnabled={setTempLevelSystemEnabled}
+          handleRoleChange={handleRoleChange}
+          totalPomodoros={totalPomodoros}
+          totalStudyMinutes={totalStudyMinutes}
+          totalUniqueDays={totalUniqueDays}
+          consecutiveLoginDays={consecutiveLoginDays}
+          firstLoginDate={firstLoginDate}
+          pomodoroBoostActive={pomodoroBoostActive}
+          pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
+          usernameInput={usernameInput}
+          setUsernameInput={setUsernameInput}
+          usernameError={usernameError}
+          setUsernameError={setUsernameError}
+          usernameLoading={usernameLoading}
+          handleSaveUsername={handleSaveUsername}
+          resetProgress={resetProgress}
+        />
       )}
 
       {activeTab === 'whats-new' && (

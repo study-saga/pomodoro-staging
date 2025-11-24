@@ -5,7 +5,7 @@ import { DEFAULT_SETTINGS, USERNAME_EDIT_COOLDOWN, USERNAME_EDIT_COST, getDefaul
 import { MAX_LEVEL, getXPNeeded } from '../data/levels';
 import { getMilestoneForDay, type MilestoneReward } from '../data/milestones';
 import { calculateRoleXP } from '../data/roleSystem';
-import { calculateBuffStack } from '../lib/buffManager';
+import { getStackedMultiplier, getActiveBuffs } from '../data/eventBuffsData';
 
 // Helper to detect device type
 const getIsMobile = () => {
@@ -131,42 +131,55 @@ export const useSettingsStore = create<SettingsStore>()(
 
         console.log('[XP] addXP called with minutes:', minutes, 'Current level:', state.level, 'Current XP:', state.xp, 'Role:', state.levelPath);
 
-        /**
-         * NEW BUFF SYSTEM: Calculate event buff multiplier from activeBuffs
-         * This replaces hardcoded boost checks and enables stacking
-         * Example: day10_boost (+25%) + slingshot (+25%) = 1.50x multiplier
-         */
-        const buffStackResult = calculateBuffStack(state.activeBuffs, state.levelPath);
-        const eventBuffMultiplier = buffStackResult.totalXPMultiplier;
+        // Check if pomodoro boost is active and not expired
+        let boostMultiplier = 1;
+        let boostStillActive = state.pomodoroBoostActive;
 
-        // Log active event buffs
-        if (buffStackResult.bonusStrings.length > 0) {
-          console.log('[XP] Active event buffs:', buffStackResult.bonusStrings.join(', '));
+        if (state.pomodoroBoostActive && state.pomodoroBoostExpiresAt) {
+          if (Date.now() > state.pomodoroBoostExpiresAt) {
+            // Boost has expired
+            boostStillActive = false;
+            console.log('[XP] Pomodoro boost expired');
+          } else {
+            // Boost is still active - use the actual multiplier from state
+            boostMultiplier = state.pomodoroBoostMultiplier || 1.25;
+            const boostPercent = Math.round((boostMultiplier - 1) * 100);
+            console.log(`[XP] Applying +${boostPercent}% XP boost!`);
+          }
         }
 
-        // Role-based XP calculation with event buff multiplier
+        // Role-based XP calculation using role system
         const roleResult = calculateRoleXP(state.levelPath, minutes, {
           consecutiveDays: state.consecutiveLoginDays,
           prestigeLevel: state.prestigeLevel,
           consecutiveCrits: state.consecutiveCriticals,
-          eventBuffMultiplier, // Pass event buffs to role calculation
         });
 
-        const xpGained = roleResult.xpGained;
+        let baseXP = roleResult.xpGained;
         const criticalSuccess = roleResult.criticalSuccess;
 
         // Log role bonuses
         if (roleResult.bonuses.length > 0) {
-          console.log('[XP] Role bonuses:', roleResult.bonuses.join(', '));
+          console.log('[XP] Role buffs applied:', roleResult.bonuses.join(', '));
         }
 
-        /**
-         * LEGACY FIELD SYNC: Keep old boost fields in sync for backwards compatibility
-         * Check if day10_boost is active in new buff system
-         */
-        const day10Buff = state.activeBuffs.day10_boost;
-        const boostStillActive = day10Buff && (!day10Buff.expiresAt || day10Buff.expiresAt > Date.now());
+        // Apply event buff multipliers (date-based, stackable)
+        const eventBuffMultiplier = getStackedMultiplier(new Date());
+        const activeEventBuffs = getActiveBuffs(new Date());
 
+        if (eventBuffMultiplier > 1 && activeEventBuffs.length > 0) {
+          console.log(
+            '[XP] Event buffs active:',
+            activeEventBuffs.map((b) => `${b.title} (x${b.xpMultiplier})`).join(', ')
+          );
+          console.log('[XP] Stacked event buff multiplier:', eventBuffMultiplier.toFixed(3));
+        }
+
+        // Calculate final XP with all multipliers stacked
+        // Order: base XP → daily boost → event buffs
+        const xpWithBoost = baseXP * boostMultiplier;
+        const xpWithEventBuffs = xpWithBoost * eventBuffMultiplier;
+        const xpGained = Math.floor(xpWithEventBuffs);
         let newXP = state.xp + xpGained;
         let newLevel = state.level;
         let newPrestigeLevel = state.prestigeLevel;

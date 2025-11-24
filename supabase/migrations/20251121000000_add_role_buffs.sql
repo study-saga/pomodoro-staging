@@ -107,5 +107,6 @@ GRANT EXECUTE ON FUNCTION public.atomic_save_completed_pomodoro(UUID, TEXT, INTE
 COMMENT ON FUNCTION public.atomic_save_completed_pomodoro IS
   'Atomically saves completed pomodoro and updates user stats in one transaction.
    Supports both Supabase Auth (web) and Discord Activity (discord_id) authentication.
-   Tracks critical success events for human role buff.
+   Tracks critical success events for human role buff (p_critical_success defaults to FALSE).
+   IMPORTANT: Callers must pass p_critical_success=TRUE when human role triggers 2x XP critical.
    Prevents inconsistent state from partial failures.';

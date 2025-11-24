@@ -7,10 +7,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: '0.0.0.0', // Allow external connections
-    hmr: {
-      host: 'dev.study-saga.com', // Your custom domain
-      clientPort: 443, // HTTPS port
-      protocol: 'wss', // Secure WebSocket for HMR
-    },
+    // HMR auto-detects localhost when no custom config provided
+    // Only override for remote dev environments
   },
 })

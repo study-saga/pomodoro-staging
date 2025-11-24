@@ -1,11 +1,9 @@
 /**
- * Role System Configuration
- * Defines unique stats, buffs, and events for each role (Elf/Human)
- */
+* Role System Configuration
+* Defines unique stats, buffs, and events for each role (Elf/Human)
+*/
 
 export type RoleType = 'elf' | 'human';
-
-export type BuffCategory = 'permanent' | 'event' | 'proc';
 
 export interface RoleBuff {
   id: string;
@@ -13,9 +11,6 @@ export interface RoleBuff {
   description: string;
   icon: string;
   type: 'passive' | 'active' | 'proc'; // passive = always on, active = user triggered, proc = chance-based
-  category: BuffCategory; // permanent = always active, event = time-limited, proc = chance-based
-  roles?: RoleType[]; // Which roles can use this buff (undefined = all roles)
-  xpBonus?: number; // XP multiplier (0.15 = +15%)
 }
 
 export interface RoleStats {
@@ -78,13 +73,18 @@ export const ELF_ROLE: RoleConfig = {
     secondary: '#9333ea',
     gradient: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
   },
-  buffs: [],
+  buffs: [
+    {
+      id: 'elf_consistency',
+      name: 'Elven Focus',
+      description: '+0.5 XP per minute (consistent bonus)',
+      icon: '🎯',
+      type: 'passive',
+    },
+  ],
   stats: {
     baseXPMultiplier: 1.0,
     xpBonus: 0.5, // +0.5 XP/min
-    streakBonus: 0.1, // +0.1 XP per day streak
-    maxStreakBonus: 2.0, // Max +2 XP/min from streak
-    breakTimeReduction: 0.2, // 20% shorter breaks
     levelUpReward: 5, // +5 XP bonus on level up
   },
   events: [
@@ -115,13 +115,20 @@ export const HUMAN_ROLE: RoleConfig = {
     secondary: '#2563eb',
     gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
   },
-  buffs: [],
+  buffs: [
+    {
+      id: 'human_critical',
+      name: 'Critical Success',
+      description: '25% chance to double session XP',
+      icon: '🎯',
+      type: 'proc',
+    }
+  ],
   stats: {
     baseXPMultiplier: 1.0,
     xpBonus: 0, // No flat bonus
     criticalChance: 0.25, // 25% base crit chance
     criticalMultiplier: 2.0, // 2x XP on crit
-    prestigeXPBonus: 0.1, // +10% XP per prestige level
   },
   events: [
     {
@@ -167,15 +174,16 @@ export function getRoleStats(roleType: RoleType): RoleStats {
   return ROLES[roleType].stats;
 }
 
+export interface RoleXPOptions {
+  consecutiveDays?: number;
+  prestigeLevel?: number;
+  consecutiveCrits?: number;
+}
+
 export function calculateRoleXP(
   roleType: RoleType,
   baseMinutes: number,
-  additionalContext?: {
-    consecutiveDays?: number;
-    prestigeLevel?: number;
-    consecutiveCrits?: number;
-    eventBuffMultiplier?: number; // From calculateBuffStack (e.g., 1.40 = +40%)
-  }
+  _options: RoleXPOptions = {}
 ): { xpGained: number; criticalSuccess: boolean; bonuses: string[] } {
   const role = getRoleConfig(roleType);
   const stats = role.stats;
@@ -191,60 +199,23 @@ export function calculateRoleXP(
   if (roleType === 'elf') {
     // Elf: Consistency bonus
     bonuses.push(`+${stats.xpBonus} XP/min (Elven Focus)`);
-
-    // Streak bonus
-    if (additionalContext?.consecutiveDays && stats.streakBonus) {
-      const streakBonus = Math.min(
-        additionalContext.consecutiveDays * stats.streakBonus,
-        stats.maxStreakBonus || Infinity
-      );
-      xpPerMinute += streakBonus;
-      bonuses.push(`+${streakBonus.toFixed(1)} XP/min (Streak Master)`);
-    }
   }
 
   if (roleType === 'human') {
     // Human: Critical chance
     let critChance = stats.criticalChance || 0;
 
-    // Determination buff: increase crit chance based on consecutive fails
-    if (additionalContext?.consecutiveCrits !== undefined && additionalContext.consecutiveCrits < 0) {
-      const failedAttempts = Math.abs(additionalContext.consecutiveCrits);
-      const bonusCritChance = failedAttempts * 0.05;
-      critChance = Math.min(critChance + bonusCritChance, 1.0);
-      if (bonusCritChance > 0) {
-        bonuses.push(`+${(bonusCritChance * 100).toFixed(0)}% crit chance (Determination)`);
-      }
-    }
-
     // Roll for critical
     if (Math.random() < critChance) {
       criticalSuccess = true;
       bonuses.push('🎯 CRITICAL SUCCESS!');
     }
-
-    // Prestige bonus
-    if (additionalContext?.prestigeLevel && stats.prestigeXPBonus) {
-      const prestigeBonus = additionalContext.prestigeLevel * stats.prestigeXPBonus;
-      xpPerMinute *= (1 + prestigeBonus);
-      bonuses.push(`+${(prestigeBonus * 100).toFixed(0)}% XP (Prestige)`);
-    }
   }
 
-  // Calculate base XP
+  // Calculate total XP
   totalXP = baseMinutes * xpPerMinute;
 
-  // Apply event buff multiplier (ADDITIVE - stacks from active buffs)
-  if (additionalContext?.eventBuffMultiplier) {
-    totalXP *= additionalContext.eventBuffMultiplier;
-    const percentage = Math.round((additionalContext.eventBuffMultiplier - 1) * 100);
-    if (percentage > 0) {
-      bonuses.push(`+${percentage}% Event Buffs`);
-    }
-  }
-
-  // Apply critical multiplier (FINAL - multiplicative after all additive bonuses)
-  // Human crits are calculated LAST to avoid double-stacking with event buffs
+  // Apply critical multiplier
   if (criticalSuccess && stats.criticalMultiplier) {
     totalXP *= stats.criticalMultiplier;
   }
@@ -256,59 +227,16 @@ export function calculateRoleXP(
   };
 }
 
-// ============================================
-// EVENT BUFFS (TIME-LIMITED, ALL OR SPECIFIC ROLES)
-// ============================================
-
-export const EVENT_BUFFS: RoleBuff[] = [
-  {
-    id: 'day10_boost',
-    name: '+25% XP Boost',
-    description: '24-hour XP boost from day 10 gift',
-    icon: '🍅',
-    type: 'passive',
-    category: 'event',
-    xpBonus: 0.25, // +25%
-    // No roles restriction - applies to all
-  },
-  {
-    id: 'slingshot_nov22',
-    name: 'Elven Slingshot',
-    description: '+25% XP boost (Nov 22-23 event)',
-    icon: '🏹',
-    type: 'passive',
-    category: 'event',
-    roles: ['elf'], // Only elves
-    xpBonus: 0.25, // +25%
-  },
-];
-
 /**
- * Get event buff by ID
- */
-export function getEventBuff(buffId: string): RoleBuff | undefined {
-  return EVENT_BUFFS.find(b => b.id === buffId);
-}
-
-/**
- * Check if an event buff applies to a role
- */
-export function eventBuffAppliesToRole(buff: RoleBuff, roleType: RoleType): boolean {
-  // If no role restriction, applies to all
-  if (!buff.roles || buff.roles.length === 0) return true;
-  // Check if role is in the allowed list
-  return buff.roles.includes(roleType);
-}
-
-/**
- * Get active buffs for a role based on current state
+ * Get active buffs for a role
+ * Currently returns all passive and proc-type buffs
+ * (Future: could add conditional logic based on game state)
  */
 export function getActiveBuffs(
   roleType: RoleType
 ): RoleBuff[] {
   const allBuffs = getRoleBuffs(roleType);
 
-  // For now, return all passive buffs
-  // In the future, can add logic to enable/disable based on conditions
+  // Return all passive and proc buffs (always active)
   return allBuffs.filter(buff => buff.type === 'passive' || buff.type === 'proc');
 }

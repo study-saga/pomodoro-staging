@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import SkeletonArcher from '../SkeletonArcher';
 
 interface LevelUpCelebrationProps {
@@ -19,15 +19,27 @@ export function LevelUpCelebration({ show, level, levelName }: LevelUpCelebratio
     }
   }, [show]);
 
-  // Generate confetti particles
-  const confettiParticles = Array.from({ length: 20 }, (_, i) => ({
-    id: i,
-    color: ['#FCD34D', '#F59E0B', '#EF4444', '#EC4899'][Math.floor(Math.random() * 4)],
-    delay: Math.random() * 0.3,
-    x: (Math.random() - 0.5) * 400,
-    y: (Math.random() - 0.5) * 400,
-    rotation: Math.random() * 360
-  }));
+  // Generate confetti particles (memoized to prevent regeneration on every render)
+  const confettiParticles = useMemo(() => Array.from({ length: 90 }, (_, i) => {
+    const sizes = [
+      { w: 6, h: 3 },   // small
+      { w: 10, h: 5 },  // medium
+      { w: 14, h: 7 },  // large
+    ];
+    const size = sizes[Math.floor(Math.random() * sizes.length)];
+
+    return {
+      id: i,
+      color: ['#FCD34D', '#F59E0B', '#EF4444', '#EC4899'][Math.floor(Math.random() * 4)],
+      delay: Math.random() * 0.3,
+      x: (Math.random() - 0.5) * 400,
+      y: (Math.random() - 0.5) * 400,
+      rotation: Math.random() * 360,
+      rotateX: Math.random() * 720,
+      width: size.w,
+      height: size.h,
+    };
+  }), []);
 
   return (
     <AnimatePresence>
@@ -125,25 +137,36 @@ export function LevelUpCelebration({ show, level, levelName }: LevelUpCelebratio
           {confettiParticles.map((particle) => (
             <motion.div
               key={`confetti-${particle.id}`}
+              className="absolute"
+              style={{
+                width: `${particle.width}px`,
+                height: `${particle.height}px`,
+                backgroundColor: particle.color,
+                borderRadius: '1px',
+              }}
               initial={{
                 x: typeof window !== 'undefined' ? window.innerWidth / 2 : 0,
                 y: typeof window !== 'undefined' ? window.innerHeight / 2 : 0,
-                opacity: 1
+                opacity: 1,
+                rotateZ: 0,
+                rotateX: 0,
               }}
               animate={{
                 x: typeof window !== 'undefined' ? window.innerWidth / 2 + particle.x : particle.x,
                 y: typeof window !== 'undefined' ? window.innerHeight / 2 + particle.y : particle.y,
-                opacity: 0,
-                rotate: particle.rotation
+                opacity: [1, 1, 1, 1, 0],
+                rotateZ: particle.rotation * 2,
+                rotateX: particle.rotateX,
               }}
               transition={{
-                duration: 1.5,
+                duration: 5,
                 delay: particle.delay,
-                ease: 'easeOut'
-              }}
-              className="absolute w-3 h-3 rounded-full"
-              style={{
-                backgroundColor: particle.color
+                ease: [0.4, 0.0, 0.6, 1],
+                opacity: {
+                  duration: 5,
+                  times: [0, 0.2, 0.8, 0.9, 1],
+                  ease: 'easeOut',
+                }
               }}
             />
           ))}

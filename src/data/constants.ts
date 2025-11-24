@@ -138,6 +138,7 @@ export const DEFAULT_SETTINGS = {
   firstLoginDate: null,
   pomodoroBoostActive: false,
   pomodoroBoostExpiresAt: null,
+  pomodoroBoostMultiplier: 1.25,
   consecutiveCriticals: 0,
   todayPomodoros: 0,
   comebackActive: false,
