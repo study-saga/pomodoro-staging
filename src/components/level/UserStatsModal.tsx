@@ -1,5 +1,5 @@
 
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { X, Target, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
@@ -9,6 +9,7 @@ import {
   ROLE_EMOJI_ELF,
   ROLE_EMOJI_HUMAN,
 } from '../../data/levels';
+import { createRateLimiter, rateLimitedToast } from '../../utils/rateLimiters';
 
 interface UserStatsModalProps {
   onClose: () => void;
@@ -31,6 +32,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
 
   const [showSinceTooltip, setShowSinceTooltip] = useState(false);
   const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
+  const rateLimiterRef = useRef(createRateLimiter(720000)); // 12 minutes (5 changes per hour)
   // Average session length: total minutes divided by pomodoro count
   const avgSessionLength = totalPomodoros > 0
     ? Math.round(totalStudyMinutes / totalPomodoros)
@@ -65,37 +67,42 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
     }
   }, [roleChangeMessage]);
 
-  // Handle role change with funny messages
+  // Handle role change with funny messages (rate limited to 5 per hour)
   const handleRoleChange = (newRole: 'elf' | 'human') => {
-    setLevelPath(newRole);
+    // Apply rate limiting (12 minutes between role changes)
+    rateLimiterRef.current(() => {
+      setLevelPath(newRole);
 
-    const messages = {
-      elf: [
-        "You have chosen the path of the Elf! May nature guide your journey.",
-        "The forest welcomes you, brave Elf. Your adventure begins anew!",
-        "An Elf emerges! The ancient woods await your wisdom.",
-        "You walk the Elven path. Grace and focus shall be your companions.",
-        "Pointy ears, sharp focus.",
-        "Leaves are better than swords.",
-        "Immortality is a long study session.",
-        "Tree hugger? No, tree scholar.",
-        "Elven wisdom activated. Coffee optional.",
-      ],
-      human: [
-        "You have chosen the path of the Human! May courage light your way.",
-        "A warrior's path chosen! Your legend starts now, brave Human.",
-        "The Human spirit awakens within you. Face your challenges head-on!",
-        "You walk the Human path. Strength and determination guide you forward.",
-        "Jack of all trades, master of none.",
-        "Live fast, study hard.",
-        "Round ears, rounder ambition.",
-        "XP is just a number.",
-        "Human selected. Results may vary.",
-      ],
-    };
+      const messages = {
+        elf: [
+          "You have chosen the path of the Elf! May nature guide your journey.",
+          "The forest welcomes you, brave Elf. Your adventure begins anew!",
+          "An Elf emerges! The ancient woods await your wisdom.",
+          "You walk the Elven path. Grace and focus shall be your companions.",
+          "Pointy ears, sharp focus.",
+          "Leaves are better than swords.",
+          "Immortality is a long study session.",
+          "Tree hugger? No, tree scholar.",
+          "Elven wisdom activated. Coffee optional.",
+        ],
+        human: [
+          "You have chosen the path of the Human! May courage light your way.",
+          "A warrior's path chosen! Your legend starts now, brave Human.",
+          "The Human spirit awakens within you. Face your challenges head-on!",
+          "You walk the Human path. Strength and determination guide you forward.",
+          "Jack of all trades, master of none.",
+          "Live fast, study hard.",
+          "Round ears, rounder ambition.",
+          "XP is just a number.",
+          "Human selected. Results may vary.",
+        ],
+      };
 
-    const randomMessage = messages[newRole][Math.floor(Math.random() * messages[newRole].length)];
-    setRoleChangeMessage(randomMessage);
+      const randomMessage = messages[newRole][Math.floor(Math.random() * messages[newRole].length)];
+
+      // Use rate-limited toast to prevent spam
+      rateLimitedToast(randomMessage, setRoleChangeMessage);
+    })();
   };
 
   return (

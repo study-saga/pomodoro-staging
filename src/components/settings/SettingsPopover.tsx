@@ -24,6 +24,7 @@ import {
   PopoverContent,
   PopoverBody,
 } from '../ui/popover';
+import { createRateLimiter } from '../../utils/rateLimiters';
 
 export const SettingsPopover = memo(function SettingsPopover() {
   const { appUser } = useAuth();
@@ -41,6 +42,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
   });
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const rateLimiterRef = useRef(createRateLimiter(720000)); // 12 minutes (5 changes per hour)
 
   const { isMobile, isPortrait } = useDeviceType();
 
@@ -116,25 +118,27 @@ export const SettingsPopover = memo(function SettingsPopover() {
   }, [open, activeTab]);
 
   const handleRoleChange = (newRole: 'elf' | 'human') => {
-    setLevelPath(newRole);
+    rateLimiterRef.current(() => {
+      setLevelPath(newRole);
 
-    const messages = {
-      elf: [
-        "You have chosen the path of the Elf! May nature guide your journey.",
-        "The forest welcomes you, brave Elf. Your adventure begins anew!",
-        "An Elf emerges! The ancient woods await your wisdom.",
-        "You walk the Elven path. Grace and focus shall be your companions.",
-      ],
-      human: [
-        "You have chosen the path of the Human! May courage light your way.",
-        "A warrior's path chosen! Your legend starts now, brave Human.",
-        "The Human spirit awakens within you. Face your challenges head-on!",
-        "You walk the Human path. Strength and determination guide you forward.",
-      ],
-    };
+      const messages = {
+        elf: [
+          "You have chosen the path of the Elf! May nature guide your journey.",
+          "The forest welcomes you, brave Elf. Your adventure begins anew!",
+          "An Elf emerges! The ancient woods await your wisdom.",
+          "You walk the Elven path. Grace and focus shall be your companions.",
+        ],
+        human: [
+          "You have chosen the path of the Human! May courage light your way.",
+          "A warrior's path chosen! Your legend starts now, brave Human.",
+          "The Human spirit awakens within you. Face your challenges head-on!",
+          "You walk the Human path. Strength and determination guide you forward.",
+        ],
+      };
 
-    const randomMessage = messages[newRole][Math.floor(Math.random() * messages[newRole].length)];
-    setRoleChangeMessage(randomMessage);
+      const randomMessage = messages[newRole][Math.floor(Math.random() * messages[newRole].length)];
+      setRoleChangeMessage(randomMessage);
+    })();
   };
 
   const {
