@@ -695,7 +695,7 @@ export async function claimDailyGift(
  * @param discordId - User's Discord ID (for Discord Activity mode)
  * @returns true if gift can be claimed, false if already claimed today
  */
-export async function canClaimDailyGift(userId: string, discordId: string): Promise<boolean> {
+export async function canClaimDailyGift(userId: string, _discordId: string): Promise<boolean> {
   console.log(`[User Sync] Checking if user ${userId} can claim daily gift`)
 
   // Determine authentication mode by checking for Supabase session
