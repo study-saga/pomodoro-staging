@@ -123,6 +123,7 @@ export function MessageInput({
             autoCorrect="off"
             spellCheck="false"
             enterKeyHint="send"
+            inputMode="text"
             className="w-full h-[36px] bg-white/5 text-white placeholder-gray-500 rounded-xl px-3.5 py-2.5 pr-10 resize-none border border-white/5 focus:border-purple-500/30 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-sm no-scrollbar flex items-center"
           />
 

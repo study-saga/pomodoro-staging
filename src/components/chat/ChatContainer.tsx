@@ -213,7 +213,7 @@ export function ChatContainer() {
             localCount={chattingCount}
             onlineCount={onlineUsers.length}
           />
-          <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-hidden flex flex-col pb-[60px]">
             <div className="flex-1 overflow-hidden">
               {activeTab === 'local' && (
                 <GlobalChatMessages
@@ -233,7 +233,7 @@ export function ChatContainer() {
 
             {/* Input attached at bottom for mobile */}
             {activeTab === 'local' && (
-              <div className="bg-black/40 backdrop-blur-md border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
+              <div className="fixed bottom-0 left-0 right-0 bg-black/60 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom,0)]">
                 <MessageInput
                   onSendMessage={handleSendMessage}
                   placeholder="Message..."
