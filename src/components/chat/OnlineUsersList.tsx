@@ -1,5 +1,6 @@
 import { getAvatarUrl } from '../../lib/chatService';
 import type { OnlineUser } from '../../types/chat';
+import { Shield } from 'lucide-react';
 
 interface OnlineUsersListProps {
   users: OnlineUser[];
@@ -77,6 +78,16 @@ export function OnlineUsersList({
                   <p className="text-sm font-medium text-white truncate">
                     {user.username}
                   </p>
+                  {user.role === 'moderator' && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/20 text-blue-300">
+                      <Shield size={8} className="mr-1" /> Mod
+                    </span>
+                  )}
+                  {user.role === 'admin' && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-500/20 text-red-300">
+                      <Shield size={8} className="mr-1" /> Admin
+                    </span>
+                  )}
                   {isCurrentUser && (
                     <span className="text-xs text-gray-400">(You)</span>
                   )}

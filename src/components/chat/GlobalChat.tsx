@@ -38,7 +38,7 @@ export function GlobalChatMessages({ currentUser }: GlobalChatMessagesProps) {
     return () => window.removeEventListener('click', handleClick);
   }, []);
 
-  const handleContextMenu = (e: React.MouseEvent, userId: string, username: string) => {
+  const handleContextMenu = (e: React.MouseEvent, userId: string, username: string, targetRole?: string) => {
     e.preventDefault(); // Always prevent default context menu
 
     // Only show for mods/admins
@@ -46,10 +46,25 @@ export function GlobalChatMessages({ currentUser }: GlobalChatMessagesProps) {
       return;
     }
 
-    // Prevent banning self with feedback
+    // Prevent banning self
     if (userId === currentUser.id) {
       toast.error("You cannot ban yourself.");
       return;
+    }
+
+    // Role-based protection
+    if (userRole === 'moderator') {
+      if (targetRole === 'moderator' || targetRole === 'admin') {
+        toast.error("You cannot ban other moderators or admins.");
+        return;
+      }
+    }
+
+    if (userRole === 'admin') {
+      if (targetRole === 'admin') {
+        toast.error("You cannot ban other admins.");
+        return;
+      }
     }
 
     setContextMenu({ x: e.clientX, y: e.clientY, userId, username });
@@ -100,7 +115,7 @@ export function GlobalChatMessages({ currentUser }: GlobalChatMessagesProps) {
                   key={msg.id}
                   className={`group flex items-start gap-2 px-2 py-1 rounded-lg transition-colors ${isMentioned && !isDeleted ? 'bg-yellow-500/10 hover:bg-yellow-500/20' : 'hover:bg-white/5'
                     }`}
-                  onContextMenu={(e) => !isDeleted && handleContextMenu(e, msg.user.id, msg.user.username)}
+                  onContextMenu={(e) => !isDeleted && handleContextMenu(e, msg.user.id, msg.user.username, msg.user.role)}
                 >
                   {/* Avatar */}
                   <div className="w-8 flex-shrink-0 pt-0.5">
