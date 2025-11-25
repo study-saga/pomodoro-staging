@@ -4,24 +4,20 @@ import { useChat } from '../../contexts/ChatContext';
 import { formatMessageTime, getAvatarUrl, hasMention } from '../../lib/chatService';
 import { Trash2, Shield, AlertTriangle } from 'lucide-react';
 import type { AppUser } from '../../lib/types';
-import { BanModal } from './BanModal';
 import { toast } from 'sonner';
 
 interface GlobalChatMessagesProps {
   currentUser: AppUser;
+  onBanUser: (user: { id: string; username: string }) => void;
 }
 
 /**
  * Global chat messages list
  * Displays the list of messages and handles auto-scrolling
  */
-export function GlobalChatMessages({ currentUser }: GlobalChatMessagesProps) {
-  const { globalMessages, deleteGlobalMessage, userRole, banUser } = useChat();
+export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessagesProps) {
+  const { globalMessages, deleteGlobalMessage, userRole } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Ban Modal State
-  const [banModalOpen, setBanModalOpen] = useState(false);
-  const [selectedUserToBan, setSelectedUserToBan] = useState<{ id: string; username: string } | null>(null);
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; userId: string; username: string } | null>(null);
@@ -72,17 +68,8 @@ export function GlobalChatMessages({ currentUser }: GlobalChatMessagesProps) {
 
   const handleBanClick = () => {
     if (contextMenu) {
-      setSelectedUserToBan({ id: contextMenu.userId, username: contextMenu.username });
-      setBanModalOpen(true);
+      onBanUser({ id: contextMenu.userId, username: contextMenu.username });
       setContextMenu(null);
-    }
-  };
-
-  const handleBanConfirm = async (duration: number | null, reason: string) => {
-    if (selectedUserToBan) {
-      await banUser(selectedUserToBan.id, duration, reason);
-      setBanModalOpen(false);
-      setSelectedUserToBan(null);
     }
   };
 
@@ -205,14 +192,6 @@ export function GlobalChatMessages({ currentUser }: GlobalChatMessagesProps) {
               </button>
             </div>
           )}
-
-          {/* Ban Modal */}
-          <BanModal
-            isOpen={banModalOpen}
-            onClose={() => setBanModalOpen(false)}
-            onBan={handleBanConfirm}
-            username={selectedUserToBan?.username || ''}
-          />
         </>,
         document.body
       )}

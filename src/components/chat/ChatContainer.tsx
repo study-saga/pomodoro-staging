@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { MessageCircle, Minimize2, AlertTriangle, Lock, Clock } from 'lucide-react';
 import { ChatTabs } from './ChatTabs';
 import { GlobalChatMessages } from './GlobalChat';
@@ -9,7 +10,7 @@ import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRateLimit } from '../../hooks/useRateLimit';
 import type { ChatTab } from '../../types/chat';
-import { formatDistanceToNow } from 'date-fns';
+import { BanModal } from './BanModal';
 
 /**
  * Main chat container with collapsible functionality
@@ -17,12 +18,16 @@ import { formatDistanceToNow } from 'date-fns';
  */
 export function ChatContainer() {
   const { appUser } = useAuth();
-  const { onlineUsers, setChatOpen, isChatEnabled, sendGlobalMessage, isGlobalConnected, isBanned, banReason, banExpiresAt } = useChat();
+  const { onlineUsers, setChatOpen, isChatEnabled, sendGlobalMessage, isGlobalConnected, isBanned, banReason, banExpiresAt, banUser } = useChat();
   const { canSend, timeUntilReset, messagesRemaining, recordMessage } = useRateLimit();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTab>('local');
   const [timeLeft, setTimeLeft] = useState<string>('');
+
+  // Ban Modal State
+  const [banModalOpen, setBanModalOpen] = useState(false);
+  const [selectedUserToBan, setSelectedUserToBan] = useState<{ id: string; username: string } | null>(null);
 
   // Calculate counts
   const chattingCount = onlineUsers.filter(u => u.isChatting).length;
@@ -44,7 +49,20 @@ export function ChatContainer() {
         setTimeLeft('Ban expiring...');
         clearInterval(interval);
       } else {
-        setTimeLeft(formatDistanceToNow(end, { addSuffix: true }));
+        const diff = end.getTime() - now.getTime();
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        const parts = [];
+        if (days > 0) parts.push(`${days}d`);
+        if (hours > 0) parts.push(`${hours}h`);
+        parts.push(`${minutes}m`);
+        parts.push(`${seconds}s`);
+
+        setTimeLeft(parts.join(' '));
       }
     }, 1000);
 
@@ -91,6 +109,19 @@ export function ChatContainer() {
     });
 
     recordMessage();
+  };
+
+  const handleOpenBanModal = (user: { id: string; username: string }) => {
+    setSelectedUserToBan(user);
+    setBanModalOpen(true);
+  };
+
+  const handleBanConfirm = async (duration: number | null, reason: string) => {
+    if (selectedUserToBan) {
+      await banUser(selectedUserToBan.id, duration, reason);
+      setBanModalOpen(false);
+      setSelectedUserToBan(null);
+    }
   };
 
   // Don't show chat if not authenticated
@@ -182,11 +213,17 @@ export function ChatContainer() {
           />
           <div className="flex-1 overflow-hidden flex flex-col">
             <div className="flex-1 overflow-hidden">
-              {activeTab === 'local' && <GlobalChatMessages currentUser={appUser} />}
+              {activeTab === 'local' && (
+                <GlobalChatMessages
+                  currentUser={appUser}
+                  onBanUser={handleOpenBanModal}
+                />
+              )}
               {activeTab === 'online' && (
                 <OnlineUsersList
                   users={onlineUsers}
                   currentUserId={appUser.id}
+                  onBanUser={handleOpenBanModal}
                 />
               )}
               {activeTab === 'banned' && <BannedUsersList />}
@@ -205,6 +242,17 @@ export function ChatContainer() {
             )}
           </div>
         </div>
+
+        {/* Ban Modal */}
+        {createPortal(
+          <BanModal
+            isOpen={banModalOpen}
+            onClose={() => setBanModalOpen(false)}
+            onBan={handleBanConfirm}
+            username={selectedUserToBan?.username || ''}
+          />,
+          document.body
+        )}
       </div>
     );
   }
@@ -290,11 +338,17 @@ export function ChatContainer() {
             />
 
             <div className="flex-1 overflow-hidden">
-              {activeTab === 'local' && <GlobalChatMessages currentUser={appUser} />}
+              {activeTab === 'local' && (
+                <GlobalChatMessages
+                  currentUser={appUser}
+                  onBanUser={handleOpenBanModal}
+                />
+              )}
               {activeTab === 'online' && (
                 <OnlineUsersList
                   users={onlineUsers}
                   currentUserId={appUser.id}
+                  onBanUser={handleOpenBanModal}
                 />
               )}
               {activeTab === 'banned' && <BannedUsersList />}
@@ -316,6 +370,17 @@ export function ChatContainer() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Ban Modal */}
+      {createPortal(
+        <BanModal
+          isOpen={banModalOpen}
+          onClose={() => setBanModalOpen(false)}
+          onBan={handleBanConfirm}
+          username={selectedUserToBan?.username || ''}
+        />,
+        document.body
       )}
     </>
   );

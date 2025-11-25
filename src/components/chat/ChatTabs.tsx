@@ -14,7 +14,7 @@ export function ChatTabs({ activeTab, onTabChange, localCount, onlineCount }: Ch
   const isMod = userRole === 'moderator' || userRole === 'admin';
 
   return (
-    <div className="flex items-center p-1.5 gap-1 bg-black/20 border-b border-white/5">
+    <div className="flex items-center p-1.5 pr-10 gap-1 bg-black/20 border-b border-white/5">
       <button
         onClick={() => onTabChange('local')}
         className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium transition-all ${activeTab === 'local'
