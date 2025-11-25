@@ -20,13 +20,13 @@ export function ChatTabs({
   onlineCount = 0
 }: ChatTabsProps) {
   const tabs = [
-    { id: 'local' as ChatTab, label: 'Local', count: localCount },
+    { id: 'local' as ChatTab, label: 'Global Chat', count: localCount },
     { id: 'dm' as ChatTab, label: 'DM', count: dmCount },
     { id: 'online' as ChatTab, label: 'Online', count: onlineCount }
   ];
 
   return (
-    <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-gray-900/50">
+    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-white/5">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         return (
@@ -34,7 +34,7 @@ export function ChatTabs({
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={`
-              px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+              px-2.5 py-1 rounded-lg text-xs font-medium transition-all
               ${
                 isActive
                   ? 'bg-white/10 text-white'
@@ -43,11 +43,9 @@ export function ChatTabs({
             `}
           >
             {tab.label}
-            {tab.count > 0 && (
-              <span className="ml-1.5 text-xs opacity-75">
-                • {tab.count}
-              </span>
-            )}
+            <span className="ml-1 text-[10px] opacity-60">
+              • {tab.count}
+            </span>
           </button>
         );
       })}

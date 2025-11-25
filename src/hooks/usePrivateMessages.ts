@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { PrivateMessage } from '../types/chat';
 import { getConversationId } from '../lib/chatService';
 
@@ -22,7 +21,6 @@ export function usePrivateMessages(
 ): UsePrivateMessagesResult {
   const [messages, setMessages] = useState<PrivateMessage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   // Create deterministic conversation ID (sorted UUIDs)
@@ -109,8 +107,6 @@ export function usePrivateMessages(
           console.log(`Disconnected from DM channel: ${conversationId}`);
         }
       });
-
-    setChannel(dmChannel);
 
     return () => {
       mounted = false;

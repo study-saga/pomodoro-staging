@@ -17,7 +17,7 @@ const TIME_WINDOW_MS = 60 * 1000; // 1 minute
 export function useRateLimit(): RateLimitResult {
   const [messageTimestamps, setMessageTimestamps] = useState<number[]>([]);
   const [timeUntilReset, setTimeUntilReset] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Clean up old timestamps outside the time window
   const cleanOldTimestamps = useCallback(() => {

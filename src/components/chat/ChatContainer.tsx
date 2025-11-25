@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageCircle, Maximize2, Minimize2 } from 'lucide-react';
+import { MessageCircle, Minimize2 } from 'lucide-react';
 import { ChatTabs } from './ChatTabs';
 import { GlobalChat } from './GlobalChat';
 import { OnlineUsersList } from './OnlineUsersList';
@@ -36,10 +36,10 @@ export function ChatContainer() {
     return (
       <button
         onClick={() => setIsExpanded(true)}
-        className="fixed bottom-20 right-4 z-50 w-14 h-14 bg-purple-600 hover:bg-purple-700 rounded-full shadow-lg flex items-center justify-center transition-colors"
+        className="fixed bottom-20 right-4 z-50 w-14 h-14 bg-gray-900/70 backdrop-blur-xl border border-white/20 hover:bg-gray-900/80 rounded-full shadow-2xl flex items-center justify-center transition-colors"
         title="Open chat"
       >
-        <MessageCircle size={24} className="text-white" />
+        <MessageCircle size={24} className="text-white/90" />
       </button>
     );
   }
@@ -47,7 +47,7 @@ export function ChatContainer() {
   // Mobile: Full screen overlay
   if (isMobile && isExpanded) {
     return (
-      <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col">
+      <div className="fixed inset-0 z-50 bg-gray-900/95 backdrop-blur-xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h2 className="text-lg font-bold text-white">Chat</h2>
@@ -113,43 +113,33 @@ export function ChatContainer() {
 
   // Desktop: Collapsible bottom-left panel
   return (
-    <div
-      className={`
-        fixed bottom-4 left-4 z-50
-        bg-gray-900/90 backdrop-blur-xl border border-white/10 rounded-t-2xl
-        shadow-2xl transition-all duration-300 overflow-hidden
-        ${isExpanded ? 'w-[360px] h-[450px]' : 'w-[360px] h-[60px]'}
-      `}
-    >
-      {/* Collapsed: Just input bar visible */}
+    <>
+      {/* Collapsed: Floating chat button */}
       {!isExpanded && (
         <button
           onClick={() => setIsExpanded(true)}
-          className="w-full h-full flex items-center gap-3 px-4 hover:bg-white/5 transition-colors"
+          className="fixed bottom-4 left-4 z-50 w-14 h-14 bg-gray-900/70 backdrop-blur-xl border border-white/20 rounded-full shadow-2xl flex items-center justify-center hover:bg-gray-900/80 transition-colors"
+          title="Open chat"
         >
-          <MessageCircle size={20} className="text-gray-400" />
-          <span className="flex-1 text-left text-sm text-gray-400">
-            say something...
-          </span>
-          <Maximize2 size={16} className="text-gray-500" />
+          <MessageCircle size={24} className="text-white/90" />
         </button>
       )}
 
       {/* Expanded: Full chat interface */}
       {isExpanded && (
-        <div className="h-full flex flex-col">
+        <div className="fixed bottom-24 left-4 z-50 w-80 h-96 bg-gray-900/60 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
           {/* Header with minimize button */}
-          <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-gray-900/50 shrink-0">
-            <h3 className="text-sm font-bold text-white">Chat</h3>
+          <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/5 shrink-0">
+            <h3 className="text-xs font-semibold text-white/80 uppercase tracking-wide">Chat</h3>
             <button
               onClick={() => {
                 setIsExpanded(false);
                 setSelectedConversation(null);
               }}
-              className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-1 hover:bg-white/5 rounded transition-colors"
               title="Minimize"
             >
-              <Minimize2 size={16} className="text-gray-400" />
+              <Minimize2 size={14} className="text-gray-400" />
             </button>
           </div>
 
@@ -200,6 +190,6 @@ export function ChatContainer() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

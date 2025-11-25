@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { Send, Smile } from 'lucide-react';
 import { validateMessage } from '../../lib/chatService';
 
@@ -89,20 +89,20 @@ export function MessageInput({
   const isOverLimit = charCount > 500;
 
   return (
-    <div className="border-t border-white/10 bg-gray-900/50 p-3">
+    <div className="border-t border-white/5 p-2">
       {/* Error/Warning Messages */}
       {error && (
-        <div className="text-xs text-red-400 mb-2 px-2">
+        <div className="text-[10px] text-red-400 mb-1.5 px-1">
           {error}
         </div>
       )}
       {!canSend && timeUntilReset > 0 && (
-        <div className="text-xs text-yellow-400 mb-2 px-2">
-          Rate limit: {timeUntilReset}s cooldown ({messagesRemaining} msgs left)
+        <div className="text-[10px] text-yellow-400 mb-1.5 px-1">
+          Rate limit: {timeUntilReset}s ({messagesRemaining} left)
         </div>
       )}
 
-      <div className="flex items-end gap-2">
+      <div className="flex items-end gap-1.5">
         {/* Textarea */}
         <div className="flex-1 relative">
           <textarea
@@ -113,14 +113,14 @@ export function MessageInput({
             placeholder={placeholder}
             disabled={disabled}
             rows={1}
-            className="w-full bg-white/5 text-white placeholder-gray-400 rounded-lg px-3 py-2 pr-10 resize-none border border-white/10 focus:border-purple-500/50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed max-h-32 text-sm"
+            className="w-full bg-white/5 text-white placeholder-gray-500 rounded-lg px-2.5 py-1.5 pr-10 resize-none border border-white/5 focus:border-purple-500/30 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed max-h-24 text-xs"
           />
 
           {/* Character Counter */}
           {showCharCount && (
             <div
-              className={`absolute bottom-2 right-2 text-xs ${
-                isOverLimit ? 'text-red-400' : 'text-gray-400'
+              className={`absolute bottom-1.5 right-2 text-[10px] ${
+                isOverLimit ? 'text-red-400' : 'text-gray-500'
               }`}
             >
               {charCount}/500
@@ -128,30 +128,20 @@ export function MessageInput({
           )}
         </div>
 
-        {/* Emoji Button (placeholder for future implementation) */}
-        <button
-          type="button"
-          className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-gray-300 transition-colors"
-          title="Emoji (coming soon)"
-          disabled
-        >
-          <Smile size={20} />
-        </button>
-
         {/* Send Button */}
         <button
           onClick={handleSend}
           disabled={disabled || !canSend || !content.trim() || isOverLimit}
-          className="p-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg text-white transition-colors"
-          title="Send message (Enter)"
+          className="p-1.5 bg-purple-600/80 hover:bg-purple-600 disabled:bg-gray-700/50 disabled:cursor-not-allowed rounded-lg text-white transition-colors"
+          title="Send (Enter)"
         >
-          <Send size={20} />
+          <Send size={16} />
         </button>
       </div>
 
       {/* Helper Text */}
-      <div className="text-xs text-gray-500 mt-2 px-2">
-        <span className="opacity-75">Shift + Enter for new line</span>
+      <div className="text-[10px] text-gray-600 mt-1 px-1">
+        <span>Shift+Enter for new line</span>
       </div>
     </div>
   );

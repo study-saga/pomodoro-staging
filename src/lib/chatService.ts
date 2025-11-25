@@ -1,5 +1,3 @@
-import type { AppUser } from './types';
-
 /**
  * Get Discord avatar URL for a user
  */

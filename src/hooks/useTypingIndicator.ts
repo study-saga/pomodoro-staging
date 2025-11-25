@@ -20,9 +20,9 @@ export function useTypingIndicator(
   currentUser: { id: string; username: string } | null
 ): UseTypingIndicatorResult {
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const typingTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const typingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
     if (!currentUser) {
@@ -79,7 +79,7 @@ export function useTypingIndicator(
         }
       });
 
-    setChannel(typingChannel);
+    channelRef.current = typingChannel;
 
     // Cleanup on unmount
     return () => {
@@ -95,11 +95,11 @@ export function useTypingIndicator(
 
   // Broadcast typing indicator
   const broadcastTyping = useCallback(() => {
-    if (!channel || !isConnected || !currentUser) {
+    if (!channelRef.current || !isConnected || !currentUser) {
       return;
     }
 
-    channel.send({
+    channelRef.current.send({
       type: 'broadcast',
       event: 'typing',
       payload: {
@@ -107,7 +107,7 @@ export function useTypingIndicator(
         username: currentUser.username
       }
     });
-  }, [channel, isConnected, currentUser]);
+  }, [isConnected, currentUser]);
 
   return {
     typingUsers,

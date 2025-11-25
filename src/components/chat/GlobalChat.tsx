@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { useChatRoom } from '../../hooks/useChatRoom';
@@ -17,10 +17,12 @@ interface GlobalChatProps {
 export function GlobalChat({ currentUser }: GlobalChatProps) {
   const { messages, sendMessage, deleteMessage, isConnected } = useChatRoom();
   const { canSend, timeUntilReset, messagesRemaining, recordMessage } = useRateLimit();
-  const { typingUsers, broadcastTyping } = useTypingIndicator('global-chat', {
-    id: currentUser.id,
-    username: currentUser.username
-  });
+
+  const typingUser = useMemo(
+    () => ({ id: currentUser.id, username: currentUser.username }),
+    [currentUser.id, currentUser.username]
+  );
+  const { typingUsers, broadcastTyping } = useTypingIndicator('global-chat', typingUser);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -49,15 +51,15 @@ export function GlobalChat({ currentUser }: GlobalChatProps) {
     <div className="flex flex-col h-full">
       {/* Connection Status */}
       {!isConnected && (
-        <div className="px-4 py-2 bg-yellow-500/20 text-yellow-200 text-xs text-center">
+        <div className="px-4 py-2 bg-yellow-500/10 backdrop-blur text-yellow-200 text-xs text-center border-b border-yellow-500/20">
           Connecting to chat...
         </div>
       )}
 
       {/* Messages List */}
-      <div className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
+      <div className="flex-1 overflow-y-auto px-1.5 py-2 space-y-0.5">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm">
+          <div className="flex flex-col items-center justify-center h-full text-gray-500 text-xs">
             <p>No messages yet. Say hi! 👋</p>
           </div>
         ) : (
@@ -74,7 +76,7 @@ export function GlobalChat({ currentUser }: GlobalChatProps) {
 
         {/* Typing Indicators */}
         {typingUsers.length > 0 && (
-          <div className="px-3 py-2 text-sm text-gray-400 italic">
+          <div className="px-2 py-1.5 text-[11px] text-gray-400 italic">
             {typingUsers.length === 1 ? (
               <span>{typingUsers[0].username} is typing...</span>
             ) : typingUsers.length === 2 ? (

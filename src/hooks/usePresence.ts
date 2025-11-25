@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { OnlineUser } from '../types/chat';
 
 interface UsePresenceResult {
@@ -16,7 +15,6 @@ export function usePresence(
   currentUser: { id: string; username: string; avatar: string | null } | null
 ): UsePresenceResult {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
@@ -73,8 +71,6 @@ export function usePresence(
           console.log('Disconnected from presence channel');
         }
       });
-
-    setChannel(presenceChannel);
 
     // Cleanup on unmount
     return () => {

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
@@ -32,10 +32,12 @@ export function ConversationView({
   );
   const { canSend, timeUntilReset, messagesRemaining, recordMessage } = useRateLimit();
   const conversationId = getConversationId(currentUser.id, recipientId);
-  const { typingUsers, broadcastTyping } = useTypingIndicator(conversationId, {
-    id: currentUser.id,
-    username: currentUser.username
-  });
+
+  const typingUser = useMemo(
+    () => ({ id: currentUser.id, username: currentUser.username }),
+    [currentUser.id, currentUser.username]
+  );
+  const { typingUsers, broadcastTyping } = useTypingIndicator(conversationId, typingUser);
   const { showNotification, permission, requestPermission } = useChatNotifications();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -116,7 +118,7 @@ export function ConversationView({
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-white">{recipientUsername}</h3>
           {!isConnected && (
-            <p className="text-xs text-yellow-400">Connecting...</p>
+            <p className="text-xs text-yellow-300">Connecting...</p>
           )}
         </div>
       </div>
