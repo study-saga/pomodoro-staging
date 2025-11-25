@@ -1,50 +1,60 @@
+import { MessageCircle, Users, Shield } from 'lucide-react';
+import { useChat } from '../../contexts/ChatContext';
 import type { ChatTab } from '../../types/chat';
 
 interface ChatTabsProps {
   activeTab: ChatTab;
   onTabChange: (tab: ChatTab) => void;
-  localCount?: number;
-  onlineCount?: number;
+  localCount: number;
+  onlineCount: number;
 }
 
-/**
- * Tab navigation for chat (Local | DM | Online)
- * Shows message/user counts in each tab
- */
-export function ChatTabs({
-  activeTab,
-  onTabChange,
-  localCount = 0,
-  onlineCount = 0
-}: ChatTabsProps) {
-  const tabs = [
-    { id: 'local' as ChatTab, label: 'General', count: localCount },
-    { id: 'online' as ChatTab, label: 'Online', count: onlineCount }
-  ];
+export function ChatTabs({ activeTab, onTabChange, localCount, onlineCount }: ChatTabsProps) {
+  const { userRole } = useChat();
+  const isMod = userRole === 'moderator' || userRole === 'admin';
 
   return (
-    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-white/5">
-      {tabs.map((tab) => {
-        const isActive = activeTab === tab.id;
-        return (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className={`
-              px-2.5 py-1 rounded-lg text-xs font-medium transition-all
-              ${isActive
-                ? 'bg-white/10 text-white'
-                : 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
-              }
-            `}
-          >
-            {tab.label}
-            <span className="ml-1 text-[10px] opacity-60">
-              • {tab.count}
-            </span>
-          </button>
-        );
-      })}
+    <div className="flex items-center p-1.5 gap-1 bg-black/20 border-b border-white/5">
+      <button
+        onClick={() => onTabChange('local')}
+        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium transition-all ${activeTab === 'local'
+          ? 'bg-white/10 text-white shadow-lg'
+          : 'text-gray-400 hover:text-white hover:bg-white/5'
+          }`}
+      >
+        <MessageCircle size={14} />
+        General
+        <span className="bg-white/10 px-1.5 py-0.5 rounded-full text-[10px]">
+          {localCount}
+        </span>
+      </button>
+
+      <button
+        onClick={() => onTabChange('online')}
+        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium transition-all ${activeTab === 'online'
+          ? 'bg-white/10 text-white shadow-lg'
+          : 'text-gray-400 hover:text-white hover:bg-white/5'
+          }`}
+      >
+        <Users size={14} />
+        Online
+        <span className="bg-white/10 px-1.5 py-0.5 rounded-full text-[10px]">
+          {onlineCount}
+        </span>
+      </button>
+
+      {isMod && (
+        <button
+          onClick={() => onTabChange('banned')}
+          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${activeTab === 'banned'
+            ? 'bg-red-500/20 text-red-200 shadow-lg border border-red-500/20'
+            : 'text-gray-400 hover:text-red-200 hover:bg-red-500/10'
+            }`}
+          title="Banned Users"
+        >
+          <Shield size={14} />
+        </button>
+      )}
     </div>
   );
 }

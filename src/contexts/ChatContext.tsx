@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef, ty
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import type { ChatMessage, OnlineUser } from '../types/chat';
+import type { ChatMessage, OnlineUser, UserRole } from '../types/chat';
 import { generateMessageId } from '../lib/chatService';
 import { useAuth } from './AuthContext';
 
@@ -21,6 +21,14 @@ interface ChatContextValue {
   // Presence
   onlineUsers: OnlineUser[]; // All users on site
   setChatOpen: (isOpen: boolean) => void; // Toggle chat presence
+
+  // Moderation
+  userRole: UserRole;
+  isBanned: boolean;
+  banReason: string | null;
+  banExpiresAt: string | null;
+  banUser: (userId: string, durationMinutes: number | null, reason: string) => Promise<void>;
+  unbanUser: (userId: string) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null);
@@ -38,10 +46,102 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
+  // Moderation state
+  const [userRole, setUserRole] = useState<UserRole>('user');
+  const [isBanned, setIsBanned] = useState(false);
+  const [banReason, setBanReason] = useState<string | null>(null);
+  const [banExpiresAt, setBanExpiresAt] = useState<string | null>(null);
+
   // Message batching & Rate limiting
   const messageBatchRef = useRef<ChatMessage[]>([]);
   const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastMessageTimeRef = useRef<number>(0);
+
+  // 0. Fetch User Role & Check Ban Status
+  useEffect(() => {
+    if (!appUser) {
+      setUserRole('user');
+      setIsBanned(false);
+      setBanReason(null);
+      setBanExpiresAt(null);
+      return;
+    }
+
+    const fetchUserStatus = async () => {
+      // Fetch role
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', appUser.id)
+        .single();
+
+      if (userData) {
+        setUserRole(userData.role as UserRole);
+      }
+
+      // Check active bans
+      const { data: banData } = await supabase
+        .from('chat_bans')
+        .select('reason, expires_at')
+        .eq('user_id', appUser.id)
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+        .maybeSingle();
+
+      if (banData) {
+        setIsBanned(true);
+        setBanReason(banData.reason);
+        setBanExpiresAt(banData.expires_at);
+      } else {
+        setIsBanned(false);
+        setBanReason(null);
+        setBanExpiresAt(null);
+      }
+    };
+
+    fetchUserStatus();
+
+    // Subscribe to ban changes for this user
+    const banChannel = supabase.channel(`bans:${appUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_bans',
+          filter: `user_id=eq.${appUser.id}`
+        },
+        async () => {
+          // Re-check ban status on any change
+          const { data: banData } = await supabase
+            .from('chat_bans')
+            .select('reason, expires_at')
+            .eq('user_id', appUser.id)
+            .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+            .maybeSingle();
+
+          if (banData) {
+            setIsBanned(true);
+            setBanReason(banData.reason);
+            setBanExpiresAt(banData.expires_at);
+            toast.error(`You have been banned: ${banData.reason}`);
+            setIsGlobalConnected(false); // Force disconnect
+          } else {
+            // Only unban if previously banned
+            if (isBanned) {
+              setIsBanned(false);
+              setBanReason(null);
+              setBanExpiresAt(null);
+              toast.success('Your ban has been lifted.');
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      banChannel.unsubscribe();
+    };
+  }, [appUser]);
 
   // 1. Admin Kill Switch Listener
   useEffect(() => {
@@ -92,7 +192,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // 2. Single Channel Subscription (Global + Chat)
   useEffect(() => {
-    if (!appUser || !isChatEnabled) { // Disconnect if chat disabled
+    if (!appUser || !isChatEnabled || isBanned) { // Disconnect if chat disabled or banned
       setOnlineUsers([]);
       setIsGlobalConnected(false);
       return;
@@ -139,6 +239,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             avatar: string | null;
             is_chatting: boolean;
             online_at: string;
+            role?: UserRole;
           }>();
 
           const users: OnlineUser[] = [];
@@ -151,7 +252,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 id: presence.id,
                 username: presence.username,
                 avatar: presence.avatar,
-                isChatting: presence.is_chatting
+                isChatting: presence.is_chatting,
+                online_at: presence.online_at,
+                role: presence.role
               });
             }
           });
@@ -169,7 +272,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               username: appUser.username,
               avatar: appUser.avatar,
               is_chatting: isChatOpen, // Dynamic status
-              online_at: new Date().toISOString()
+              online_at: new Date().toISOString(),
+              role: userRole
             });
           } else if (status === 'CLOSED') {
             setIsGlobalConnected(false);
@@ -202,7 +306,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       disconnect();
     };
-  }, [appUser, isChatOpen, isChatEnabled]); // Re-connect when enabled status changes
+  }, [appUser, isChatOpen, isChatEnabled, isBanned, userRole]); // Re-connect when status changes
 
   // Flush message batch
   const flushMessageBatch = useCallback(() => {
@@ -238,6 +342,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    if (isBanned) {
+      toast.error(`You are banned: ${banReason}`);
+      return;
+    }
+
     if (!channelRef.current || !isGlobalConnected) {
       console.error('Not connected to global chat');
       return;
@@ -256,7 +365,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       user: {
         id: user.id,
         username: user.username,
-        avatar: user.avatar
+        avatar: user.avatar,
+        role: userRole
       },
       content,
       timestamp: now
@@ -271,7 +381,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     batchTimerRef.current = setTimeout(() => {
       flushMessageBatch();
     }, BATCH_DELAY_MS);
-  }, [isGlobalConnected, flushMessageBatch, isChatEnabled]);
+  }, [isGlobalConnected, flushMessageBatch, isChatEnabled, isBanned, banReason, userRole]);
 
   // Delete global message
   const deleteGlobalMessage = useCallback((messageId: string) => {
@@ -286,6 +396,58 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     });
   }, [isGlobalConnected]);
 
+  // Ban User Function
+  const banUser = useCallback(async (userId: string, durationMinutes: number | null, reason: string) => {
+    if (!appUser || (userRole !== 'moderator' && userRole !== 'admin')) {
+      toast.error('You do not have permission to ban users.');
+      return;
+    }
+
+    let expiresAt = null;
+    if (durationMinutes) {
+      const date = new Date();
+      date.setMinutes(date.getMinutes() + durationMinutes);
+      expiresAt = date.toISOString();
+    }
+
+    const { error } = await supabase
+      .from('chat_bans')
+      .insert({
+        user_id: userId,
+        banned_by: appUser.id,
+        reason,
+        expires_at: expiresAt
+      });
+
+    if (error) {
+      console.error('Error banning user:', error);
+      toast.error('Failed to ban user.');
+    } else {
+      toast.success('User has been banned.');
+    }
+  }, [appUser, userRole]);
+
+  // Unban User Function
+  const unbanUser = useCallback(async (userId: string) => {
+    if (!appUser || (userRole !== 'moderator' && userRole !== 'admin')) {
+      toast.error('You do not have permission to unban users.');
+      return;
+    }
+
+    // Delete the ban record
+    const { error } = await supabase
+      .from('chat_bans')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error unbanning user:', error);
+      toast.error('Failed to unban user.');
+    } else {
+      toast.success('User has been unbanned.');
+    }
+  }, [appUser, userRole]);
+
   const value: ChatContextValue = {
     globalMessages,
     sendGlobalMessage,
@@ -293,7 +455,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     isGlobalConnected,
     isChatEnabled,
     onlineUsers,
-    setChatOpen: setIsChatOpen
+    setChatOpen: setIsChatOpen,
+    userRole,
+    isBanned,
+    banReason,
+    banExpiresAt,
+    banUser,
+    unbanUser
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

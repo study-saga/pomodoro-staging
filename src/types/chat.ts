@@ -6,6 +6,7 @@ export interface ChatMessage {
     id: string;
     username: string;
     avatar: string | null;
+    role?: UserRole;
   };
   content: string;
   timestamp: number;
@@ -22,11 +23,24 @@ export interface PrivateMessage {
   deleted_by_recipient: boolean;
 }
 
+export type UserRole = 'user' | 'moderator' | 'admin';
+
 export interface OnlineUser {
   id: string;
   username: string;
   avatar: string | null;
+  online_at: string;
   isChatting?: boolean;
+  role?: UserRole;
+}
+
+export interface ChatBan {
+  id: string;
+  user_id: string;
+  banned_by: string;
+  reason: string;
+  expires_at: string | null;
+  created_at: string;
 }
 
 export interface Conversation {
@@ -43,7 +57,7 @@ export interface TypingUser {
   username: string;
 }
 
-export type ChatTab = 'local' | 'dm' | 'online';
+export type ChatTab = 'local' | 'dm' | 'online' | 'banned';
 
 export interface ChatState {
   isExpanded: boolean;

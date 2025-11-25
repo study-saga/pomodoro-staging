@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { MessageCircle, Minimize2, AlertTriangle } from 'lucide-react';
+import { MessageCircle, Minimize2, AlertTriangle, Lock, Clock } from 'lucide-react';
 import { ChatTabs } from './ChatTabs';
 import { GlobalChatMessages } from './GlobalChat';
 import { MessageInput } from './MessageInput';
 import { OnlineUsersList } from './OnlineUsersList';
+import { BannedUsersList } from './BannedUsersList';
 import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRateLimit } from '../../hooks/useRateLimit';
 import type { ChatTab } from '../../types/chat';
+import { formatDistanceToNow } from 'date-fns';
 
 /**
  * Main chat container with collapsible functionality
@@ -15,12 +17,12 @@ import type { ChatTab } from '../../types/chat';
  */
 export function ChatContainer() {
   const { appUser } = useAuth();
-  const { onlineUsers, setChatOpen, isChatEnabled, sendGlobalMessage, isGlobalConnected } = useChat();
+  const { onlineUsers, setChatOpen, isChatEnabled, sendGlobalMessage, isGlobalConnected, isBanned, banReason, banExpiresAt } = useChat();
   const { canSend, timeUntilReset, messagesRemaining, recordMessage } = useRateLimit();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTab>('local');
-
+  const [timeLeft, setTimeLeft] = useState<string>('');
 
   // Calculate counts
   const chattingCount = onlineUsers.filter(u => u.isChatting).length;
@@ -29,6 +31,25 @@ export function ChatContainer() {
   useEffect(() => {
     setChatOpen(isExpanded);
   }, [isExpanded, setChatOpen]);
+
+  // Ban Countdown Timer
+  useEffect(() => {
+    if (!isBanned || !banExpiresAt) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const end = new Date(banExpiresAt);
+
+      if (now >= end) {
+        setTimeLeft('Ban expiring...');
+        clearInterval(interval);
+      } else {
+        setTimeLeft(formatDistanceToNow(end, { addSuffix: true }));
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isBanned, banExpiresAt]);
 
   // Global Enter key listener to open chat
   useEffect(() => {
@@ -41,7 +62,8 @@ export function ChatContainer() {
         !e.shiftKey &&
         !e.ctrlKey &&
         !e.altKey &&
-        !e.metaKey
+        !e.metaKey &&
+        !isBanned // Don't open if banned
       ) {
         const activeTag = document.activeElement?.tagName.toLowerCase();
         if (activeTag !== 'input' && activeTag !== 'textarea' && activeTag !== 'select') {
@@ -56,7 +78,7 @@ export function ChatContainer() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isExpanded, appUser]);
+  }, [isExpanded, appUser, isBanned]);
 
   // Handle sending messages
   const handleSendMessage = (content: string) => {
@@ -83,13 +105,15 @@ export function ChatContainer() {
     return (
       <button
         onClick={() => setIsExpanded(true)}
-        className={`fixed bottom-20 right-4 z-50 w-14 h-14 backdrop-blur-xl border rounded-full shadow-2xl flex items-center justify-center transition-colors ${isChatEnabled
+        className={`fixed bottom-20 right-4 z-50 w-14 h-14 backdrop-blur-xl border rounded-full shadow-2xl flex items-center justify-center transition-colors ${isChatEnabled && !isBanned
           ? 'bg-gray-900/70 border-white/20 hover:bg-gray-900/80'
           : 'bg-red-900/70 border-red-500/30 hover:bg-red-900/80'
           }`}
-        title={isChatEnabled ? "Open chat (Enter)" : "Chat disabled"}
+        title={isBanned ? "You are banned" : isChatEnabled ? "Open chat (Enter)" : "Chat disabled"}
       >
-        {isChatEnabled ? (
+        {isBanned ? (
+          <Lock size={24} className="text-red-200" />
+        ) : isChatEnabled ? (
           <MessageCircle size={24} className="text-white/90" />
         ) : (
           <AlertTriangle size={24} className="text-red-200" />
@@ -115,7 +139,32 @@ export function ChatContainer() {
 
         {/* Content */}
         <div className="flex-1 flex flex-col min-h-0 relative">
-          {!isChatEnabled && (
+          {/* Ban Overlay */}
+          {isBanned && (
+            <div className="absolute inset-0 z-20 bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+              <div className="p-4 bg-red-500/10 rounded-full mb-4 animate-pulse">
+                <Lock size={48} className="text-red-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">Account Banned</h3>
+              <p className="text-red-200 font-medium mb-6 max-w-xs">{banReason}</p>
+
+              {banExpiresAt ? (
+                <div className="flex flex-col items-center gap-2 text-gray-400">
+                  <span className="text-xs uppercase tracking-widest">Unban In</span>
+                  <div className="flex items-center gap-2 text-xl font-mono text-white">
+                    <Clock size={20} className="text-red-400" />
+                    {timeLeft}
+                  </div>
+                </div>
+              ) : (
+                <div className="px-4 py-2 bg-red-500/20 rounded-lg text-red-200 text-sm font-bold">
+                  PERMANENT BAN
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isChatEnabled && !isBanned && (
             <div className="absolute inset-0 z-10 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
               <AlertTriangle size={48} className="text-red-500 mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Chat Disabled</h3>
@@ -140,6 +189,7 @@ export function ChatContainer() {
                   currentUserId={appUser.id}
                 />
               )}
+              {activeTab === 'banned' && <BannedUsersList />}
             </div>
 
             {/* Input attached at bottom for mobile */}
@@ -150,7 +200,7 @@ export function ChatContainer() {
                 canSend={canSend}
                 timeUntilReset={timeUntilReset}
                 messagesRemaining={messagesRemaining}
-                disabled={!isGlobalConnected || !isChatEnabled}
+                disabled={!isGlobalConnected || !isChatEnabled || isBanned}
               />
             )}
           </div>
@@ -166,13 +216,15 @@ export function ChatContainer() {
       {!isExpanded && (
         <button
           onClick={() => setIsExpanded(true)}
-          className={`fixed bottom-24 left-4 z-50 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${isChatEnabled
+          className={`fixed bottom-24 left-4 z-50 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${isChatEnabled && !isBanned
             ? 'text-white hover:text-white drop-shadow-2xl'
             : 'text-red-400 hover:text-red-300 drop-shadow-lg'
             }`}
-          title={isChatEnabled ? "Open chat (Enter)" : "Chat disabled"}
+          title={isBanned ? "You are banned" : isChatEnabled ? "Open chat (Enter)" : "Chat disabled"}
         >
-          {isChatEnabled ? (
+          {isBanned ? (
+            <Lock size={32} />
+          ) : isChatEnabled ? (
             <MessageCircle size={32} fill="white" className="opacity-90 hover:opacity-100" />
           ) : (
             <AlertTriangle size={32} />
@@ -194,8 +246,33 @@ export function ChatContainer() {
               <Minimize2 size={16} />
             </button>
 
+            {/* Ban Overlay */}
+            {isBanned && (
+              <div className="absolute inset-0 z-30 bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+                <div className="p-4 bg-red-500/10 rounded-full mb-4 animate-pulse">
+                  <Lock size={48} className="text-red-500" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">Account Banned</h3>
+                <p className="text-red-200 font-medium mb-6 max-w-xs">{banReason}</p>
+
+                {banExpiresAt ? (
+                  <div className="flex flex-col items-center gap-2 text-gray-400">
+                    <span className="text-xs uppercase tracking-widest">Unban In</span>
+                    <div className="flex items-center gap-2 text-xl font-mono text-white">
+                      <Clock size={20} className="text-red-400" />
+                      {timeLeft}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="px-4 py-2 bg-red-500/20 rounded-lg text-red-200 text-sm font-bold">
+                    PERMANENT BAN
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Maintenance Overlay */}
-            {!isChatEnabled && (
+            {!isChatEnabled && !isBanned && (
               <div className="absolute inset-0 z-10 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
                 <AlertTriangle size={48} className="text-red-500 mb-4" />
                 <h3 className="text-xl font-bold text-white mb-2">Chat Disabled</h3>
@@ -220,11 +297,12 @@ export function ChatContainer() {
                   currentUserId={appUser.id}
                 />
               )}
+              {activeTab === 'banned' && <BannedUsersList />}
             </div>
           </div>
 
           {/* Detached Input (Only for local tab) */}
-          {activeTab === 'local' && (
+          {activeTab === 'local' && !isBanned && (
             <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl overflow-hidden">
               <MessageInput
                 onSendMessage={handleSendMessage}

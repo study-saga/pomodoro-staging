@@ -15,6 +15,7 @@ export interface AppUser {
   discord_id: string
   username: string
   avatar: string | null
+  role: 'user' | 'moderator' | 'admin'
 
   // Level system data (SERVER-CONTROLLED - read-only from client)
   level: number
