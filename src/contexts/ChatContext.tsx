@@ -28,77 +28,35 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Global chat state
   const [globalMessages, setGlobalMessages] = useState<ChatMessage[]>([]);
   const [isGlobalConnected, setIsGlobalConnected] = useState(false);
-  const globalChannelRef = useRef<RealtimeChannel | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   // Presence state
-  const [rawOnlineUsers, setRawOnlineUsers] = useState<OnlineUser[]>([]); // From global-presence
-  const [chatUserIds, setChatUserIds] = useState<Set<string>>(new Set()); // From global-chat
+  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const presenceChannelRef = useRef<RealtimeChannel | null>(null);
 
   // Message batching
   const messageBatchRef = useRef<ChatMessage[]>([]);
   const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 1. Global Presence Subscription (Always active)
+  // Single Channel Subscription (Global + Chat)
   useEffect(() => {
     if (!appUser) {
-      setRawOnlineUsers([]);
+      setOnlineUsers([]);
       return;
     }
 
-    const channel = supabase.channel('global-presence');
-    presenceChannelRef.current = channel;
+    let channel: RealtimeChannel | null = null;
 
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState<OnlineUser>();
-        const users: OnlineUser[] = [];
-
-        Object.values(state).forEach((presences) => {
-          presences.forEach((presence) => {
-            users.push({
-              id: presence.id,
-              username: presence.username,
-              avatar: presence.avatar
-            });
-          });
-        });
-
-        setRawOnlineUsers(users);
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          // Track user in global presence
-          await channel.track({
-            id: appUser.id,
-            username: appUser.username,
-            avatar: appUser.avatar,
-            online_at: new Date().toISOString()
-          });
-        }
-      });
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [appUser]);
-
-  // 2. Global Chat Subscription (Messages + Chat Presence)
-  useEffect(() => {
-    if (!appUser) return;
-
-    let chatChannel: RealtimeChannel | null = null;
-
-    const connectChat = async () => {
-      chatChannel = supabase.channel('global-chat', {
+    const connect = async () => {
+      // Single channel for everything
+      channel = supabase.channel('global', {
         config: {
           broadcast: { self: true },
           presence: { key: appUser.id }
         }
       });
 
-      chatChannel
+      channel
         // Messages
         .on('broadcast', { event: 'message' }, ({ payload }) => {
           const message = payload as ChatMessage;
@@ -120,35 +78,57 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             msg.id === messageId ? { ...msg, deleted: true } : msg
           ));
         })
-        // Chat Presence (Who has chat open)
+        // Presence (Syncs both "Online" and "In Chat" status via metadata)
         .on('presence', { event: 'sync' }, () => {
-          const state = chatChannel!.presenceState();
-          const ids = new Set(Object.keys(state));
-          setChatUserIds(ids);
+          const state = channel!.presenceState<{
+            id: string;
+            username: string;
+            avatar: string | null;
+            is_chatting: boolean;
+            online_at: string;
+          }>();
+
+          const users: OnlineUser[] = [];
+
+          Object.values(state).forEach((presences) => {
+            // Use the most recent presence state for this user
+            const presence = presences[0];
+            if (presence) {
+              users.push({
+                id: presence.id,
+                username: presence.username,
+                avatar: presence.avatar,
+                isChatting: presence.is_chatting
+              });
+            }
+          });
+
+          setOnlineUsers(users);
         })
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             setIsGlobalConnected(true);
-            console.log('Connected to global chat');
+            console.log('Connected to global channel');
 
-            // If chat is open, track presence in chat channel
-            if (isChatOpen) {
-              await chatChannel!.track({
-                user_id: appUser.id,
-                online_at: new Date().toISOString()
-              });
-            }
+            // Track presence with metadata
+            await channel!.track({
+              id: appUser.id,
+              username: appUser.username,
+              avatar: appUser.avatar,
+              is_chatting: isChatOpen, // Dynamic status
+              online_at: new Date().toISOString()
+            });
           } else if (status === 'CLOSED') {
             setIsGlobalConnected(false);
           }
         });
 
-      globalChannelRef.current = chatChannel;
+      channelRef.current = channel;
     };
 
-    const disconnectChat = () => {
-      if (chatChannel) {
-        chatChannel.unsubscribe();
+    const disconnect = () => {
+      if (channel) {
+        channel.unsubscribe();
         setIsGlobalConnected(false);
       }
     };
@@ -156,35 +136,35 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     // Inactive tab detection
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        disconnectChat();
+        disconnect();
       } else {
-        connectChat();
+        connect();
       }
     };
 
-    connectChat();
+    connect();
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      disconnectChat();
+      disconnect();
     };
-  }, [appUser, isChatOpen]); // Re-run when isChatOpen changes to update tracking
+  }, [appUser, isChatOpen]); // Re-connect/Re-track when isChatOpen changes
 
   // Flush message batch
   const flushMessageBatch = useCallback(() => {
-    if (messageBatchRef.current.length === 0 || !globalChannelRef.current) {
+    if (messageBatchRef.current.length === 0 || !channelRef.current) {
       return;
     }
 
     if (messageBatchRef.current.length === 1) {
-      globalChannelRef.current.send({
+      channelRef.current.send({
         type: 'broadcast',
         event: 'message',
         payload: messageBatchRef.current[0]
       });
     } else {
-      globalChannelRef.current.send({
+      channelRef.current.send({
         type: 'broadcast',
         event: 'message_batch',
         payload: messageBatchRef.current
@@ -200,7 +180,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     content: string,
     user: { id: string; username: string; avatar: string | null }
   ) => {
-    if (!globalChannelRef.current || !isGlobalConnected) {
+    if (!channelRef.current || !isGlobalConnected) {
       console.error('Not connected to global chat');
       return;
     }
@@ -229,22 +209,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // Delete global message
   const deleteGlobalMessage = useCallback((messageId: string) => {
-    if (!globalChannelRef.current || !isGlobalConnected) {
+    if (!channelRef.current || !isGlobalConnected) {
       return;
     }
 
-    globalChannelRef.current.send({
+    channelRef.current.send({
       type: 'broadcast',
       event: 'delete',
       payload: { messageId }
     });
   }, [isGlobalConnected]);
-
-  // Merge presence data
-  const onlineUsers = rawOnlineUsers.map(user => ({
-    ...user,
-    isChatting: chatUserIds.has(user.id)
-  }));
 
   const value: ChatContextValue = {
     globalMessages,
