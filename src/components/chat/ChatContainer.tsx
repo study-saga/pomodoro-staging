@@ -144,13 +144,20 @@ export function ChatContainer() {
           }`}
         title={isBanned ? "You are banned" : isChatEnabled ? "Open chat (Enter)" : "Chat disabled"}
       >
-        {isBanned ? (
-          <Lock size={32} />
-        ) : isChatEnabled ? (
-          <MessageCircle size={32} fill="white" className="opacity-90 hover:opacity-100" />
-        ) : (
-          <AlertTriangle size={32} />
-        )}
+        <div className="flex flex-col items-center gap-1">
+          {isBanned ? (
+            <Lock size={32} />
+          ) : isChatEnabled ? (
+            <MessageCircle size={32} className="opacity-90 hover:opacity-100" strokeWidth={2.5} />
+          ) : (
+            <AlertTriangle size={32} />
+          )}
+          {isChatEnabled && !isBanned && (
+            <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg">
+              BETA
+            </span>
+          )}
+        </div>
       </button>
     );
   }
@@ -275,13 +282,20 @@ export function ChatContainer() {
             }`}
           title={isBanned ? "You are banned" : isChatEnabled ? "Open chat (Enter)" : "Chat disabled"}
         >
-          {isBanned ? (
-            <Lock size={32} />
-          ) : isChatEnabled ? (
-            <MessageCircle size={32} fill="white" className="opacity-90 hover:opacity-100" />
-          ) : (
-            <AlertTriangle size={32} />
-          )}
+          <div className="flex flex-col items-center gap-1">
+            {isBanned ? (
+              <Lock size={32} />
+            ) : isChatEnabled ? (
+              <MessageCircle size={32} className="opacity-90 hover:opacity-100" strokeWidth={2.5} />
+            ) : (
+              <AlertTriangle size={32} />
+            )}
+            {isChatEnabled && !isBanned && (
+              <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg">
+                BETA
+              </span>
+            )}
+          </div>
         </button>
       )}
 
