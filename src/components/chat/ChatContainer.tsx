@@ -85,8 +85,12 @@ export function ChatContainer() {
         !e.metaKey &&
         !isBanned // Don't open if banned
       ) {
-        const activeTag = document.activeElement?.tagName.toLowerCase();
-        if (activeTag !== 'input' && activeTag !== 'textarea' && activeTag !== 'select') {
+        const activeElement = document.activeElement;
+        const isInteractive = activeElement?.matches(
+          'input, textarea, select, [contenteditable="true"], button, a, [role="button"], [role="link"]'
+        );
+
+        if (!isInteractive) {
           e.preventDefault();
           setIsExpanded(true);
           setActiveTab('local'); // Ensure we are on the chat tab to show input
