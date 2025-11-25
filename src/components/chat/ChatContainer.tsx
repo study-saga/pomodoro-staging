@@ -21,6 +21,7 @@ export function ChatContainer() {
   const { appUser } = useAuth();
   const { onlineUsers, setChatOpen, isChatEnabled, sendGlobalMessage, isGlobalConnected, isBanned, banReason, banExpiresAt, banUser } = useChat();
   const { canSend, timeUntilReset, messagesRemaining, recordMessage } = useRateLimit();
+  const { isCompact } = useDeviceType();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTab>('local');
@@ -259,7 +260,6 @@ export function ChatContainer() {
   }
 
   // Desktop: Collapsible bottom-left panel
-  const { isCompact } = useDeviceType();
 
   return (
     <>
