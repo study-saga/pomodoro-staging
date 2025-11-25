@@ -75,6 +75,9 @@ CREATE POLICY "Users can delete own messages"
     )
   );
 
+-- Add last_dm_check column to users table for tracking when user last viewed DMs
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_dm_check TIMESTAMPTZ;
+
 -- Create function to get unread DM count for a user
 CREATE OR REPLACE FUNCTION get_unread_dm_count(user_uuid UUID)
 RETURNS INTEGER AS $$
@@ -87,9 +90,6 @@ RETURNS INTEGER AS $$
       '1970-01-01'::TIMESTAMPTZ
     );
 $$ LANGUAGE SQL STABLE;
-
--- Add last_dm_check column to users table for tracking when user last viewed DMs
-ALTER TABLE users ADD COLUMN IF NOT EXISTS last_dm_check TIMESTAMPTZ;
 
 -- Grant execute permission on the function
 GRANT EXECUTE ON FUNCTION get_unread_dm_count TO authenticated;
