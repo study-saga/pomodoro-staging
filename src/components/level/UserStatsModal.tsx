@@ -261,7 +261,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="fixed bottom-4 left-4 right-4 sm:bottom-8 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[100] sm:max-w-md sm:w-full"
+            className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-[100] max-w-md w-[calc(100%-2rem)] sm:w-96"
           >
             <div className="relative bg-gradient-to-br from-purple-900/40 to-blue-900/40 backdrop-blur-xl border border-white/20 rounded-2xl p-4 sm:p-5 shadow-2xl overflow-hidden">
               {/* Glow effect */}
