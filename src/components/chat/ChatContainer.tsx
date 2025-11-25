@@ -127,7 +127,7 @@ export function ChatContainer() {
 
       {/* Expanded: Full chat interface */}
       {isExpanded && (
-        <div className="fixed bottom-24 left-4 z-50 w-80 h-96 bg-gray-900/60 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+        <div className="fixed bottom-24 left-4 z-50 w-96 h-[500px] bg-gray-900/60 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
           {/* Header with minimize button */}
           <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/5 shrink-0">
             <h3 className="text-xs font-semibold text-white/80 uppercase tracking-wide">Chat</h3>

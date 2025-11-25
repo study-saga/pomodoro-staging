@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
-import { Send, Smile } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { validateMessage } from '../../lib/chatService';
 
 interface MessageInputProps {
