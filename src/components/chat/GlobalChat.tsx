@@ -1,40 +1,24 @@
 import { useEffect, useRef } from 'react';
 import { MessageBubble } from './MessageBubble';
-import { MessageInput } from './MessageInput';
 import { useChat } from '../../contexts/ChatContext';
-import { useRateLimit } from '../../hooks/useRateLimit';
 import type { AppUser } from '../../lib/types';
 
-interface GlobalChatProps {
+interface GlobalChatMessagesProps {
   currentUser: AppUser;
 }
 
 /**
- * Global chat room component (ephemeral, last 10 messages)
- * Uses Broadcast channels for real-time messaging
+ * Global chat messages list
+ * Displays the list of messages and handles auto-scrolling
  */
-export function GlobalChat({ currentUser }: GlobalChatProps) {
-  const { globalMessages, sendGlobalMessage, deleteGlobalMessage, isGlobalConnected } = useChat();
-  const { canSend, timeUntilReset, messagesRemaining, recordMessage } = useRateLimit();
-
+export function GlobalChatMessages({ currentUser }: GlobalChatMessagesProps) {
+  const { globalMessages, deleteGlobalMessage, isGlobalConnected } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [globalMessages]);
-
-  const handleSendMessage = (content: string) => {
-    if (!canSend) return;
-
-    sendGlobalMessage(content, {
-      id: currentUser.id,
-      username: currentUser.username,
-      avatar: currentUser.avatar
-    });
-
-    recordMessage();
-  };
 
   const handleDeleteMessage = (messageId: string) => {
     deleteGlobalMessage(messageId);
@@ -50,7 +34,7 @@ export function GlobalChat({ currentUser }: GlobalChatProps) {
       )}
 
       {/* Messages List */}
-      <div className="flex-1 overflow-y-auto px-1.5 py-2 space-y-0.5">
+      <div className="flex-1 overflow-y-auto px-1.5 py-2 space-y-0.5 no-scrollbar">
         {globalMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500 text-xs">
             <p>No messages yet. Say hi! 👋</p>
@@ -69,16 +53,6 @@ export function GlobalChat({ currentUser }: GlobalChatProps) {
 
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Message Input */}
-      <MessageInput
-        onSendMessage={handleSendMessage}
-        placeholder="say something..."
-        canSend={canSend}
-        timeUntilReset={timeUntilReset}
-        messagesRemaining={messagesRemaining}
-        disabled={!isGlobalConnected}
-      />
     </div>
   );
 }

@@ -18,7 +18,7 @@ export function ChatTabs({
   onlineCount = 0
 }: ChatTabsProps) {
   const tabs = [
-    { id: 'local' as ChatTab, label: 'Global Chat', count: localCount },
+    { id: 'local' as ChatTab, label: 'General', count: localCount },
     { id: 'online' as ChatTab, label: 'Online', count: onlineCount }
   ];
 
@@ -32,10 +32,9 @@ export function ChatTabs({
             onClick={() => onTabChange(tab.id)}
             className={`
               px-2.5 py-1 rounded-lg text-xs font-medium transition-all
-              ${
-                isActive
-                  ? 'bg-white/10 text-white'
-                  : 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+              ${isActive
+                ? 'bg-white/10 text-white'
+                : 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
               }
             `}
           >

@@ -127,6 +127,30 @@ export function validateMessage(content: string): { valid: boolean; error?: stri
     return { valid: false, error: 'Message too long (max 500 characters)' };
   }
 
+  // Check for excessive newlines (spam prevention)
+  const newlines = (content.match(/\n/g) || []).length;
+  if (newlines > 10) {
+    return { valid: false, error: 'Too many lines (max 10)' };
+  }
+
+  if (/\n{4,}/.test(content)) {
+    return { valid: false, error: 'Too many consecutive empty lines' };
+  }
+
+  // Check for repeated characters (e.g. "aaaaaaaa")
+  if (/(.)\1{15,}/.test(content)) {
+    return { valid: false, error: 'Too many repeated characters' };
+  }
+
+  // Check for repeated words (e.g. "test test test")
+  const words = content.split(/\s+/);
+  for (let i = 0; i < words.length - 4; i++) {
+    const slice = words.slice(i, i + 5);
+    if (slice.every(w => w.toLowerCase() === slice[0].toLowerCase())) {
+      return { valid: false, error: 'Too many repeated words' };
+    }
+  }
+
   return { valid: true };
 }
 
