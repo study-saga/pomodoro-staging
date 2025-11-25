@@ -10,6 +10,7 @@ import {
   ROLE_EMOJI_HUMAN,
 } from '../../data/levels';
 import { createRateLimiter, rateLimitedToast } from '../../utils/rateLimiters';
+import { useDeviceType } from '../../hooks/useDeviceType';
 
 interface UserStatsModalProps {
   onClose: () => void;
@@ -31,7 +32,6 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
     firstLoginDate,
   } = useSettingsStore();
 
-  const [showSinceTooltip, setShowSinceTooltip] = useState(false);
   const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
   const rateLimiterRef = useRef(createRateLimiter(720000)); // 12 minutes (5 changes per hour)
   // Average session length: total minutes divided by pomodoro count
@@ -106,12 +106,14 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
     })();
   };
 
+  const { isCompact } = useDeviceType();
+
   return (
     <>
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+      <div className={`${isCompact ? 'p-3' : 'p-4'} border-b border-gray-700`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">
+          <h2 className={`${isCompact ? 'text-base' : 'text-lg'} font-bold text-white`}>
             User Info
           </h2>
           <button
@@ -125,9 +127,9 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
 
       {/* Stats Grid with ScrollArea */}
       <ScrollArea className="max-h-[60vh]">
-        <div className="p-4 pb-2">
+        <div className={`${isCompact ? 'p-3 pb-2' : 'p-4 pb-2'}`}>
           {/* Path Selection - Hero Stats Style */}
-          <label className="w-full bg-gradient-to-r from-purple-900/40 to-purple-900/20 rounded-xl p-3 border border-purple-500/30 mb-3 cursor-pointer block hover:border-purple-500/50 hover:from-purple-900/50 hover:to-purple-900/30 transition-all relative group">
+          <label className={`w-full bg-gradient-to-r from-purple-900/40 to-purple-900/20 rounded-xl ${isCompact ? 'p-2' : 'p-3'} border border-purple-500/30 mb-3 cursor-pointer block hover:border-purple-500/50 hover:from-purple-900/50 hover:to-purple-900/30 transition-all relative group`}>
             <input
               type="checkbox"
               className="opacity-0 w-0 h-0 peer"
@@ -135,14 +137,14 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
               onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
             />
             <div className="flex flex-row items-center justify-start gap-3">
-              <span className="text-4xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">
+              <span className={`${isCompact ? 'text-3xl' : 'text-4xl'} filter drop-shadow-md group-hover:scale-110 transition-transform duration-300`}>
                 {levelPath === 'elf' ? '🧝' : '⚔️'}
               </span>
               <div className="flex flex-col items-start text-left">
-                <p className="text-lg font-bold text-white tracking-tight group-hover:text-purple-200 transition-colors">
+                <p className={`${isCompact ? 'text-base' : 'text-lg'} font-bold text-white tracking-tight group-hover:text-purple-200 transition-colors`}>
                   {levelPath === 'elf' ? 'Elf' : 'Human'}
                 </p>
-                <p className="text-[11px] text-purple-200/60 font-medium">
+                <p className={`${isCompact ? 'text-[10px]' : 'text-[11px]'} text-purple-200/60 font-medium`}>
                   {levelPath === 'elf' ? 'Consistency & Focus' : 'High Risk, High Reward'}
                 </p>
               </div>
@@ -195,41 +197,10 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
 
             {/* Since Date */}
             {firstLoginDate && (
-              <div
-                role="button"
-                tabIndex={0}
-                aria-expanded={showSinceTooltip}
-                aria-label={`Account created ${formattedFirstLoginDate}, ${daysSinceFirstLogin} ${daysSinceFirstLogin === 1 ? 'day' : 'days'} ago`}
-                className="relative bg-white/5 rounded-lg p-2 border border-white/10 cursor-help focus:outline-none focus:ring-2 focus:ring-pink-400/50"
-                onMouseEnter={() => setShowSinceTooltip(true)}
-                onMouseLeave={() => setShowSinceTooltip(false)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setShowSinceTooltip(!showSinceTooltip);
-                  }
-                }}
-              >
-                <div className="flex items-center gap-1.5 text-pink-400 mb-0.5">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-xs text-gray-400">Since</span>
-                </div>
-                <p className="text-base font-bold text-white">{formattedFirstLoginDate}</p>
-
-                {/* Tooltip */}
-                {showSinceTooltip && (
-                  <div
-                    role="status"
-                    aria-live="polite"
-                    className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 z-50 shadow-xl whitespace-nowrap"
-                  >
-                    <p className="text-xs text-gray-200 text-center">
-                      I was there, Gandalf.<br />
-                      I was there {daysSinceFirstLogin} {daysSinceFirstLogin === 1 ? 'day' : 'days'} ago!
-                    </p>
-                  </div>
-                )}
-              </div>
+              <SinceDateTooltip
+                formattedDate={formattedFirstLoginDate}
+                daysSince={daysSinceFirstLogin}
+              />
             )}
 
             {/* Active Boost */}
@@ -308,5 +279,56 @@ function StatCard({ icon, label, value, color }: StatCardProps) {
       </div>
       <p className="text-base font-bold text-white leading-tight">{value}</p>
     </div>
+  );
+}
+
+import { createPortal } from 'react-dom';
+
+function SinceDateTooltip({ formattedDate, daysSince }: { formattedDate: string, daysSince: number }) {
+  const [show, setShow] = useState(false);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (show && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + 8,
+        left: rect.left + rect.width / 2
+      });
+    }
+  }, [show]);
+
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        role="button"
+        tabIndex={0}
+        className="relative bg-white/5 rounded-lg p-2 border border-white/10 cursor-help focus:outline-none focus:ring-2 focus:ring-pink-400/50"
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onClick={() => setShow(!show)}
+      >
+        <div className="flex items-center gap-1.5 text-pink-400 mb-0.5">
+          <Calendar className="w-4 h-4" />
+          <span className="text-xs text-gray-400">Since</span>
+        </div>
+        <p className="text-base font-bold text-white">{formattedDate}</p>
+      </div>
+
+      {show && createPortal(
+        <div
+          className="fixed transform -translate-x-1/2 z-[100] px-3 py-2 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-xl whitespace-nowrap pointer-events-none"
+          style={{ top: position.top, left: position.left }}
+        >
+          <p className="text-xs text-gray-200 text-center">
+            I was there, Gandalf.<br />
+            I was there {daysSince} {daysSince === 1 ? 'day' : 'days'} ago!
+          </p>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }

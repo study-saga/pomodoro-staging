@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useRateLimit } from '../../hooks/useRateLimit';
 import type { ChatTab } from '../../types/chat';
 import { BanModal } from './BanModal';
+import { useDeviceType } from '../../hooks/useDeviceType';
 
 /**
  * Main chat container with collapsible functionality
@@ -258,13 +259,15 @@ export function ChatContainer() {
   }
 
   // Desktop: Collapsible bottom-left panel
+  const { isCompact } = useDeviceType();
+
   return (
     <>
       {/* Collapsed: Floating chat button */}
       {!isExpanded && (
         <button
           onClick={() => setIsExpanded(true)}
-          className={`fixed bottom-24 left-4 z-50 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${isChatEnabled && !isBanned
+          className={`fixed bottom-24 left-4 z-40 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${isChatEnabled && !isBanned
             ? 'text-white hover:text-white drop-shadow-2xl'
             : 'text-red-400 hover:text-red-300 drop-shadow-lg'
             }`}
@@ -282,9 +285,9 @@ export function ChatContainer() {
 
       {/* Expanded: Full chat interface */}
       {isExpanded && (
-        <div className="fixed bottom-24 left-4 z-50 w-96 flex flex-col gap-1.5">
+        <div className={`fixed bottom-24 left-4 z-40 flex flex-col gap-1.5 ${isCompact ? 'w-72' : 'w-96'}`}>
           {/* Main Glass Box (Tabs + Content) */}
-          <div className="h-[450px] bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative">
+          <div className={`${isCompact ? 'h-[350px]' : 'h-[450px]'} bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative`}>
             {/* Minimize Button (Absolute top-right) */}
             <button
               onClick={() => setIsExpanded(false)}

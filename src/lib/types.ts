@@ -61,6 +61,8 @@ export interface AppUser {
 
   // Visual preferences (CLIENT-CONTROLLED - read/write)
   background_id: string
+  background_mobile?: string
+  background_desktop?: string
   playlist: 'lofi' | 'synthwave'
   ambient_volumes: Record<string, number>
 
@@ -88,6 +90,8 @@ export interface UserSettings {
 
   // Visual preferences (3 fields)
   background_id: string
+  background_mobile?: string
+  background_desktop?: string
   playlist: 'lofi' | 'synthwave'
   ambient_volumes: Record<string, number>
 

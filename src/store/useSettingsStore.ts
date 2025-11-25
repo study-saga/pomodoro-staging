@@ -43,6 +43,8 @@ interface SettingsStore extends Settings {
 
   // Visual actions
   setBackground: (background: string) => void;
+  backgroundMobile: string;
+  backgroundDesktop: string;
   setPlaylist: (playlist: 'lofi' | 'synthwave') => void;
 
   // Level system actions
@@ -77,6 +79,8 @@ export const useSettingsStore = create<SettingsStore>()(
       // Initial state from defaults with device-aware background
       ...DEFAULT_SETTINGS,
       background: getValidBackgroundForDevice(DEFAULT_SETTINGS.background, getIsMobile()),
+      backgroundMobile: getDefaultBackground(true),
+      backgroundDesktop: getDefaultBackground(false),
 
       // Sync state (not persisted - always starts false)
       settingsSyncComplete: false,
@@ -121,7 +125,13 @@ export const useSettingsStore = create<SettingsStore>()(
       setBackground: (background) => {
         const isMobile = getIsMobile();
         const validBackground = getValidBackgroundForDevice(background, isMobile);
-        set({ background: validBackground });
+
+        set((state) => ({
+          background: validBackground,
+          // Update the specific preference based on current device type
+          backgroundMobile: isMobile ? validBackground : state.backgroundMobile,
+          backgroundDesktop: !isMobile ? validBackground : state.backgroundDesktop
+        }));
       },
       setPlaylist: (playlist) => set({ playlist }),
 
@@ -532,10 +542,24 @@ export const useSettingsStore = create<SettingsStore>()(
         // After loading from localStorage, validate background compatibility
         if (state) {
           const isMobile = getIsMobile();
-          const validBackground = getValidBackgroundForDevice(state.background, isMobile);
-          if (validBackground !== state.background) {
-            state.background = validBackground;
+
+          // Switch to the correct background preference for this device
+          // If preference exists, use it. Otherwise use current background if valid, or default.
+          let targetBackground = isMobile ? state.backgroundMobile : state.backgroundDesktop;
+
+          // Fallback if specific preference is missing (legacy state)
+          if (!targetBackground) {
+            targetBackground = state.background;
           }
+
+          const validBackground = getValidBackgroundForDevice(targetBackground, isMobile);
+
+          // Apply the validated background
+          state.background = validBackground;
+
+          // Ensure preferences are populated if they were empty (migration from old state)
+          if (!state.backgroundMobile) state.backgroundMobile = getDefaultBackground(true);
+          if (!state.backgroundDesktop) state.backgroundDesktop = getDefaultBackground(false);
         }
       },
     }

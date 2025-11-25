@@ -10,18 +10,32 @@ export function VideoBackground() {
 
   const currentBg = BACKGROUNDS.find((bg) => bg.id === background);
 
-  // Validate background compatibility and fallback if needed
+  // Handle device type changes (resize)
   useEffect(() => {
+    const { backgroundMobile, backgroundDesktop, setBackground } = useSettingsStore.getState();
+
+    // Determine which background we SHOULD be showing
+    const targetBackground = isMobile ? backgroundMobile : backgroundDesktop;
+
+    // If current background doesn't match target (and target exists), switch it
+    if (targetBackground && background !== targetBackground) {
+      console.log(`[VideoBackground] Switching to ${isMobile ? 'mobile' : 'desktop'} preference: ${targetBackground}`);
+      setBackground(targetBackground);
+      return;
+    }
+
+    // Fallback: Validate current background compatibility
     if (currentBg) {
       const requiredOrientation = isPortrait ? 'vertical' : 'horizontal';
       if (currentBg.orientation !== requiredOrientation) {
         // Background doesn't match viewport orientation - switch to appropriate default
+        // This handles cases where preference might be invalid for current orientation
         const defaultBg = getDefaultBackground(isMobile);
         console.warn(`Background ${currentBg.name} (${currentBg.orientation}) incompatible with ${isPortrait ? 'portrait' : 'landscape'} orientation. Switching to default.`);
         setBackground(defaultBg);
       }
     }
-  }, [currentBg, isMobile, isPortrait, setBackground]);
+  }, [isMobile, isPortrait, background, currentBg, setBackground]);
 
   useEffect(() => {
     if (videoRef.current) {

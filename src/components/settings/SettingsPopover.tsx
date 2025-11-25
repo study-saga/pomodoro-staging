@@ -45,7 +45,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const modalRef = useRef<HTMLDivElement>(null);
   const rateLimiterRef = useRef(createRateLimiter(720000)); // 12 minutes (5 changes per hour)
 
-  const { isMobile, isPortrait } = useDeviceType();
+  const { isPortrait, isCompact } = useDeviceType();
 
   // Calculate total track count
   const totalTracks = lofiTracks.length + synthwaveTracks.length;
@@ -405,7 +405,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
   return (
     <>
       {/* Desktop: Popover */}
-      {!isMobile && (
+      {!isCompact && (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             {trigger}
@@ -556,7 +556,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
       )}
 
       {/* Mobile: Centered Modal */}
-      {isMobile && (
+      {isCompact && (
         <>
           <div onClick={() => setOpen(!open)}>
             {trigger}

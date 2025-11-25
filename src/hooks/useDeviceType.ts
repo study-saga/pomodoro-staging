@@ -13,14 +13,23 @@ export function useDeviceType(breakpoint: number = 768) {
     return window.innerHeight > window.innerWidth
   })
 
+  const [isCompact, setIsCompact] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerWidth < 1024 || window.innerHeight < 700
+  })
+
   useEffect(() => {
     const checkDevice = () => {
       // Show mobile version below specified breakpoint
       const mobile = window.innerWidth < breakpoint
       // Determine orientation based on aspect ratio
       const portrait = window.innerHeight > window.innerWidth
+      // Compact mode for small laptops or Discord activity windows
+      const compact = window.innerWidth < 1024 || window.innerHeight < 700
+
       setIsMobile(mobile)
       setIsPortrait(portrait)
+      setIsCompact(compact)
     }
 
     // Debounce resize events for performance
@@ -44,5 +53,5 @@ export function useDeviceType(breakpoint: number = 768) {
     }
   }, [breakpoint])
 
-  return { isMobile, isPortrait }
+  return { isMobile, isPortrait, isCompact }
 }

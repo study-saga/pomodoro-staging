@@ -70,6 +70,8 @@ export function useSettingsSync() {
 
       // Visual preferences (3 fields) - CLIENT-CONTROLLED
       background_id: s.background,
+      background_mobile: s.backgroundMobile,
+      background_desktop: s.backgroundDesktop,
       playlist: s.playlist,
       ambient_volumes: s.ambientVolumes,
 
@@ -133,6 +135,8 @@ export function useSettingsSync() {
 
           // Visual preferences (3 fields)
           p_background_id: currentSettings.background,
+          p_background_mobile: currentSettings.backgroundMobile,
+          p_background_desktop: currentSettings.backgroundDesktop,
           p_playlist: currentSettings.playlist,
           p_ambient_volumes: currentSettings.ambientVolumes,
 
@@ -220,6 +224,8 @@ export function useSettingsSync() {
 
         // Visual preferences (3 fields)
         background_id: currentSettings.background,
+        background_mobile: currentSettings.backgroundMobile,
+        background_desktop: currentSettings.backgroundDesktop,
         playlist: currentSettings.playlist,
         ambient_volumes: currentSettings.ambientVolumes,
 
@@ -271,6 +277,14 @@ export function useSettingsSync() {
     // Load visual preferences
     // setBackground() validates and ensures device-appropriate background
     settings.setBackground(appUser.background_id || 'room-video')
+
+    // Load separate background preferences if they exist
+    // We update the store directly for these new fields
+    useSettingsStore.setState({
+      backgroundMobile: appUser.background_mobile || settings.backgroundMobile,
+      backgroundDesktop: appUser.background_desktop || settings.backgroundDesktop
+    })
+
     settings.setPlaylist(appUser.playlist)
 
     // Load ambient volumes
@@ -406,6 +420,8 @@ export function useSettingsSync() {
 
     // Visual preferences (3 fields)
     settings.background,
+    settings.backgroundMobile,
+    settings.backgroundDesktop,
     settings.playlist,
     JSON.stringify(settings.ambientVolumes),
 

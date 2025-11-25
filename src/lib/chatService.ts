@@ -118,7 +118,6 @@ export function truncateMessage(text: string, maxLength: number = 50): string {
  */
 import {
   RegExpMatcher,
-  TextCensor,
   englishDataset,
   englishRecommendedTransformers,
 } from 'obscenity';

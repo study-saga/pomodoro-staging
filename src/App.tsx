@@ -121,7 +121,7 @@ function AppContent() {
       </div>
 
       {/* Main Content - Centered Timer */}
-      <div className="min-h-screen flex items-center justify-center pb-32 md:pb-20 pt-8 sm:pt-0">
+      <div className="min-h-screen flex items-center justify-center pb-24 md:pb-20 pt-16 sm:pt-0">
         <PomodoroTimer />
       </div>
 

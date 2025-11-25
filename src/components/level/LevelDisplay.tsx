@@ -48,7 +48,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const boostRef = useRef<HTMLDivElement>(null);
   const eventBuffRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const { isMobile } = useDeviceType();
+  const { isMobile, isCompact } = useDeviceType();
   const { appUser } = useAuth();
   const { activeBuffs } = useActiveEventBuffs(levelPath);
 
@@ -265,7 +265,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   return (
     <>
       {/* Level UI Container - Fixed position */}
-      <div className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
+      <div className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isCompact ? 'p-2 min-w-[140px] max-w-[180px] scale-90 origin-top-left' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
         {/* Confetti - contained inside Level UI */}
         {showConfetti && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none z-50">
@@ -331,12 +331,12 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{levelBadge}</div>
+                <div className={isCompact ? 'text-xl' : 'text-3xl'}>{levelBadge}</div>
                 <div className="min-w-0 overflow-hidden flex-1">
-                  <h2 className={`font-bold text-white truncate ${isMobile ? 'text-base' : 'text-lg'}`}>
+                  <h2 className={`font-bold text-white truncate ${isCompact ? 'text-sm' : 'text-lg'}`}>
                     {username}
                   </h2>
-                  <p className="text-xs text-gray-300">{levelTitle}</p>
+                  <p className={`text-gray-300 ${isCompact ? 'text-[10px]' : 'text-xs'}`}>{levelTitle}</p>
                 </div>
               </div>
               <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
@@ -520,7 +520,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       </div>
 
       {/* User Stats - Different components for desktop/mobile */}
-      {!isMobile ? (
+      {!isCompact ? (
         /* Desktop: Popover positioned next to Level UI */
         <UserStatsPopover
           open={showStatsPopover}
