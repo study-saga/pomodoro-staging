@@ -1,5 +1,6 @@
 
 import { memo, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { X, Target, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
@@ -282,7 +283,7 @@ function StatCard({ icon, label, value, color }: StatCardProps) {
   );
 }
 
-import { createPortal } from 'react-dom';
+
 
 function SinceDateTooltip({ formattedDate, daysSince }: { formattedDate: string, daysSince: number }) {
   const [show, setShow] = useState(false);

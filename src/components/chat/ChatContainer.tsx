@@ -132,7 +132,7 @@ export function ChatContainer() {
   }
 
   // Mobile: Floating chat button
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const { isMobile } = useDeviceType(); // Already imported at top
 
   if (isMobile && !isExpanded) {
     return (

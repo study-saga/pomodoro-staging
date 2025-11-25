@@ -4,6 +4,13 @@
 --              This prevents multiple users from having the same username.
 
 -- ============================================================================
+-- INDEX: Unique Username (Case-Insensitive)
+-- ============================================================================
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower 
+ON public.users (LOWER(username)) 
+WHERE username IS NOT NULL;
+
+-- ============================================================================
 -- FUNCTION: update_username (Web Mode)
 -- ============================================================================
 
@@ -68,14 +75,18 @@ BEGIN
         END IF;
 
         -- Deduct XP and update username (atomic transaction)
-        UPDATE public.users
-        SET
-          username = p_new_username,
-          xp = xp - v_xp_cost,
-          last_username_change = NOW(),
-          updated_at = NOW()
-        WHERE id = p_user_id
-        RETURNING * INTO v_user;
+        BEGIN
+          UPDATE public.users
+          SET
+            username = p_new_username,
+            xp = xp - v_xp_cost,
+            last_username_change = NOW(),
+            updated_at = NOW()
+          WHERE id = p_user_id
+          RETURNING * INTO v_user;
+        EXCEPTION WHEN unique_violation THEN
+          RAISE EXCEPTION 'Username is already taken';
+        END;
 
         RETURN v_user;
       ELSE
@@ -88,13 +99,17 @@ BEGIN
   END IF;
 
   -- Cooldown has passed (or first time changing) - free username change
-  UPDATE public.users
-  SET
-    username = p_new_username,
-    last_username_change = NOW(),
-    updated_at = NOW()
-  WHERE id = p_user_id
-  RETURNING * INTO v_user;
+  BEGIN
+    UPDATE public.users
+    SET
+      username = p_new_username,
+      last_username_change = NOW(),
+      updated_at = NOW()
+    WHERE id = p_user_id
+    RETURNING * INTO v_user;
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'Username is already taken';
+  END;
 
   RETURN v_user;
 END;
@@ -160,14 +175,18 @@ BEGIN
         END IF;
 
         -- Deduct XP and update username (atomic transaction)
-        UPDATE public.users
-        SET
-          username = p_new_username,
-          xp = xp - v_xp_cost,
-          last_username_change = NOW(),
-          updated_at = NOW()
-        WHERE discord_id = p_discord_id
-        RETURNING * INTO v_user;
+        BEGIN
+          UPDATE public.users
+          SET
+            username = p_new_username,
+            xp = xp - v_xp_cost,
+            last_username_change = NOW(),
+            updated_at = NOW()
+          WHERE discord_id = p_discord_id
+          RETURNING * INTO v_user;
+        EXCEPTION WHEN unique_violation THEN
+          RAISE EXCEPTION 'Username is already taken';
+        END;
 
         RETURN v_user;
       ELSE
@@ -180,13 +199,17 @@ BEGIN
   END IF;
 
   -- Cooldown has passed (or first time changing) - free username change
-  UPDATE public.users
-  SET
-    username = p_new_username,
-    last_username_change = NOW(),
-    updated_at = NOW()
-  WHERE discord_id = p_discord_id
-  RETURNING * INTO v_user;
+  BEGIN
+    UPDATE public.users
+    SET
+      username = p_new_username,
+      last_username_change = NOW(),
+      updated_at = NOW()
+    WHERE discord_id = p_discord_id
+    RETURNING * INTO v_user;
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'Username is already taken';
+  END;
 
   RETURN v_user;
 END;

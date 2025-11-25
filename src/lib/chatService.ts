@@ -221,9 +221,17 @@ export function generateMessageId(): string {
 }
 
 /**
+ * Escape RegExp special characters
+ */
+function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * Check if user is mentioned in message
  */
 export function hasMention(content: string, username: string): boolean {
-  const mentionPattern = new RegExp(`@${username}\\b`, 'i');
+  const escapedUsername = escapeRegExp(username);
+  const mentionPattern = new RegExp(`@${escapedUsername}\\b`, 'i');
   return mentionPattern.test(content);
 }

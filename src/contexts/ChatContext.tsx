@@ -52,6 +52,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [banReason, setBanReason] = useState<string | null>(null);
   const [banExpiresAt, setBanExpiresAt] = useState<string | null>(null);
 
+  // Ref to track banned state without triggering effect re-runs
+  const isBannedRef = useRef(isBanned);
+  useEffect(() => {
+    isBannedRef.current = isBanned;
+  }, [isBanned]);
+
   // Message batching & Rate limiting
   const messageBatchRef = useRef<ChatMessage[]>([]);
   const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -125,9 +131,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             setBanExpiresAt(banData.expires_at);
             toast.error(`You have been banned: ${banData.reason}`);
             setIsGlobalConnected(false); // Force disconnect
+            setIsGlobalConnected(false); // Force disconnect
           } else {
             // Only unban if previously banned
-            if (isBanned) {
+            if (isBannedRef.current) {
               setIsBanned(false);
               setBanReason(null);
               setBanExpiresAt(null);

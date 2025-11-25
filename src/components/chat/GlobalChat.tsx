@@ -16,7 +16,7 @@ interface GlobalChatMessagesProps {
  * Displays the list of messages and handles auto-scrolling
  */
 export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessagesProps) {
-  const { globalMessages, deleteGlobalMessage, userRole } = useChat();
+  const { globalMessages, deleteGlobalMessage, userRole, isGlobalConnected } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Context Menu State
@@ -77,7 +77,8 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
     <>
       <div className="flex flex-col h-full">
         {/* Connection Status */}
-        {!useChat().isGlobalConnected && (
+        {/* Connection Status */}
+        {!isGlobalConnected && (
           <div className="px-4 py-2 bg-yellow-500/10 backdrop-blur text-yellow-200 text-xs text-center border-b border-yellow-500/20">
             Connecting to chat...
           </div>

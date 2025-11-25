@@ -30,7 +30,9 @@ CREATE POLICY "Everyone can read bans"
   USING (true);
 
 DROP POLICY IF EXISTS "Moderators can create bans" ON public.chat_bans;
-CREATE POLICY "Moderators can create bans"
+-- Allow admins to insert new settings too
+DROP POLICY IF EXISTS "Admins can insert system settings" ON public.system_settings;
+CREATE POLICY "Admins can insert system settings"
   ON public.chat_bans
   FOR INSERT
   WITH CHECK (
@@ -42,7 +44,9 @@ CREATE POLICY "Moderators can create bans"
   );
 
 DROP POLICY IF EXISTS "Moderators can delete bans" ON public.chat_bans;
-CREATE POLICY "Moderators can delete bans"
+-- Policy: Admins can update system settings (Moved from 040000_add_system_settings.sql)
+DROP POLICY IF EXISTS "Admins can update system settings" ON public.system_settings;
+CREATE POLICY "Admins can update system settings"
   ON public.chat_bans
   FOR DELETE
   USING (

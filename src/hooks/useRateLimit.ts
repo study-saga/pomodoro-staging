@@ -16,6 +16,13 @@ const TIME_WINDOW_MS = 60 * 1000; // 1 minute
  */
 export function useRateLimit(): RateLimitResult {
   const [messageTimestamps, setMessageTimestamps] = useState<number[]>([]);
+  const messageTimestampsRef = useRef<number[]>([]);
+
+  // Keep ref in sync
+  useEffect(() => {
+    messageTimestampsRef.current = messageTimestamps;
+  }, [messageTimestamps]);
+
   const [timeUntilReset, setTimeUntilReset] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -23,34 +30,44 @@ export function useRateLimit(): RateLimitResult {
   const cleanOldTimestamps = useCallback(() => {
     const now = Date.now();
     const cutoff = now - TIME_WINDOW_MS;
+
+    // Use functional update to avoid dependency on state
     setMessageTimestamps(prev => prev.filter(ts => ts > cutoff));
   }, []);
 
   // Update time until reset every second
   useEffect(() => {
-    if (messageTimestamps.length > 0) {
-      intervalRef.current = setInterval(() => {
-        cleanOldTimestamps();
+    // Start interval once
+    intervalRef.current = setInterval(() => {
+      // We can call cleanOldTimestamps here, but better to just read ref for calculation
+      // to avoid state updates if not needed.
+      // However, the original code called cleanOldTimestamps() every second.
+      // Let's replicate that behavior but safely.
+      cleanOldTimestamps();
 
-        const now = Date.now();
-        const oldestTimestamp = messageTimestamps[0];
-        if (oldestTimestamp) {
-          const timeLeft = Math.ceil((oldestTimestamp + TIME_WINDOW_MS - now) / 1000);
-          setTimeUntilReset(Math.max(0, timeLeft));
-        } else {
-          setTimeUntilReset(0);
-        }
-      }, 1000);
+      const now = Date.now();
+      // Read from ref to get latest without restarting interval
+      const currentTimestamps = messageTimestampsRef.current;
 
-      return () => {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-        }
-      };
-    } else {
-      setTimeUntilReset(0);
-    }
-  }, [messageTimestamps, cleanOldTimestamps]);
+      if (currentTimestamps.length > 0) {
+        const oldestTimestamp = currentTimestamps[0];
+        // Check if oldest is actually valid (might have been cleaned but ref update pending?)
+        // The cleanOldTimestamps queues a state update, which updates ref in effect.
+        // So ref might be slightly stale in this tick, but that's fine for UI timer.
+
+        const timeLeft = Math.ceil((oldestTimestamp + TIME_WINDOW_MS - now) / 1000);
+        setTimeUntilReset(Math.max(0, timeLeft));
+      } else {
+        setTimeUntilReset(0);
+      }
+    }, 1000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [cleanOldTimestamps]); // cleanOldTimestamps is stable via useCallback
 
   // Record a new message
   const recordMessage = useCallback(() => {

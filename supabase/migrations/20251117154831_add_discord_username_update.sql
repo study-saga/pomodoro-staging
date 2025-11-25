@@ -34,6 +34,12 @@ BEGIN
     RAISE EXCEPTION 'User not found for Discord ID: %', p_discord_id;
   END IF;
 
+  -- SECURITY: Verify caller owns this user profile
+  -- Even for Discord Activities, we require a valid Supabase session linked to this user
+  IF auth.uid() IS NULL OR v_user.auth_user_id != auth.uid() THEN
+    RAISE EXCEPTION 'Unauthorized: You do not own this account';
+  END IF;
+
   -- Validate username (basic checks)
   IF p_new_username IS NULL OR LENGTH(TRIM(p_new_username)) = 0 THEN
     RAISE EXCEPTION 'Username cannot be empty';
