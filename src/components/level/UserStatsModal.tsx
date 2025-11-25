@@ -1,4 +1,3 @@
-
 import { memo, useState, useEffect, useRef } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { X, Target, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
@@ -270,6 +269,15 @@ interface StatCardProps {
   color: string;
 }
 
+/**
+ * Displays a compact statistic card with an icon, label, and value.
+ *
+ * @param icon - Leading icon element rendered next to the label
+ * @param label - Uppercase label describing the statistic
+ * @param value - Prominent value shown for the statistic
+ * @param color - CSS class(es) applied to the label row (used for the accent color)
+ * @returns The stat card element ready to be rendered inside a grid or list
+ */
 function StatCard({ icon, label, value, color }: StatCardProps) {
   return (
     <div className="bg-white/5 rounded-lg p-2 border border-white/10 flex flex-col">
@@ -284,6 +292,14 @@ function StatCard({ icon, label, value, color }: StatCardProps) {
 
 import { createPortal } from 'react-dom';
 
+/**
+ * Shows a small "Since" trigger with the provided date and displays a portal tooltip stating how many days have passed since that date.
+ *
+ * The tooltip is positioned below the trigger, appears on hover or click, and is rendered into document.body.
+ *
+ * @param formattedDate - The human-readable date string displayed on the trigger.
+ * @param daysSince - The number of days elapsed since `formattedDate`, used in the tooltip message.
+ */
 function SinceDateTooltip({ formattedDate, daysSince }: { formattedDate: string, daysSince: number }) {
   const [show, setShow] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);

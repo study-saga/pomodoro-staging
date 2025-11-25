@@ -11,8 +11,19 @@ const MAX_MESSAGES = 10;
 const TIME_WINDOW_MS = 60 * 1000; // 1 minute
 
 /**
- * Rate limiting hook to prevent spam
- * Limits users to MAX_MESSAGES messages per TIME_WINDOW_MS
+ * Enforces a rolling per-user message rate limit and exposes state and actions for UI control.
+ *
+ * The hook tracks message timestamps within the last TIME_WINDOW_MS and provides:
+ * - whether a new message is allowed,
+ * - seconds until the current rate-limit window resets,
+ * - how many messages remain in the current window,
+ * - a function to record a newly sent message.
+ *
+ * @returns An object with:
+ *  - `canSend`: `true` if fewer than MAX_MESSAGES have been sent in the current window, `false` otherwise.
+ *  - `timeUntilReset`: whole seconds until the oldest recorded message falls outside the time window (0 if none).
+ *  - `messagesRemaining`: number of messages left before reaching MAX_MESSAGES (minimum 0).
+ *  - `recordMessage`: function that records the current time as a sent message.
  */
 export function useRateLimit(): RateLimitResult {
   const [messageTimestamps, setMessageTimestamps] = useState<number[]>([]);

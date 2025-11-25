@@ -12,8 +12,15 @@ interface GlobalChatMessagesProps {
 }
 
 /**
- * Global chat messages list
- * Displays the list of messages and handles auto-scrolling
+ * Render the global chat message list with auto-scroll, per-message controls, and a moderator context menu.
+ *
+ * Displays messages, avatars, timestamps, mention highlights, deletion state, and role badges. Handles automatic
+ * scrolling to the newest message, message deletion (for message owner or moderators/admins), and a right-click
+ * context menu for moderators/admins to initiate a ban action with role-based protections.
+ *
+ * @param currentUser - The currently authenticated user; used to determine message ownership, mention detection, avatar rendering, and self-ban protection.
+ * @param onBanUser - Callback invoked with `{ id, username }` when a moderator/admin chooses "Ban User" from the context menu.
+ * @returns The React element tree for the global chat messages view.
  */
 export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessagesProps) {
   const { globalMessages, deleteGlobalMessage, userRole } = useChat();

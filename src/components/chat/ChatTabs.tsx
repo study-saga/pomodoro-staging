@@ -9,6 +9,15 @@ interface ChatTabsProps {
   onlineCount: number;
 }
 
+/**
+ * Render tab buttons to switch between General, Online, and (for moderators) Banned chat views.
+ *
+ * @param activeTab - The currently active tab key ('local' | 'online' | 'banned').
+ * @param onTabChange - Callback invoked with the selected tab key when a tab is clicked.
+ * @param localCount - Numeric badge for the General (local) tab.
+ * @param onlineCount - Numeric badge for the Online tab.
+ * @returns The chat tabs container element with interactive tab buttons and badges.
+ */
 export function ChatTabs({ activeTab, onTabChange, localCount, onlineCount }: ChatTabsProps) {
   const { userRole } = useChat();
   const isMod = userRole === 'moderator' || userRole === 'admin';

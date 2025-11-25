@@ -3,6 +3,13 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 import { BACKGROUNDS, getDefaultBackground } from '../../data/constants';
 import { useDeviceType } from '../../hooks/useDeviceType';
 
+/**
+ * Renders a full-viewport background video (with a dark overlay) based on the current background setting and device orientation, and updates the app background when device type or orientation changes.
+ *
+ * The component will switch the stored background preference to the configured mobile/desktop preference when the device type changes, validate the current background's orientation and fall back to an appropriate default if incompatible, and attempt to play the video when the background changes.
+ *
+ * @returns A JSX element that renders the background video and a dark overlay, or `null` if no matching background is found.
+ */
 export function VideoBackground() {
   const { background, setBackground } = useSettingsStore();
   const { isMobile, isPortrait } = useDeviceType();

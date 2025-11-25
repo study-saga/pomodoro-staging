@@ -1,5 +1,8 @@
 /**
- * Get Discord avatar URL for a user
+ * Build a Discord avatar URL for a user or return an existing full URL; returns `null` if no avatar is available.
+ *
+ * @param user - Object containing avatar data. `avatar` may be a full URL or a Discord avatar hash; `discord_id` is required when `avatar` is a Discord hash.
+ * @returns A fully-qualified avatar URL, or `null` if no avatar can be determined.
  */
 export function getAvatarUrl(user: { avatar: string | null; discord_id?: string }): string | null {
   if (user.avatar) {
@@ -16,8 +19,14 @@ export function getAvatarUrl(user: { avatar: string | null; discord_id?: string 
 }
 
 /**
- * Format message timestamp to human-readable format
- * Examples: "today at 3:04 am", "yesterday at 11:30 pm", "Jan 15 at 2:45 pm"
+ * Formats a timestamp into a human-readable message time.
+ *
+ * Returns "today at <time>" or "yesterday at <time>" when applicable, otherwise returns
+ * a short date with time ("Mon D at <time>") for the current year or a long date with year
+ * ("Mon D, YYYY at <time>") for previous years. Time is formatted in en-US `h:mm am/pm` style.
+ *
+ * @param timestamp - The input timestamp as a number (milliseconds since epoch) or an ISO date string.
+ * @returns A formatted time string (e.g., "today at 3:04 am", "yesterday at 11:30 pm", "Jan 15 at 2:45 pm", or "Jan 15, 2023 at 2:45 pm").
  */
 export function formatMessageTime(timestamp: number | string): string {
   const date = typeof timestamp === 'string' ? new Date(timestamp) : new Date(timestamp);
@@ -64,8 +73,10 @@ export function formatMessageTime(timestamp: number | string): string {
 }
 
 /**
- * Format relative time for conversation list
- * Examples: "2m ago", "1h ago", "2d ago"
+ * Produce a short relative time label for a timestamp suitable for conversation lists.
+ *
+ * @param timestamp - A numeric millisecond timestamp or an ISO date string
+ * @returns A short human-readable label such as `just now`, `2m ago`, `1h ago`, `3d ago`, or a short date like `Jan 5`
  */
 export function formatRelativeTime(timestamp: number | string): string {
   const date = typeof timestamp === 'string' ? new Date(timestamp) : new Date(timestamp);
@@ -95,8 +106,9 @@ export function formatRelativeTime(timestamp: number | string): string {
 }
 
 /**
- * Create deterministic conversation ID from two user IDs
- * Always returns UUIDs in sorted order: dm:{smaller_uuid}:{larger_uuid}
+ * Produce a deterministic conversation ID for a direct message between two users.
+ *
+ * @returns A string formatted as `dm:<smaller_id>:<larger_id>`, where the two user IDs are sorted lexicographically.
  */
 export function getConversationId(userId1: string, userId2: string): string {
   const sorted = [userId1, userId2].sort();
@@ -104,7 +116,11 @@ export function getConversationId(userId1: string, userId2: string): string {
 }
 
 /**
- * Truncate message text for previews
+ * Create a shortened preview of a message.
+ *
+ * @param text - The message text to truncate
+ * @param maxLength - Maximum allowed length of the returned string (default 50)
+ * @returns The original `text` if its length is less than or equal to `maxLength`, otherwise a truncated string ending with an ellipsis (`...`)
  */
 export function truncateMessage(text: string, maxLength: number = 50): string {
   if (text.length <= maxLength) {
@@ -133,8 +149,10 @@ const matcher = new RegExpMatcher({
 const CRITICAL_SPACED_WORDS = ['sex', 'ass', 'shit', 'fuck', 'bitch', 'nigger', 'cunt', 'hell', 'whore', 'slut'];
 
 /**
- * Check for spaced profanity (e.g. "s e x") using strict word boundaries
- * This avoids false positives like "class example" matching "sex"
+ * Detects spaced-out variants of known profane words (for example "s e x") using strict character boundaries.
+ *
+ * @param text - Input text to scan for spaced profanity
+ * @returns `true` if any spaced profanity pattern is found, `false` otherwise
  */
 function checkSpacedProfanity(text: string): boolean {
   const lower = text.toLowerCase();
@@ -157,7 +175,10 @@ function checkSpacedProfanity(text: string): boolean {
 }
 
 /**
- * Validate message content
+ * Validate chat message text against length, spam, link, and profanity rules.
+ *
+ * @param content - The message text to validate
+ * @returns An object with `valid` set to `true` when the message passes all checks; otherwise `valid` is `false` and `error` contains a short reason (e.g., empty message, too long, links not allowed, profanity, excessive newlines, repeated characters/words).
  */
 export function validateMessage(content: string): { valid: boolean; error?: string } {
   const trimmed = content.trim();
@@ -214,14 +235,20 @@ export function validateMessage(content: string): { valid: boolean; error?: stri
 }
 
 /**
- * Generate unique message ID
+ * Create a compact unique identifier for a message.
+ *
+ * @returns A string composed of the current timestamp in milliseconds, a hyphen, and a 9-character base36 random token (e.g. `1610000000000-abc123xyz`).
  */
 export function generateMessageId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 /**
- * Check if user is mentioned in message
+ * Determine whether a username is mentioned in a message.
+ *
+ * @param content - The message text to search
+ * @param username - The username to look for (without the leading `@`)
+ * @returns `true` if `content` contains `@<username>` as a case-insensitive, word-boundary mention, `false` otherwise
  */
 export function hasMention(content: string, username: string): boolean {
   const mentionPattern = new RegExp(`@${username}\\b`, 'i');

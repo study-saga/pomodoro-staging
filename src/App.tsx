@@ -19,6 +19,13 @@ import { ChatProvider } from './contexts/ChatContext';
 import { getEnvironment } from './lib/environment';
 import { canClaimDailyGift } from './lib/userSyncAuth';
 
+/**
+ * Render the application's main UI, authentication flows, and media/gift overlays.
+ *
+ * Synchronizes cross-device settings, checks daily-gift eligibility (shows the daily-gift modal when eligible), and displays either a loading/auth screen or the full authenticated app containing the timer, media players, presence, chat, and settings controls.
+ *
+ * @returns The component's JSX for the appropriate app state (loading, unauthenticated error/login, or authenticated main UI).
+ */
 function AppContent() {
   const { authenticated, loading, error, appUser } = useAuth();
   const settingsSyncComplete = useSettingsStore((state) => state.settingsSyncComplete);
@@ -155,7 +162,13 @@ function AppContent() {
   );
 }
 
-// Wrapper component with providers
+/**
+ * Application root that supplies authentication and chat contexts to the app content.
+ *
+ * Wraps AppContent with AuthProvider and ChatProvider so descendants can access auth and chat state.
+ *
+ * @returns The root React element with authentication and chat providers applied
+ */
 function App() {
   return (
     <AuthProvider>

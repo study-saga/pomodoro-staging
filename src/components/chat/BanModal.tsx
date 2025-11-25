@@ -16,6 +16,18 @@ const BAN_DURATIONS = [
     { label: 'Permanent', value: null },
 ];
 
+/**
+ * Render a confirmation modal that allows selecting a ban duration and providing a reason to ban a user.
+ *
+ * The modal only renders when `isOpen` is true. The "Ban User" action is disabled until a non-empty reason
+ * is provided; invoking it calls `onBan(selectedDuration, reason)` and then `onClose()`.
+ *
+ * @param isOpen - Controls whether the modal is visible
+ * @param onClose - Callback invoked to close the modal
+ * @param onBan - Callback invoked to perform the ban with signature `(duration: number | null, reason: string)`
+ * @param username - The username of the target user shown in the modal header
+ * @returns The modal element when open, or `null` when closed
+ */
 export function BanModal({ isOpen, onClose, onBan, username }: BanModalProps) {
     const [reason, setReason] = useState('');
     const [selectedDuration, setSelectedDuration] = useState<number | null>(60);

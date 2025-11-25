@@ -8,8 +8,18 @@ interface UseChatNotificationsResult {
 }
 
 /**
- * Hook for managing browser notifications for chat messages
- * Requests permission and shows notifications for new DMs
+ * Manage browser notification permission and display chat message notifications.
+ *
+ * The hook initializes and exposes the current Notification.permission, a
+ * function to request permission, and a function to show a chat notification
+ * with a truncated body, app icon/badge, a duplicate-preventing tag, and an
+ * automatic close after five seconds. If provided, the notification's click
+ * handler will focus the window and invoke the supplied callback.
+ *
+ * @returns An object containing:
+ * - `permission`: the current `NotificationPermission` value.
+ * - `requestPermission`: a function that requests notification permission and updates `permission`.
+ * - `showNotification`: a function `(title, body, onClick?)` that displays a truncated chat notification and optionally handles clicks.
  */
 export function useChatNotifications(): UseChatNotificationsResult {
   const [permission, setPermission] = useState<NotificationPermission>('default');

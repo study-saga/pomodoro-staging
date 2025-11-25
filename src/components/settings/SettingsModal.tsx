@@ -24,6 +24,13 @@ import lofiTracks from '../../data/lofi.json';
 import synthwaveTracks from '../../data/synthwave.json';
 import { createRateLimiter } from '../../utils/rateLimiters';
 
+/**
+ * Renders the application Settings modal and its trigger, providing UI for timer, appearance, sound, music, and progress preferences.
+ *
+ * The component manages staged (temporary) settings that can be saved or reset, handles username updates (with availability checks and optional XP payment), toggles level role and leveling system, controls ambient/music/volume settings, requests browser notification permission, and displays music credits and progress reset actions. It also handles focus management, Escape-to-close, and rate-limited role changes.
+ *
+ * @returns The Settings modal trigger button when closed, or the full modal JSX when open.
+ */
 export function SettingsModal() {
   const { appUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);

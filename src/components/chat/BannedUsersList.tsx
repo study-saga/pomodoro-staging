@@ -19,6 +19,13 @@ interface BannedUser {
     };
 }
 
+/**
+ * Displays a scrollable list of banned chat users with ban metadata and an action to unban.
+ *
+ * Fetches ban records from the `chat_bans` table, shows loading and empty states, and keeps the list up to date by subscribing to real-time changes; each ban entry displays the user's avatar and username, ban reason, banner username, expiry info, and an Unban button that invokes the chat context's `unbanUser`.
+ *
+ * @returns The component's JSX element rendering the banned users list and related UI states.
+ */
 export function BannedUsersList() {
     const { unbanUser } = useChat();
     const [bannedUsers, setBannedUsers] = useState<BannedUser[]>([]);

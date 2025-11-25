@@ -22,6 +22,33 @@ import { getEnvironment } from '../lib/environment'
 // Periodic sync interval (2 minutes)
 const PERIODIC_SYNC_INTERVAL = 2 * 60 * 1000
 
+/**
+ * Synchronizes client-controlled user settings between the local Zustand store and the server.
+ *
+ * Loads all user settings from the database into the local store once on mount/login, tracks changes
+ * to client-controlled fields, and persists updates to the server under controlled conditions.
+ *
+ * Behavior details:
+ * - Initial load: reads server settings once on mount/login and applies them to the store, then captures
+ *   a baseline serialized state to avoid false dirty flags.
+ * - Change tracking: observes only client-controlled settings (timers, visuals including background_mobile
+ *   and background_desktop, audio, and system preferences). When those fields differ from the last
+ *   synced state the hook marks the store as dirty and debounces an async sync.
+ * - Sync triggers:
+ *   - Debounced in-app sync (500ms) for rapid changes (e.g., slider updates).
+ *   - Visibility change: sync when the document becomes hidden if there are unsynced changes.
+ *   - Periodic sync: every 2 minutes when dirty.
+ *   - Manual trigger: exposed as window.__syncSettings for explicit syncs (e.g., modal close).
+ *   - Unload/unmount: attempts a synchronous-like sync using fetch with keepalive (Beacon considered
+ *     but fetch used to allow headers); best-effort only, errors are logged and not retried.
+ * - Security: only client-safe fields are sent (explicit serialized payload of 14 fields). Server-controlled
+ *   stats/XP/levels and other read-only fields are never written by this hook.
+ * - Discord activity: supports a Discord iframe mode where unload events are unreliable and anonymous-key
+ *   auth is used for the Discord-specific RPC endpoint when no Supabase session is present.
+ *
+ * Side effects: attaches visibility, beforeunload, pagehide listeners, starts a periodic interval, and
+ * exposes a global manual-sync function; all are cleaned up on unmount or user change.
+ */
 export function useSettingsSync() {
   const { appUser } = useAuth()
   const settings = useSettingsStore()

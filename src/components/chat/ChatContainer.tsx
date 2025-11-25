@@ -14,8 +14,12 @@ import { BanModal } from './BanModal';
 import { useDeviceType } from '../../hooks/useDeviceType';
 
 /**
- * Main chat container with collapsible functionality
- * Positioned bottom-left on desktop, floating button on mobile
+ * Render the main responsive chat UI with collapsible behavior, tabbed views, and ban/maintenance overlays.
+ *
+ * The component adapts between a floating mobile experience and a bottom-left desktop panel, integrates
+ * authentication, chat state, rate limiting, and provides controls for sending messages and moderating users.
+ *
+ * @returns The chat container JSX element
  */
 export function ChatContainer() {
   const { appUser } = useAuth();

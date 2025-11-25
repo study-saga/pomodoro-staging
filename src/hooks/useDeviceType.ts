@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react'
 
+/**
+ * Detects viewport characteristics and exposes flags for mobile, portrait, and compact layouts.
+ *
+ * @param breakpoint - Width in pixels below which the viewport is considered mobile (default 768)
+ * @returns An object with three booleans:
+ * - `isMobile`: `true` if the viewport width is less than `breakpoint`, `false` otherwise.
+ * - `isPortrait`: `true` if the viewport height is greater than its width, `false` otherwise.
+ * - `isCompact`: `true` if the viewport width is less than 1024 pixels or the height is less than 700 pixels, `false` otherwise.
+ */
 export function useDeviceType(breakpoint: number = 768) {
   const [isMobile, setIsMobile] = useState(() => {
     // Initial detection - use specified breakpoint

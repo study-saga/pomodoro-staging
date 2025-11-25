@@ -10,8 +10,13 @@ interface MessageBubbleProps {
 }
 
 /**
- * Individual message bubble component
- * Displays user avatar, username, timestamp, and message content
+ * Render a chat message bubble showing avatar, username, timestamp, and content; handles deleted messages and an optional own-message delete action.
+ *
+ * @param message - The chat message to render.
+ * @param currentUserId - ID of the current user (used to determine ownership).
+ * @param onDelete - Optional callback invoked with the message id when the owner clicks the delete button.
+ * @param showAvatar - Whether to render the avatar area (defaults to `true`).
+ * @returns A JSX element representing the rendered message bubble.
  */
 export function MessageBubble({
   message,

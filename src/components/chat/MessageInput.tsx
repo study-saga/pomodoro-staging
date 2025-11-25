@@ -13,7 +13,20 @@ interface MessageInputProps {
 }
 
 /**
- * Message input component with character limit and rate limiting
+ * Renders a multiline message input with auto-resize, character counting, validation, and rate-limit-aware send control.
+ *
+ * The component manages local input state and displays inline errors and rate-limit hints. It auto-focuses when requested,
+ * expands to fit content, shows a character counter after 400 characters and marks overflow above 500 characters, and
+ * invokes `onSendMessage` with the trimmed message when sending (Enter without Shift or clicking Send).
+ *
+ * @param onSendMessage - Callback invoked with the trimmed message when a send is performed
+ * @param placeholder - Placeholder text shown inside the textarea
+ * @param canSend - Whether sending is currently allowed (false when rate-limited)
+ * @param timeUntilReset - Seconds remaining until the rate limit resets (used for the rate-limit hint)
+ * @param messagesRemaining - Number of messages remaining under the current rate limit (used for the rate-limit hint)
+ * @param disabled - When true, disables the textarea and send button
+ * @param autoFocus - When true, focuses the textarea after mount or when the prop changes
+ * @returns A JSX element containing the message input UI
  */
 export function MessageInput({
   onSendMessage,

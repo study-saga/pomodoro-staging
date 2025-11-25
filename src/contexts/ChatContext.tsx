@@ -33,6 +33,16 @@ interface ChatContextValue {
 
 const ChatContext = createContext<ChatContextValue | null>(null);
 
+/**
+ * Provides chat context to descendants and manages global chat state, presence, and moderation.
+ *
+ * This component maintains the global message list, a single realtime channel for messages and presence,
+ * outgoing message batching and rate limiting, online user presence, admin-controlled enable/disable state,
+ * and per-user ban/role information and actions (ban/unban). It exposes these via the ChatContext value.
+ *
+ * @param children - React children that will receive the ChatContext
+ * @returns The ChatContext provider wrapping `children`
+ */
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { appUser } = useAuth();
 
@@ -467,6 +477,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 }
 
+/**
+ * Access the chat context provided by the nearest ChatProvider.
+ *
+ * @returns The chat context value containing: `globalMessages`, `sendGlobalMessage`, `deleteGlobalMessage`, `isGlobalConnected`, `isChatEnabled`, `onlineUsers`, `setChatOpen`, `userRole`, `isBanned`, `banReason`, `banExpiresAt`, `banUser`, and `unbanUser`.
+ *
+ * @throws If called outside of a `ChatProvider`.
+ */
 export function useChat() {
   const context = useContext(ChatContext);
   if (!context) {

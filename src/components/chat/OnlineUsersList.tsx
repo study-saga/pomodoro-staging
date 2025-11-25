@@ -13,7 +13,14 @@ interface OnlineUsersListProps {
 }
 
 /**
- * List of online users with presence indicators
+ * Render a sorted list of online users with presence and role badges and a context menu for moderator/admin actions.
+ *
+ * Moderators and admins can open a context menu on a user to perform actions (e.g., ban); the component prevents self-ban and enforces role-based protections, and it will invoke `onBanUser` when a ban is confirmed.
+ *
+ * @param users - The list of users to display. Users are ordered with the current user first, then users who are actively chatting, then others; ties are resolved by username.
+ * @param currentUserId - The id of the current user; used to highlight the current user and prevent self-actions.
+ * @param onBanUser - Optional callback called with `{ id, username }` when a ban is performed via the context menu.
+ * @returns The JSX element rendering the online users list.
  */
 export function OnlineUsersList({
   users,

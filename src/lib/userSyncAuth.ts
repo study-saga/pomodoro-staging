@@ -83,21 +83,15 @@ export async function updateUserSettings(
 }
 
 /**
- * Update user settings (CLIENT-CONTROLLED)
+ * Update a user's client-controlled preferences in the backend using either Supabase auth (web mode) or Discord identity (Discord Activity mode).
  *
- * SECURITY: Only syncs settings that users can safely control.
- * Does NOT sync XP, levels, or stats (those are server-controlled).
+ * Only settings that clients are allowed to control are synced (timer, visual, audio, and UI/system preferences). XP, levels, and server-side stats are never modified by this function.
  *
- * Stats are updated ONLY through server-validated endpoints:
- * - atomic_save_completed_pomodoro() - When user completes a pomodoro
- * - increment_user_xp() - Server-controlled XP updates
- * - increment_pomodoro_totals() - Server-controlled stat updates
- *
- * This prevents users from cheating by setting arbitrary XP/levels.
- *
- * Supports dual authentication modes:
- * - Web Mode: Uses Supabase Auth session (auth.uid()) via update_user_settings RPC
- * - Discord Activity Mode: Uses Discord SDK identity (discord_id) via update_user_settings_discord RPC
+ * @param userId - The Supabase auth user ID (used in web mode)
+ * @param discordId - The Discord user ID (used in Discord Activity mode)
+ * @param preferences - Partial set of client-controlled preference fields to apply; supported groups include timer (pomodoro and break lengths, auto-start flags), visual (background id/desktop/mobile, playlist, ambient volumes), audio (sound enabled, volume, music volume), and system (level system enabled, level path). Fields omitted or `undefined` are not changed.
+ * @returns The updated AppUser record
+ * @throws Error if the server-side RPC fails to update settings
  */
 export async function updateUserPreferences(
   userId: string,
@@ -215,7 +209,11 @@ export async function updateUserPreferences(
 }
 
 /**
- * Get user by auth user ID
+ * Retrieve the user record that matches the provided authentication user ID.
+ *
+ * @param authUserId - The authentication provider's user identifier to look up
+ * @returns The matching `AppUser`, or `null` if no user exists for `authUserId`
+ * @throws Error when the database query fails
  */
 export async function getUserByAuthId(authUserId: string): Promise<AppUser | null> {
   console.log(`[User Sync] Fetching user by auth ID: ${authUserId}`)
@@ -235,7 +233,13 @@ export async function getUserByAuthId(authUserId: string): Promise<AppUser | nul
 }
 
 /**
- * Get user by auth user ID
+ * Check whether a username is available for registration.
+ *
+ * Empty or whitespace-only `username` values are treated as unavailable and return `false`.
+ * If the backend RPC call fails, the error is logged and the function returns `true` (fail-open) to allow retry attempts.
+ *
+ * @param username - The username to check (leading/trailing whitespace is ignored)
+ * @returns `true` if the username is available, `false` otherwise.
  */
 export async function checkUsernameAvailability(username: string): Promise<boolean> {
   if (!username || username.trim().length === 0) return false;
