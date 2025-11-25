@@ -22,8 +22,9 @@ export function MessageInput({
   timeUntilReset = 0,
   messagesRemaining = 10,
   disabled = false,
-  autoFocus = false
-}: MessageInputProps) {
+  autoFocus = false,
+  className = 'p-3.5'
+}: MessageInputProps & { className?: string }) {
   const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -94,7 +95,7 @@ export function MessageInput({
   const isOverLimit = charCount > 500;
 
   return (
-    <div className="p-3.5">
+    <div className={className}>
       {/* Error/Warning Messages */}
       {error && (
         <div className="text-[10px] text-red-400 mb-2 px-1">
@@ -118,6 +119,10 @@ export function MessageInput({
             placeholder={placeholder}
             disabled={disabled}
             rows={1}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck="false"
+            enterKeyHint="send"
             className="w-full h-[36px] bg-white/5 text-white placeholder-gray-500 rounded-xl px-3.5 py-2.5 pr-10 resize-none border border-white/5 focus:border-purple-500/30 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-sm no-scrollbar flex items-center"
           />
 

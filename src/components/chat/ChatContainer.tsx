@@ -233,14 +233,17 @@ export function ChatContainer() {
 
             {/* Input attached at bottom for mobile */}
             {activeTab === 'local' && (
-              <MessageInput
-                onSendMessage={handleSendMessage}
-                placeholder="say something..."
-                canSend={canSend}
-                timeUntilReset={timeUntilReset}
-                messagesRemaining={messagesRemaining}
-                disabled={!isGlobalConnected || !isChatEnabled || isBanned}
-              />
+              <div className="bg-black/40 backdrop-blur-md border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
+                <MessageInput
+                  onSendMessage={handleSendMessage}
+                  placeholder="Message..."
+                  canSend={canSend}
+                  timeUntilReset={timeUntilReset}
+                  messagesRemaining={messagesRemaining}
+                  disabled={!isGlobalConnected || !isChatEnabled || isBanned}
+                  className="p-3"
+                />
+              </div>
             )}
           </div>
         </div>
