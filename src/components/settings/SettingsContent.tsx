@@ -284,11 +284,10 @@ export function SettingsContent(props: SettingsContentProps) {
               <button
                 key={bg.id}
                 onClick={() => setTempBackground(bg.id)}
-                className={`relative rounded-lg overflow-hidden aspect-video border-2 transition-all ${
-                  tempBackground === bg.id
-                    ? 'border-purple-500 shadow-lg shadow-purple-500/50'
-                    : 'border-white/20 hover:border-white/40'
-                }`}
+                className={`relative rounded-lg overflow-hidden aspect-video border-2 transition-all ${tempBackground === bg.id
+                  ? 'border-purple-500 shadow-lg shadow-purple-500/50'
+                  : 'border-white/20 hover:border-white/40'
+                  }`}
               >
                 <img
                   src={bg.poster}
@@ -428,14 +427,13 @@ export function SettingsContent(props: SettingsContentProps) {
               <>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white text-sm">Status:</span>
-                  <span className={`text-sm font-medium ${
-                    notificationPermission === 'granted' ? 'text-green-400' :
+                  <span className={`text-sm font-medium ${notificationPermission === 'granted' ? 'text-green-400' :
                     notificationPermission === 'denied' ? 'text-red-400' :
-                    'text-yellow-400'
-                  }`}>
+                      'text-yellow-400'
+                    }`}>
                     {notificationPermission === 'granted' ? '✓ Enabled' :
-                     notificationPermission === 'denied' ? '✗ Blocked' :
-                     '⚠ Not enabled'}
+                      notificationPermission === 'denied' ? '✗ Blocked' :
+                        '⚠ Not enabled'}
                   </span>
                 </div>
                 {notificationPermission === 'default' && (
@@ -498,9 +496,12 @@ export function SettingsContent(props: SettingsContentProps) {
               If you are a copyright holder and believe any song in this collection infringes on your rights,
               please contact me and I will remove it immediately.
             </p>
-            <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors">
+            <a
+              href="mailto:lexlarisa@protonmail.com?subject=Music%20Copyright%20Infringement%20Report"
+              className="inline-block px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors"
+            >
               Contact: lexlarisa@protonmail.com
-            </button>
+            </a>
           </div>
         </motion.div>
       )}

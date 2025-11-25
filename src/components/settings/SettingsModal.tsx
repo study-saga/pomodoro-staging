@@ -335,8 +335,8 @@ export function SettingsModal() {
     { id: 'timer', label: 'General' },
     { id: 'appearance', label: 'Appearance' },
     { id: 'sounds', label: 'Sounds' },
-    { id: 'music', label: 'Music' },
     { id: 'progress', label: 'Progress' },
+    { id: 'music', label: 'Credits' },
   ] as const;
 
   if (!isOpen) {
@@ -786,9 +786,12 @@ export function SettingsModal() {
                     If you are a copyright holder and believe any song in this collection infringes on your rights,
                     please contact me and I will remove it immediately.
                   </p>
-                  <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors">
+                  <a
+                    href="mailto:lexlarisa@protonmail.com?subject=Music%20Copyright%20Infringement%20Report"
+                    className="inline-block px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors"
+                  >
                     Contact: lexlarisa@protonmail.com
-                  </button>
+                  </a>
                 </div>
               </motion.div>
             )}

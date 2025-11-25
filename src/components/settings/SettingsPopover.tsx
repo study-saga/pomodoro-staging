@@ -1,6 +1,6 @@
 import { memo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings as SettingsIcon, X, Palette, Volume2, Music, BarChart, Sparkles, Bell } from 'lucide-react';
+import { Settings as SettingsIcon, X, Palette, Volume2, Sparkles, Bell, FileText, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -385,8 +385,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'sounds', label: 'Sounds', icon: Volume2 },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'music', label: 'Music', icon: Music },
-    { id: 'progress', label: 'Progress', icon: BarChart },
+    { id: 'progress', label: 'Progress', icon: Trophy },
+    { id: 'music', label: 'Credits', icon: FileText },
     { id: 'whats-new', label: "What's New", icon: Sparkles },
   ] as const;
 

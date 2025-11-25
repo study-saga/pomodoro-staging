@@ -19,6 +19,12 @@ export interface ChangelogEntry {
 export const changelog: ChangelogEntry[] = [
   // ⬇️ ADD NEW UPDATES HERE (most recent first) ⬇️
   {
+    date: '2025-11-25',
+    title: 'Global Chat',
+    description: 'Connect with other users in real-time! We implemented a new chat system to help you stay motivated together.',
+    tags: ['feature'],
+  },
+  {
     date: '2025-11-24',
     title: 'Role Paths Added',
     description: 'Choose between Human and Elf paths, each with unique buffs: Human gets 25% crit chance for 2x XP, Elf gets +0.5 XP per minute.',
