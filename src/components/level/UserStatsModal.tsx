@@ -126,7 +126,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
       </div>
 
       {/* Stats Grid with ScrollArea */}
-      <ScrollArea className="max-h-[60vh]">
+      <ScrollArea className="flex-1 min-h-0">
         <div className={`${isCompact ? 'p-3 pb-2' : 'p-4 pb-2'}`}>
           {/* Path Selection - Hero Stats Style */}
           <label className={`w-full bg-gradient-to-r from-purple-900/40 to-purple-900/20 rounded-xl ${isCompact ? 'p-2' : 'p-3'} border border-purple-500/30 mb-3 cursor-pointer block hover:border-purple-500/50 hover:from-purple-900/50 hover:to-purple-900/30 transition-all relative group`}>

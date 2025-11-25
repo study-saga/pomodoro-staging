@@ -558,7 +558,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 20 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="relative bg-gray-900/95 backdrop-blur-xl border-white/10 border rounded-2xl w-full max-w-sm"
+                  className="relative bg-gray-900/95 backdrop-blur-xl border-white/10 border rounded-2xl w-full max-w-sm max-h-[85vh] flex flex-col overflow-hidden"
                 >
                   <UserStatsModal onClose={() => setShowStatsPopover(false)} />
                 </motion.div>
