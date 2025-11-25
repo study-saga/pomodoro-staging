@@ -158,7 +158,7 @@ export function ChatContainer() {
   // Mobile: Full screen overlay
   if (isMobile && isExpanded) {
     return (
-      <div className="fixed inset-0 z-50 bg-gray-900/95 backdrop-blur-xl flex flex-col">
+      <div className="fixed inset-0 z-[70] bg-gray-900/95 backdrop-blur-xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h2 className="text-lg font-bold text-white">Chat</h2>

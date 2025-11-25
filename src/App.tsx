@@ -141,7 +141,7 @@ function AppContent() {
       <ActiveBoostIndicator />
 
       {/* Top Right Buttons - Discord & Settings */}
-      <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
+      <div className="fixed top-4 right-4 z-[60] flex items-center gap-2">
         <DiscordButton />
         <SettingsPopover />
       </div>
