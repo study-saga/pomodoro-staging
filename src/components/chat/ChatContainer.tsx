@@ -138,18 +138,18 @@ export function ChatContainer() {
     return (
       <button
         onClick={() => setIsExpanded(true)}
-        className={`fixed bottom-20 right-4 z-50 w-14 h-14 backdrop-blur-xl border rounded-full shadow-2xl flex items-center justify-center transition-colors ${isChatEnabled && !isBanned
-          ? 'bg-gray-900/70 border-white/20 hover:bg-gray-900/80'
-          : 'bg-red-900/70 border-red-500/30 hover:bg-red-900/80'
+        className={`fixed bottom-20 right-4 z-50 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${isChatEnabled && !isBanned
+          ? 'text-white hover:text-white drop-shadow-2xl'
+          : 'text-red-400 hover:text-red-300 drop-shadow-lg'
           }`}
         title={isBanned ? "You are banned" : isChatEnabled ? "Open chat (Enter)" : "Chat disabled"}
       >
         {isBanned ? (
-          <Lock size={24} className="text-red-200" />
+          <Lock size={32} />
         ) : isChatEnabled ? (
-          <MessageCircle size={24} className="text-white/90" />
+          <MessageCircle size={32} fill="white" className="opacity-90 hover:opacity-100" />
         ) : (
-          <AlertTriangle size={24} className="text-red-200" />
+          <AlertTriangle size={32} />
         )}
       </button>
     );
