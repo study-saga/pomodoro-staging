@@ -1,7 +1,8 @@
 import { memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users } from 'lucide-react'
-import { useOnlinePresence } from '../../hooks/useOnlinePresence'
+import { useChat } from '../../contexts/ChatContext'
+import { useAuth } from '../../contexts/AuthContext'
 
 const formatCount = (count: number): string => {
   if (count < 1000) return count.toString()
@@ -10,10 +11,12 @@ const formatCount = (count: number): string => {
 }
 
 export const OnlinePresenceCounter = memo(function OnlinePresenceCounter() {
-  const { count, status } = useOnlinePresence()
+  const { appUser } = useAuth()
+  const { onlineUsers, isGlobalConnected } = useChat()
+  const count = onlineUsers.length
 
   // Loading state
-  if (status === 'connecting') {
+  if (!isGlobalConnected || !appUser) {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10">
         <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse" />
@@ -21,11 +24,6 @@ export const OnlinePresenceCounter = memo(function OnlinePresenceCounter() {
         <span className="text-sm text-gray-400 tabular-nums">--</span>
       </div>
     )
-  }
-
-  // Error state - gracefully hide
-  if (status === 'error') {
-    return null
   }
 
   // Connected state - show animated count

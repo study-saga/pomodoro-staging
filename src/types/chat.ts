@@ -26,6 +26,7 @@ export interface OnlineUser {
   id: string;
   username: string;
   avatar: string | null;
+  isChatting?: boolean;
 }
 
 export interface Conversation {

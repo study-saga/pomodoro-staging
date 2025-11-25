@@ -4,7 +4,6 @@ import { validateMessage } from '../../lib/chatService';
 
 interface MessageInputProps {
   onSendMessage: (content: string) => void;
-  onTyping?: () => void;
   placeholder?: string;
   canSend: boolean;
   timeUntilReset?: number;
@@ -17,7 +16,6 @@ interface MessageInputProps {
  */
 export function MessageInput({
   onSendMessage,
-  onTyping,
   placeholder = 'say something...',
   canSend,
   timeUntilReset = 0,
@@ -40,11 +38,6 @@ export function MessageInput({
     const newContent = e.target.value;
     setContent(newContent);
     setError(null);
-
-    // Trigger typing indicator
-    if (onTyping) {
-      onTyping();
-    }
   };
 
   const handleSend = () => {

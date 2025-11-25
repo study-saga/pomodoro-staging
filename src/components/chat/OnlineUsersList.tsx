@@ -4,18 +4,24 @@ import type { OnlineUser } from '../../types/chat';
 interface OnlineUsersListProps {
   users: OnlineUser[];
   currentUserId: string;
-  onUserClick: (userId: string) => void;
 }
 
 /**
  * List of online users with presence indicators
- * Click to start DM conversation
  */
 export function OnlineUsersList({
   users,
-  currentUserId,
-  onUserClick
+  currentUserId
 }: OnlineUsersListProps) {
+  // Sort users: Current user first, then chatters, then lurkers
+  const sortedUsers = [...users].sort((a, b) => {
+    if (a.id === currentUserId) return -1;
+    if (b.id === currentUserId) return 1;
+    if (a.isChatting && !b.isChatting) return -1;
+    if (!a.isChatting && b.isChatting) return 1;
+    return a.username.localeCompare(b.username);
+  });
+
   if (users.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm p-4">
@@ -27,21 +33,18 @@ export function OnlineUsersList({
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="p-3 space-y-1">
-        {users.map((user) => {
+        {sortedUsers.map((user) => {
           const isCurrentUser = user.id === currentUserId;
           const avatarUrl = getAvatarUrl(user);
 
           return (
-            <button
+            <div
               key={user.id}
-              onClick={() => !isCurrentUser && onUserClick(user.id)}
-              disabled={isCurrentUser}
               className={`
-                w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-left
-                ${
-                  isCurrentUser
-                    ? 'bg-purple-500/10 cursor-default'
-                    : 'hover:bg-white/5 cursor-pointer'
+                w-full flex items-center gap-3 p-2 rounded-lg transition-colors
+                ${isCurrentUser
+                  ? 'bg-purple-500/10'
+                  : 'hover:bg-white/5'
                 }
               `}
             >
@@ -60,20 +63,29 @@ export function OnlineUsersList({
                     </div>
                   )}
                 </div>
-                {/* Online indicator (green dot) */}
-                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-900" />
+                {/* Online indicator */}
+                <div
+                  className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-gray-900 ${user.isChatting ? 'bg-green-500' : 'bg-gray-500'
+                    }`}
+                  title={user.isChatting ? 'In Chat' : 'Online'}
+                />
               </div>
 
               {/* Username */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
-                  {user.username}
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-white truncate">
+                    {user.username}
+                  </p>
                   {isCurrentUser && (
-                    <span className="ml-2 text-xs text-gray-400">(You)</span>
+                    <span className="text-xs text-gray-400">(You)</span>
                   )}
+                </div>
+                <p className="text-xs text-gray-400 truncate">
+                  {user.isChatting ? 'In Chat' : 'Browsing'}
                 </p>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

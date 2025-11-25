@@ -15,6 +15,7 @@ import { ChatContainer } from './components/chat/ChatContainer';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ChatProvider } from './contexts/ChatContext';
 import { getEnvironment } from './lib/environment';
 import { canClaimDailyGift } from './lib/userSyncAuth';
 
@@ -154,11 +155,13 @@ function AppContent() {
   );
 }
 
-// Wrapper component with AuthProvider
+// Wrapper component with providers
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ChatProvider>
+        <AppContent />
+      </ChatProvider>
     </AuthProvider>
   );
 }

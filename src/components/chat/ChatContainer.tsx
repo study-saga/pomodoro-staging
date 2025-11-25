@@ -1,11 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageCircle, Minimize2 } from 'lucide-react';
 import { ChatTabs } from './ChatTabs';
 import { GlobalChat } from './GlobalChat';
 import { OnlineUsersList } from './OnlineUsersList';
-import { ConversationsList } from './ConversationsList';
-import { ConversationView } from './ConversationView';
-import { usePresence } from '../../hooks/usePresence';
+import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
 import type { ChatTab } from '../../types/chat';
 
@@ -15,14 +13,14 @@ import type { ChatTab } from '../../types/chat';
  */
 export function ChatContainer() {
   const { appUser } = useAuth();
+  const { onlineUsers, setChatOpen } = useChat();
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTab>('local');
-  const [selectedConversation, setSelectedConversation] = useState<{
-    userId: string;
-    username: string;
-  } | null>(null);
 
-  const { onlineUsers } = usePresence(appUser);
+  // Update chat presence when expanded state changes
+  useEffect(() => {
+    setChatOpen(isExpanded);
+  }, [isExpanded, setChatOpen]);
 
   // Don't show chat if not authenticated
   if (!appUser) {
@@ -52,10 +50,7 @@ export function ChatContainer() {
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h2 className="text-lg font-bold text-white">Chat</h2>
           <button
-            onClick={() => {
-              setIsExpanded(false);
-              setSelectedConversation(null);
-            }}
+            onClick={() => setIsExpanded(false)}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"
           >
             <Minimize2 size={20} className="text-white" />
@@ -64,48 +59,21 @@ export function ChatContainer() {
 
         {/* Content */}
         <div className="flex-1 flex flex-col min-h-0">
-          {selectedConversation ? (
-            <ConversationView
-              currentUser={appUser}
-              recipientId={selectedConversation.userId}
-              recipientUsername={selectedConversation.username}
-              onBack={() => setSelectedConversation(null)}
-            />
-          ) : (
-            <>
-              <ChatTabs
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                localCount={0}
-                dmCount={0}
-                onlineCount={onlineUsers.length}
+          <ChatTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            localCount={0}
+            onlineCount={onlineUsers.length}
+          />
+          <div className="flex-1 overflow-hidden">
+            {activeTab === 'local' && <GlobalChat currentUser={appUser} />}
+            {activeTab === 'online' && (
+              <OnlineUsersList
+                users={onlineUsers}
+                currentUserId={appUser.id}
               />
-              <div className="flex-1 overflow-hidden">
-                {activeTab === 'local' && <GlobalChat currentUser={appUser} />}
-                {activeTab === 'dm' && (
-                  <ConversationsList
-                    currentUserId={appUser.id}
-                    onConversationClick={(userId, username) =>
-                      setSelectedConversation({ userId, username })
-                    }
-                  />
-                )}
-                {activeTab === 'online' && (
-                  <OnlineUsersList
-                    users={onlineUsers}
-                    currentUserId={appUser.id}
-                    onUserClick={(userId) => {
-                      const user = onlineUsers.find((u) => u.id === userId);
-                      if (user) {
-                        setSelectedConversation({ userId, username: user.username });
-                        setActiveTab('dm');
-                      }
-                    }}
-                  />
-                )}
-              </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
     );
@@ -132,10 +100,7 @@ export function ChatContainer() {
           <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/5 shrink-0">
             <h3 className="text-xs font-semibold text-white/80 uppercase tracking-wide">Chat</h3>
             <button
-              onClick={() => {
-                setIsExpanded(false);
-                setSelectedConversation(null);
-              }}
+              onClick={() => setIsExpanded(false)}
               className="p-1 hover:bg-white/5 rounded transition-colors"
               title="Minimize"
             >
@@ -145,48 +110,21 @@ export function ChatContainer() {
 
           {/* Content */}
           <div className="flex-1 flex flex-col min-h-0">
-            {selectedConversation ? (
-              <ConversationView
-                currentUser={appUser}
-                recipientId={selectedConversation.userId}
-                recipientUsername={selectedConversation.username}
-                onBack={() => setSelectedConversation(null)}
-              />
-            ) : (
-              <>
-                <ChatTabs
-                  activeTab={activeTab}
-                  onTabChange={setActiveTab}
-                  localCount={0}
-                  dmCount={0}
-                  onlineCount={onlineUsers.length}
+            <ChatTabs
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              localCount={0}
+              onlineCount={onlineUsers.length}
+            />
+            <div className="flex-1 overflow-hidden">
+              {activeTab === 'local' && <GlobalChat currentUser={appUser} />}
+              {activeTab === 'online' && (
+                <OnlineUsersList
+                  users={onlineUsers}
+                  currentUserId={appUser.id}
                 />
-                <div className="flex-1 overflow-hidden">
-                  {activeTab === 'local' && <GlobalChat currentUser={appUser} />}
-                  {activeTab === 'dm' && (
-                    <ConversationsList
-                      currentUserId={appUser.id}
-                      onConversationClick={(userId, username) =>
-                        setSelectedConversation({ userId, username })
-                      }
-                    />
-                  )}
-                  {activeTab === 'online' && (
-                    <OnlineUsersList
-                      users={onlineUsers}
-                      currentUserId={appUser.id}
-                      onUserClick={(userId) => {
-                        const user = onlineUsers.find((u) => u.id === userId);
-                        if (user) {
-                          setSelectedConversation({ userId, username: user.username });
-                          setActiveTab('dm');
-                        }
-                      }}
-                    />
-                  )}
-                </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

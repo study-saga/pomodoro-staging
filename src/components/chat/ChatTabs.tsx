@@ -4,7 +4,6 @@ interface ChatTabsProps {
   activeTab: ChatTab;
   onTabChange: (tab: ChatTab) => void;
   localCount?: number;
-  dmCount?: number;
   onlineCount?: number;
 }
 
@@ -16,12 +15,10 @@ export function ChatTabs({
   activeTab,
   onTabChange,
   localCount = 0,
-  dmCount = 0,
   onlineCount = 0
 }: ChatTabsProps) {
   const tabs = [
     { id: 'local' as ChatTab, label: 'Global Chat', count: localCount },
-    { id: 'dm' as ChatTab, label: 'DM', count: dmCount },
     { id: 'online' as ChatTab, label: 'Online', count: onlineCount }
   ];
 
