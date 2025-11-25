@@ -116,6 +116,50 @@ export function truncateMessage(text: string, maxLength: number = 50): string {
 /**
  * Validate message content
  */
+import {
+  RegExpMatcher,
+  TextCensor,
+  englishDataset,
+  englishRecommendedTransformers,
+} from 'obscenity';
+
+// Initialize Obscenity Matcher
+const matcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+});
+
+// Critical words to check for spaced variations (e.g. "s e x")
+// We keep this custom check because standard filters often miss "s e x"
+const CRITICAL_SPACED_WORDS = ['sex', 'ass', 'shit', 'fuck', 'bitch', 'nigger', 'cunt', 'hell', 'whore', 'slut'];
+
+/**
+ * Check for spaced profanity (e.g. "s e x") using strict word boundaries
+ * This avoids false positives like "class example" matching "sex"
+ */
+function checkSpacedProfanity(text: string): boolean {
+  const lower = text.toLowerCase();
+
+  for (const word of CRITICAL_SPACED_WORDS) {
+    if (word.length < 2) continue;
+
+    // Create pattern: \bc\b[\s\W]+\bh\b[\s\W]+\ba\b...
+    // Matches isolated characters separated by spaces/symbols
+    const chars = word.split('');
+    const patternParts = chars.map(c => `\\b${c}\\b`);
+    const pattern = patternParts.join('[\\s\\W]+');
+    const regex = new RegExp(pattern, 'i');
+
+    if (regex.test(lower)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Validate message content
+ */
 export function validateMessage(content: string): { valid: boolean; error?: string } {
   const trimmed = content.trim();
 
@@ -125,6 +169,22 @@ export function validateMessage(content: string): { valid: boolean; error?: stri
 
   if (trimmed.length > 500) {
     return { valid: false, error: 'Message too long (max 500 characters)' };
+  }
+
+  // Check for links (Spam prevention)
+  const urlPattern = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9]+\.(com|org|net|io|co|us|uk|ca|de|jp|fr|au)\b)/i;
+  if (urlPattern.test(trimmed)) {
+    return { valid: false, error: 'Links are not allowed in chat' };
+  }
+
+  // 1. Check for profanity using 'obscenity' package (Handles leetspeak like "p0rn", "bo0bs")
+  if (matcher.hasMatch(trimmed)) {
+    return { valid: false, error: 'Please keep the chat clean' };
+  }
+
+  // 2. Check for spaced profanity (e.g. "s e x")
+  if (checkSpacedProfanity(trimmed)) {
+    return { valid: false, error: 'Please keep the chat clean' };
   }
 
   // Check for excessive newlines (spam prevention)
