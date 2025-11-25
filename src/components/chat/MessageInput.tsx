@@ -7,7 +7,6 @@ interface MessageInputProps {
   placeholder?: string;
   canSend: boolean;
   timeUntilReset?: number;
-  messagesRemaining?: number;
   disabled?: boolean;
   autoFocus?: boolean;
 }
@@ -20,7 +19,6 @@ export function MessageInput({
   placeholder = 'say something...',
   canSend,
   timeUntilReset = 0,
-  messagesRemaining = 0,
   disabled = false,
   autoFocus = false,
   className = 'p-3.5'

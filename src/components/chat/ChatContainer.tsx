@@ -20,7 +20,7 @@ import { useDeviceType } from '../../hooks/useDeviceType';
 export function ChatContainer() {
   const { appUser } = useAuth();
   const { onlineUsers, setChatOpen, isChatEnabled, sendGlobalMessage, isGlobalConnected, isBanned, banReason, banExpiresAt, banUser } = useChat();
-  const { canSend, timeUntilReset, messagesRemaining, recordMessage } = useRateLimit();
+  const { canSend, timeUntilReset, recordMessage } = useRateLimit();
   const { isCompact, isMobile } = useDeviceType();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -239,7 +239,6 @@ export function ChatContainer() {
                   placeholder="Message..."
                   canSend={canSend}
                   timeUntilReset={timeUntilReset}
-                  messagesRemaining={messagesRemaining}
                   disabled={!isGlobalConnected || !isChatEnabled || isBanned}
                   className="p-3"
                 />
@@ -369,7 +368,6 @@ export function ChatContainer() {
                 placeholder="say something..."
                 canSend={canSend}
                 timeUntilReset={timeUntilReset}
-                messagesRemaining={messagesRemaining}
                 disabled={!isGlobalConnected || !isChatEnabled}
                 autoFocus={true}
               />
