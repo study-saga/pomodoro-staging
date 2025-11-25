@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageCircle, Minimize2 } from 'lucide-react';
+import { MessageCircle, Minimize2, AlertTriangle } from 'lucide-react';
 import { ChatTabs } from './ChatTabs';
 import { GlobalChat } from './GlobalChat';
 import { OnlineUsersList } from './OnlineUsersList';
@@ -13,7 +13,7 @@ import type { ChatTab } from '../../types/chat';
  */
 export function ChatContainer() {
   const { appUser } = useAuth();
-  const { onlineUsers, setChatOpen } = useChat();
+  const { onlineUsers, setChatOpen, isChatEnabled } = useChat();
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTab>('local');
 
@@ -34,10 +34,17 @@ export function ChatContainer() {
     return (
       <button
         onClick={() => setIsExpanded(true)}
-        className="fixed bottom-20 right-4 z-50 w-14 h-14 bg-gray-900/70 backdrop-blur-xl border border-white/20 hover:bg-gray-900/80 rounded-full shadow-2xl flex items-center justify-center transition-colors"
-        title="Open chat"
+        className={`fixed bottom-20 right-4 z-50 w-14 h-14 backdrop-blur-xl border rounded-full shadow-2xl flex items-center justify-center transition-colors ${isChatEnabled
+            ? 'bg-gray-900/70 border-white/20 hover:bg-gray-900/80'
+            : 'bg-red-900/70 border-red-500/30 hover:bg-red-900/80'
+          }`}
+        title={isChatEnabled ? "Open chat" : "Chat disabled"}
       >
-        <MessageCircle size={24} className="text-white/90" />
+        {isChatEnabled ? (
+          <MessageCircle size={24} className="text-white/90" />
+        ) : (
+          <AlertTriangle size={24} className="text-red-200" />
+        )}
       </button>
     );
   }
@@ -58,7 +65,17 @@ export function ChatContainer() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 relative">
+          {!isChatEnabled && (
+            <div className="absolute inset-0 z-10 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+              <AlertTriangle size={48} className="text-red-500 mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">Chat Disabled</h3>
+              <p className="text-gray-300">
+                Chat is currently disabled for maintenance. Please check back later.
+              </p>
+            </div>
+          )}
+
           <ChatTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -86,10 +103,17 @@ export function ChatContainer() {
       {!isExpanded && (
         <button
           onClick={() => setIsExpanded(true)}
-          className="fixed bottom-4 left-4 z-50 w-14 h-14 bg-gray-900/70 backdrop-blur-xl border border-white/20 rounded-full shadow-2xl flex items-center justify-center hover:bg-gray-900/80 transition-colors"
-          title="Open chat"
+          className={`fixed bottom-4 left-4 z-50 w-14 h-14 backdrop-blur-xl border rounded-full shadow-2xl flex items-center justify-center transition-colors ${isChatEnabled
+              ? 'bg-gray-900/70 border-white/20 hover:bg-gray-900/80'
+              : 'bg-red-900/70 border-red-500/30 hover:bg-red-900/80'
+            }`}
+          title={isChatEnabled ? "Open chat" : "Chat disabled"}
         >
-          <MessageCircle size={24} className="text-white/90" />
+          {isChatEnabled ? (
+            <MessageCircle size={24} className="text-white/90" />
+          ) : (
+            <AlertTriangle size={24} className="text-red-200" />
+          )}
         </button>
       )}
 
@@ -109,7 +133,17 @@ export function ChatContainer() {
           </div>
 
           {/* Content */}
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col min-h-0 relative">
+            {!isChatEnabled && (
+              <div className="absolute inset-0 z-10 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+                <AlertTriangle size={48} className="text-red-500 mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Chat Disabled</h3>
+                <p className="text-gray-300">
+                  Chat is currently disabled for maintenance. Please check back later.
+                </p>
+              </div>
+            )}
+
             <ChatTabs
               activeTab={activeTab}
               onTabChange={setActiveTab}

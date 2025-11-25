@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { ChatMessage, OnlineUser } from '../types/chat';
 import { generateMessageId } from '../lib/chatService';
@@ -7,6 +8,7 @@ import { useAuth } from './AuthContext';
 
 const MAX_MESSAGES = 50;
 const BATCH_DELAY_MS = 150; // Message batching window
+const RATE_LIMIT_MS = 2000; // 2 seconds between messages
 
 interface ChatContextValue {
   // Global chat
@@ -14,6 +16,7 @@ interface ChatContextValue {
   sendGlobalMessage: (content: string, user: { id: string; username: string; avatar: string | null }) => void;
   deleteGlobalMessage: (messageId: string) => void;
   isGlobalConnected: boolean;
+  isChatEnabled: boolean; // Admin kill switch status
 
   // Presence
   onlineUsers: OnlineUser[]; // All users on site
@@ -28,20 +31,70 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Global chat state
   const [globalMessages, setGlobalMessages] = useState<ChatMessage[]>([]);
   const [isGlobalConnected, setIsGlobalConnected] = useState(false);
+  const [isChatEnabled, setIsChatEnabled] = useState(true);
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   // Presence state
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  // Message batching
+  // Message batching & Rate limiting
   const messageBatchRef = useRef<ChatMessage[]>([]);
   const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastMessageTimeRef = useRef<number>(0);
 
-  // Single Channel Subscription (Global + Chat)
+  // 1. Admin Kill Switch Listener
   useEffect(() => {
-    if (!appUser) {
+    // Fetch initial config
+    const fetchConfig = async () => {
+      const { data } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'chat_config')
+        .single();
+
+      if (data?.value) {
+        setIsChatEnabled(data.value.enabled !== false); // Default true if missing
+      }
+    };
+
+    fetchConfig();
+
+    // Subscribe to changes
+    const settingsChannel = supabase.channel('system-settings')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'system_settings',
+          filter: 'key=eq.chat_config'
+        },
+        (payload) => {
+          const newValue = payload.new.value as { enabled: boolean; maintenance_message?: string };
+          const isEnabled = newValue.enabled !== false;
+
+          setIsChatEnabled(isEnabled);
+
+          if (!isEnabled) {
+            toast.error(newValue.maintenance_message || 'Chat has been disabled by administrators.');
+          } else {
+            toast.success('Chat has been re-enabled.');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      settingsChannel.unsubscribe();
+    };
+  }, []);
+
+  // 2. Single Channel Subscription (Global + Chat)
+  useEffect(() => {
+    if (!appUser || !isChatEnabled) { // Disconnect if chat disabled
       setOnlineUsers([]);
+      setIsGlobalConnected(false);
       return;
     }
 
@@ -149,7 +202,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       disconnect();
     };
-  }, [appUser, isChatOpen]); // Re-connect/Re-track when isChatOpen changes
+  }, [appUser, isChatOpen, isChatEnabled]); // Re-connect when enabled status changes
 
   // Flush message batch
   const flushMessageBatch = useCallback(() => {
@@ -175,15 +228,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     batchTimerRef.current = null;
   }, []);
 
-  // Send global message with batching
+  // Send global message with batching and rate limiting
   const sendGlobalMessage = useCallback((
     content: string,
     user: { id: string; username: string; avatar: string | null }
   ) => {
+    if (!isChatEnabled) {
+      toast.error('Chat is currently disabled.');
+      return;
+    }
+
     if (!channelRef.current || !isGlobalConnected) {
       console.error('Not connected to global chat');
       return;
     }
+
+    // Rate Limiting
+    const now = Date.now();
+    if (now - lastMessageTimeRef.current < RATE_LIMIT_MS) {
+      toast.error('Please wait a moment before sending another message.');
+      return;
+    }
+    lastMessageTimeRef.current = now;
 
     const message: ChatMessage = {
       id: generateMessageId(),
@@ -193,7 +259,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         avatar: user.avatar
       },
       content,
-      timestamp: Date.now()
+      timestamp: now
     };
 
     messageBatchRef.current.push(message);
@@ -205,7 +271,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     batchTimerRef.current = setTimeout(() => {
       flushMessageBatch();
     }, BATCH_DELAY_MS);
-  }, [isGlobalConnected, flushMessageBatch]);
+  }, [isGlobalConnected, flushMessageBatch, isChatEnabled]);
 
   // Delete global message
   const deleteGlobalMessage = useCallback((messageId: string) => {
@@ -225,6 +291,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     sendGlobalMessage,
     deleteGlobalMessage,
     isGlobalConnected,
+    isChatEnabled,
     onlineUsers,
     setChatOpen: setIsChatOpen
   };
