@@ -10,7 +10,8 @@ import {
   ROLE_EMOJI_HUMAN,
 } from '../../data/levels';
 import { useAuth } from '../../contexts/AuthContext';
-import { updateUsernameSecure } from '../../lib/userSyncAuth';
+import { updateUsernameSecure, checkUsernameAvailability } from '../../lib/userSyncAuth';
+
 import { showGameToast } from '../ui/GameToast';
 import { MusicCreditsModal } from './MusicCreditsModal';
 import { SettingsContent } from './SettingsContent';
@@ -260,6 +261,14 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setUsernameLoading(true);
 
     try {
+      // Check availability first (client-side check for better UX)
+      const isAvailable = await checkUsernameAvailability(usernameInput);
+      if (!isAvailable) {
+        setUsernameError('Username is already taken');
+        setUsernameLoading(false);
+        return;
+      }
+
       // Try free update first (let server decide if cooldown passed)
       const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, false);
 
@@ -324,6 +333,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
         setUsernameError('Username cannot be empty');
       } else if (errorMessage.includes('20 characters')) {
         setUsernameError('Username cannot exceed 20 characters');
+      } else if (errorMessage.includes('already taken')) {
+        setUsernameError('Username is already taken');
       } else {
         setUsernameError(`Failed to update username: ${errorMessage}`);
       }

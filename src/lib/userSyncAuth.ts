@@ -229,6 +229,24 @@ export async function getUserByAuthId(authUserId: string): Promise<AppUser | nul
 }
 
 /**
+ * Get user by auth user ID
+ */
+export async function checkUsernameAvailability(username: string): Promise<boolean> {
+  if (!username || username.trim().length === 0) return false;
+
+  const { data, error } = await supabase.rpc('check_username_availability', {
+    p_username: username
+  });
+
+  if (error) {
+    console.error('[User Sync] Error checking username availability:', error);
+    // Fail open (allow try) but log error
+    return true;
+  }
+
+  return data as boolean;
+}
+/**
  * Update user login streak
  */
 export async function updateLoginStreak(userId: string): Promise<void> {
