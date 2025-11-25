@@ -20,7 +20,7 @@ export function MessageInput({
   placeholder = 'say something...',
   canSend,
   timeUntilReset = 0,
-  messagesRemaining = 10,
+  messagesRemaining = 0,
   disabled = false,
   autoFocus = false,
   className = 'p-3.5'
@@ -104,7 +104,7 @@ export function MessageInput({
       )}
       {!canSend && timeUntilReset > 0 && (
         <div className="text-[10px] text-yellow-400 mb-2 px-1">
-          Rate limit: {timeUntilReset}s ({messagesRemaining} left)
+          Rate limit: {timeUntilReset}s
         </div>
       )}
 

@@ -108,7 +108,7 @@ function AppContent() {
 
   // Authenticated - show main app
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative h-screen overflow-hidden">
       {/* Video Background */}
       <VideoBackground />
 
@@ -121,7 +121,7 @@ function AppContent() {
       </div>
 
       {/* Main Content - Centered Timer */}
-      <div className="min-h-screen flex flex-col items-center justify-start sm:justify-center pb-24 md:pb-20 pt-48 sm:pt-0">
+      <div className="h-full flex flex-col items-center justify-start sm:justify-center pb-32 sm:pb-20 pt-32 sm:pt-0 overflow-auto">
         <PomodoroTimer />
       </div>
 
