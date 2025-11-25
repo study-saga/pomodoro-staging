@@ -11,6 +11,7 @@ import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
 import { ActiveBoostIndicator } from './components/buffs/ActiveBoostIndicator';
 import { LoginScreen } from './components/auth/LoginScreen';
 import DiscordButton from './components/DiscordButton';
+import { ChatContainer } from './components/chat/ChatContainer';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -143,6 +144,9 @@ function AppContent() {
         <DiscordButton />
         <SettingsPopover />
       </div>
+
+      {/* Chat Container (Bottom Left) */}
+      <ChatContainer />
 
       {/* Toaster for notifications */}
       <Toaster position="top-center" />
