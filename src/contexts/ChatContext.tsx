@@ -131,7 +131,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             setBanExpiresAt(banData.expires_at);
             toast.error(`You have been banned: ${banData.reason}`);
             setIsGlobalConnected(false); // Force disconnect
-            setIsGlobalConnected(false); // Force disconnect
           } else {
             // Only unban if previously banned
             if (isBannedRef.current) {
@@ -396,18 +395,50 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Only admins and moderators can delete messages
+    if (userRole !== 'admin' && userRole !== 'moderator') {
+      toast.error('You do not have permission to delete messages.');
+      return;
+    }
+
     channelRef.current.send({
       type: 'broadcast',
       event: 'delete',
       payload: { messageId }
     });
-  }, [isGlobalConnected]);
+  }, [isGlobalConnected, userRole]);
 
   // Ban User Function
   const banUser = useCallback(async (userId: string, durationMinutes: number | null, reason: string) => {
     if (!appUser || (userRole !== 'moderator' && userRole !== 'admin')) {
       toast.error('You do not have permission to ban users.');
       return;
+    }
+
+    if (userId === appUser.id) {
+      toast.error('You cannot ban yourself.');
+      return;
+    }
+
+    // Check target user's role
+    const { data: targetUser } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (targetUser) {
+      const targetRole = targetUser.role as UserRole;
+      // Admins cannot be banned by anyone (except maybe super-admins, but we treat admin as top)
+      if (targetRole === 'admin') {
+        toast.error('Administrators cannot be banned.');
+        return;
+      }
+      // Moderators cannot ban other moderators
+      if (userRole === 'moderator' && targetRole === 'moderator') {
+        toast.error('Moderators cannot ban other moderators.');
+        return;
+      }
     }
 
     let expiresAt = null;
@@ -439,6 +470,24 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     if (!appUser || (userRole !== 'moderator' && userRole !== 'admin')) {
       toast.error('You do not have permission to unban users.');
       return;
+    }
+
+    // Check who banned this user and enforce hierarchy
+    const { data: banRecord } = await supabase
+      .from('chat_bans')
+      .select('banned_by, users!chat_bans_banned_by_fkey(role)')
+      .eq('user_id', userId)
+      .single();
+
+    if (banRecord?.banned_by) {
+      // Supabase returns an array for the relation if not explicitly 1:1 mapped in types, or just handle both
+      const bannerUser = Array.isArray(banRecord.users) ? banRecord.users[0] : banRecord.users;
+      const bannerRole = bannerUser?.role as UserRole | undefined;
+      // Moderators cannot unban if banned by admin
+      if (userRole === 'moderator' && bannerRole === 'admin') {
+        toast.error('You cannot unban users that were banned by administrators.');
+        return;
+      }
     }
 
     // Delete the ban record

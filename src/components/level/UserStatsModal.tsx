@@ -306,10 +306,20 @@ function SinceDateTooltip({ formattedDate, daysSince }: { formattedDate: string,
         ref={triggerRef}
         role="button"
         tabIndex={0}
+        aria-expanded={show}
+        aria-haspopup="dialog"
         className="relative bg-white/5 rounded-lg p-2 border border-white/10 cursor-help focus:outline-none focus:ring-2 focus:ring-pink-400/50"
         onMouseEnter={() => setShow(true)}
         onMouseLeave={() => setShow(false)}
         onClick={() => setShow(!show)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setShow(!show);
+          } else if (e.key === 'Escape') {
+            setShow(false);
+          }
+        }}
       >
         <div className="flex items-center gap-1.5 text-pink-400 mb-0.5">
           <Calendar className="w-4 h-4" />

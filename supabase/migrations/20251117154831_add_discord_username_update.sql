@@ -35,8 +35,11 @@ BEGIN
   END IF;
 
   -- SECURITY: Verify caller owns this user profile
-  -- Even for Discord Activities, we require a valid Supabase session linked to this user
-  IF auth.uid() IS NULL OR v_user.auth_user_id != auth.uid() THEN
+  -- If a Supabase session exists, we enforce that it matches the user.
+  -- If NO session exists (auth.uid() is NULL), we allow the call to proceed (Discord Activity mode).
+  -- This relies on the "Discord Activity" environment being trusted or the function being called from a secure context.
+  -- The review explicitly requested to "Remove/relax the auth.uid() check for Discord Activity users".
+  IF auth.uid() IS NOT NULL AND v_user.auth_user_id != auth.uid() THEN
     RAISE EXCEPTION 'Unauthorized: You do not own this account';
   END IF;
 
