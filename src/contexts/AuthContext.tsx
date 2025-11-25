@@ -80,6 +80,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Discord Activity authentication flow
    */
   const authenticateDiscordActivity = async () => {
+    const startTime = Date.now()
+
     try {
       setLoading(true)
       setError(null)
