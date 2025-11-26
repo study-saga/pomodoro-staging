@@ -360,11 +360,11 @@ export function SettingsModal() {
         aria-modal="true"
         aria-labelledby="settings-title"
         tabIndex={-1}
-        className={`bg-gray-900 rounded-xl sm:rounded-2xl w-[95vw] max-w-md max-h-[90vh] overflow-hidden border border-white/10 shadow-2xl flex flex-col transition-all duration-300`}
+        className={`bg-gray-900 rounded-2xl w-[500px] max-h-[650px] overflow-hidden border border-white/10 shadow-2xl flex flex-col transition-all duration-300`}
       >
         {/* Header */}
-        <div className={`flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-b border-white/10 shrink-0`}>
-          <h2 id="settings-title" className={`text-sm sm:text-lg font-bold text-white`}>Settings</h2>
+        <div className={`flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0`}>
+          <h2 id="settings-title" className={`text-lg font-bold text-white`}>Settings</h2>
           <button
             onClick={() => setIsOpen(false)}
             className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
@@ -378,7 +378,7 @@ export function SettingsModal() {
         <div
           role="tablist"
           aria-label="Settings categories"
-          className={`flex ${isMobile ? 'gap-1 overflow-x-auto scroll-smooth snap-x snap-mandatory no-scrollbar' : 'gap-1'} px-2 sm:px-4 pt-2 border-b border-white/10 shrink-0`}
+          className={`flex gap-1 px-4 pt-2 border-b border-white/10 shrink-0`}
         >
           {tabs.map((tab) => (
             <button
@@ -388,7 +388,7 @@ export function SettingsModal() {
               aria-controls={`${tab.id}-panel`}
               id={`${tab.id}-tab`}
               onClick={() => setActiveTab(tab.id)}
-              className={`${isMobile ? 'px-3 py-2 text-xs whitespace-nowrap snap-start' : 'px-4 py-2 text-sm'} font-medium transition-colors relative ${activeTab === tab.id
+              className={`px-4 py-2 text-sm font-medium transition-colors relative ${activeTab === tab.id
                 ? 'text-white'
                 : 'text-gray-400 hover:text-gray-300'
                 }`}
@@ -402,7 +402,7 @@ export function SettingsModal() {
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-2 sm:p-4 text-xs sm:text-base">
+        <div className="flex-1 overflow-y-auto p-4 text-base">
           <AnimatePresence mode="wait">
             {activeTab === 'timer' && (
               <motion.div
@@ -417,15 +417,15 @@ export function SettingsModal() {
                 className="space-y-4"
               >
                 <div>
-                  <h3 className="text-white font-bold text-xs sm:text-lg mb-1.5 sm:mb-4">Timer Durations (minutes)</h3>
+                  <h3 className="text-white font-bold text-lg mb-4">Timer Durations (minutes)</h3>
 
                   {/* Pomodoro */}
-                  <div className="flex items-center justify-between mb-1.5 sm:mb-4 gap-2">
-                    <label className="text-white text-[10px] sm:text-base whitespace-nowrap">Pomodoro</label>
+                  <div className="flex items-center justify-between mb-4 gap-4">
+                    <label className="text-white text-base whitespace-nowrap">Pomodoro</label>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, pomodoro: Math.max(1, t.pomodoro - 1) }))}
-                        className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded-l-lg text-white text-xs sm:text-sm flex items-center justify-center transition-colors border-r border-white/5"
+                        className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-l-lg text-white text-sm flex items-center justify-center transition-colors border-r border-white/5"
                       >
                         −
                       </button>
@@ -435,11 +435,11 @@ export function SettingsModal() {
                         max="60"
                         value={tempTimers.pomodoro}
                         onChange={(e) => setTempTimers(t => ({ ...t, pomodoro: Number(e.target.value) }))}
-                        className="w-10 sm:w-12 bg-white/10 text-white text-center h-6 sm:h-8 text-xs sm:text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none"
+                        className="w-12 bg-white/10 text-white text-center h-8 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none"
                       />
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, pomodoro: Math.min(60, t.pomodoro + 1) }))}
-                        className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded-r-lg text-white text-xs sm:text-sm flex items-center justify-center transition-colors border-l border-white/5"
+                        className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-r-lg text-white text-sm flex items-center justify-center transition-colors border-l border-white/5"
                       >
                         +
                       </button>
@@ -447,12 +447,12 @@ export function SettingsModal() {
                   </div>
 
                   {/* Short Break */}
-                  <div className="flex items-center justify-between mb-1.5 sm:mb-4 gap-2">
-                    <label className="text-white text-[10px] sm:text-base whitespace-nowrap">Short Break</label>
+                  <div className="flex items-center justify-between mb-4 gap-4">
+                    <label className="text-white text-base whitespace-nowrap">Short Break</label>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, shortBreak: Math.max(1, t.shortBreak - 1) }))}
-                        className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded-l-lg text-white text-xs sm:text-sm flex items-center justify-center transition-colors border-r border-white/5"
+                        className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-l-lg text-white text-sm flex items-center justify-center transition-colors border-r border-white/5"
                       >
                         −
                       </button>
@@ -462,11 +462,11 @@ export function SettingsModal() {
                         max="60"
                         value={tempTimers.shortBreak}
                         onChange={(e) => setTempTimers(t => ({ ...t, shortBreak: Number(e.target.value) }))}
-                        className="w-10 sm:w-12 bg-white/10 text-white text-center h-6 sm:h-8 text-xs sm:text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none"
+                        className="w-12 bg-white/10 text-white text-center h-8 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none"
                       />
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, shortBreak: Math.min(60, t.shortBreak + 1) }))}
-                        className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded-r-lg text-white text-xs sm:text-sm flex items-center justify-center transition-colors border-l border-white/5"
+                        className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-r-lg text-white text-sm flex items-center justify-center transition-colors border-l border-white/5"
                       >
                         +
                       </button>
@@ -474,12 +474,12 @@ export function SettingsModal() {
                   </div>
 
                   {/* Long Break */}
-                  <div className="flex items-center justify-between mb-1.5 sm:mb-4 gap-2">
-                    <label className="text-white text-[10px] sm:text-base whitespace-nowrap">Long Break</label>
+                  <div className="flex items-center justify-between mb-4 gap-4">
+                    <label className="text-white text-base whitespace-nowrap">Long Break</label>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, longBreak: Math.max(1, t.longBreak - 1) }))}
-                        className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded-l-lg text-white text-xs sm:text-sm flex items-center justify-center transition-colors border-r border-white/5"
+                        className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-l-lg text-white text-sm flex items-center justify-center transition-colors border-r border-white/5"
                       >
                         −
                       </button>
@@ -489,11 +489,11 @@ export function SettingsModal() {
                         max="60"
                         value={tempTimers.longBreak}
                         onChange={(e) => setTempTimers(t => ({ ...t, longBreak: Number(e.target.value) }))}
-                        className="w-10 sm:w-12 bg-white/10 text-white text-center h-6 sm:h-8 text-xs sm:text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none"
+                        className="w-12 bg-white/10 text-white text-center h-8 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none"
                       />
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, longBreak: Math.min(60, t.longBreak + 1) }))}
-                        className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded-r-lg text-white text-xs sm:text-sm flex items-center justify-center transition-colors border-l border-white/5"
+                        className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-r-lg text-white text-sm flex items-center justify-center transition-colors border-l border-white/5"
                       >
                         +
                       </button>
@@ -502,22 +502,22 @@ export function SettingsModal() {
                 </div>
 
                 <div>
-                  <h3 className="text-white font-bold text-xs sm:text-lg mb-1.5 sm:mb-4">Advanced Settings</h3>
+                  <h3 className="text-white font-bold text-lg mb-4">Advanced Settings</h3>
 
-                  <div className="flex items-center justify-between mb-1.5 sm:mb-4 gap-2">
-                    <label className="text-white text-[10px] sm:text-base whitespace-nowrap">Pomodoros before long break</label>
+                  <div className="flex items-center justify-between mb-4 gap-4">
+                    <label className="text-white text-base whitespace-nowrap">Pomodoros before long break</label>
                     <input
                       type="number"
                       min="1"
                       max="10"
                       value={tempPomodorosBeforeLongBreak}
                       onChange={(e) => setTempPomodorosBeforeLongBreak(Number(e.target.value))}
-                      className="w-10 sm:w-12 bg-white/10 text-white text-center h-6 sm:h-8 text-xs sm:text-sm rounded border border-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none"
+                      className="w-12 bg-white/10 text-white text-center h-8 text-sm rounded border border-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none"
                     />
                   </div>
 
-                  <div className="flex items-center justify-between mb-1.5 sm:mb-4">
-                    <label className="text-white text-[10px] sm:text-base">Auto-start breaks</label>
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="text-white text-base">Auto-start breaks</label>
                     <input
                       type="checkbox"
                       checked={tempAutoStartBreaks}
@@ -526,8 +526,8 @@ export function SettingsModal() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between mb-1.5 sm:mb-4">
-                    <label className="text-white text-[10px] sm:text-base">Auto-start pomodoros</label>
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="text-white text-base">Auto-start pomodoros</label>
                     <input
                       type="checkbox"
                       checked={tempAutoStartPomodoros}
@@ -536,8 +536,8 @@ export function SettingsModal() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between mb-1.5 sm:mb-4">
-                    <label className="text-white text-[10px] sm:text-base">Enable sound notifications</label>
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="text-white text-base">Enable sound notifications</label>
                     <input
                       type="checkbox"
                       checked={tempSoundEnabled}
@@ -546,8 +546,8 @@ export function SettingsModal() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between mb-1.5 sm:mb-4">
-                    <label className="text-white text-[10px] sm:text-base">Enable leveling system</label>
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="text-white text-base">Enable leveling system</label>
                     <input
                       type="checkbox"
                       checked={tempLevelSystemEnabled}

@@ -144,7 +144,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
   const statsContent = (
     <>
       {/* Path Selection - Hero Stats Style */}
-      <label className="w-full bg-gradient-to-r from-purple-900/40 to-purple-900/20 rounded-lg sm:rounded-xl p-1.5 sm:p-4 border border-purple-500/30 mb-1.5 sm:mb-4 cursor-pointer block hover:border-purple-500/50 hover:from-purple-900/50 hover:to-purple-900/30 transition-all relative group">
+      <label className="w-full bg-gradient-to-r from-purple-900/40 to-purple-900/20 rounded-xl p-3 border border-purple-500/30 mb-3 cursor-pointer block hover:border-purple-500/50 hover:from-purple-900/50 hover:to-purple-900/30 transition-all relative group">
         <input
           type="checkbox"
           className="opacity-0 w-0 h-0 peer"
@@ -152,11 +152,11 @@ export const UserStatsPopover = memo(function UserStatsPopover({
           onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
         />
         <div className="flex flex-row items-center justify-start gap-3 sm:gap-4">
-          <span className="text-xl sm:text-5xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">
+          <span className="text-4xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">
             {levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}
           </span>
           <div className="flex flex-col items-start text-left">
-            <p className="text-xs sm:text-xl font-bold text-white tracking-tight group-hover:text-purple-200 transition-colors">
+            <p className="text-lg font-bold text-white tracking-tight group-hover:text-purple-200 transition-colors">
               {levelPath === 'elf' ? 'Elf' : 'Human'}
             </p>
             <p className="text-[10px] sm:text-xs text-purple-200/60 font-medium leading-tight">
@@ -167,7 +167,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
         <div className="absolute top-2 right-2 text-[8px] sm:text-[10px] text-white/20 uppercase tracking-widest font-bold group-hover:text-white/40 transition-colors">Tap to switch</div>
       </label>
 
-      <div className="grid grid-cols-2 gap-1.5 sm:gap-2.5">
+      <div className="grid grid-cols-2 gap-2">
         <StatCard
           icon={<Target className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
           label="Level"
@@ -248,7 +248,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
           {/* IMPORTANT: Negative sideOffset and zero collisionPadding are intentional for tight positioning.
               Watch for regressions: popover clipping at screen edges or unexpected repositioning. */}
           <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-xl sm:rounded-2xl w-[95vw] max-w-xs max-h-[85vh] overflow-y-auto p-0 shadow-2xl"
+            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[350px] max-h-[600px] overflow-y-auto p-0 shadow-2xl"
             align="start"
             side="right"
             sideOffset={-20}
@@ -349,7 +349,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
                   <span className="text-2xl sm:text-3xl">{levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between pb-2 mb-2 sm:pb-3 sm:mb-3 border-b border-white/10">
+                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                     <p className="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-wider">Role Changed</p>
                   </div>
@@ -394,12 +394,12 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value, color }: StatCardProps) {
   return (
-    <div className="bg-white/5 rounded-md sm:rounded-lg p-1 sm:p-3 border border-white/10 flex flex-col hover:bg-white/10 transition-colors">
-      <div className={`flex items-center gap-0.5 sm:gap-1 ${color} mb-0.5 h-3 sm:h-5`}>
+    <div className="bg-white/5 rounded-lg p-2 border border-white/10 flex flex-col hover:bg-white/10 transition-colors">
+      <div className={`flex items-center gap-1.5 ${color} mb-1 h-5`}>
         {icon}
-        <span className="text-[8px] sm:text-xs text-gray-400 uppercase tracking-wide font-medium">{label}</span>
+        <span className="text-xs text-gray-400 uppercase tracking-wide font-medium">{label}</span>
       </div>
-      <p className="text-[11px] sm:text-base font-bold text-white leading-tight text-left">{value}</p>
+      <p className="text-base font-bold text-white leading-tight text-left">{value}</p>
     </div>
   );
 }

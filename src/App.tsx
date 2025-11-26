@@ -6,6 +6,7 @@ import { MusicPlayer } from './components/music/MusicPlayer';
 import { AmbientSoundsPlayer } from './components/music/AmbientSoundsPlayer';
 import { LevelDisplay } from './components/level/LevelDisplay';
 import { SettingsPopover } from './components/settings/SettingsPopover';
+import { ScaleProvider } from './components/ScaleProvider';
 import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCounter';
 import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
 import { ActiveBoostIndicator } from './components/buffs/ActiveBoostIndicator';
@@ -158,11 +159,13 @@ function AppContent() {
 // Wrapper component with providers
 function App() {
   return (
-    <AuthProvider>
-      <ChatProvider>
-        <AppContent />
-      </ChatProvider>
-    </AuthProvider>
+    <ScaleProvider baseWidth={1280} baseHeight={720}>
+      <AuthProvider>
+        <ChatProvider>
+          <AppContent />
+        </ChatProvider>
+      </AuthProvider>
+    </ScaleProvider>
   );
 }
 
