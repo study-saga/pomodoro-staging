@@ -38,7 +38,9 @@ export function BannedUsersList() {
             .order('created_at', { ascending: false });
 
         if (!error && data) {
-            setBannedUsers(data as any);
+            // Filter out bans where user is null (deleted users)
+            const validBans = (data as any).filter((ban: any) => ban.user);
+            setBannedUsers(validBans);
         }
         setIsLoading(false);
     };
