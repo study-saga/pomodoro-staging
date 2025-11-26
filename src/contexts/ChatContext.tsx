@@ -13,7 +13,7 @@ const RATE_LIMIT_MS = 2000; // 2 seconds between messages
 interface ChatContextValue {
   // Global chat
   globalMessages: ChatMessage[];
-  sendGlobalMessage: (content: string, user: { id: string; username: string; avatar: string | null }) => void;
+  sendGlobalMessage: (content: string, user: { id: string; username: string; avatar: string | null; discord_id?: string }) => void;
   deleteGlobalMessage: (messageId: string) => void;
   isGlobalConnected: boolean;
   isChatEnabled: boolean; // Admin kill switch status
@@ -246,6 +246,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             is_chatting: boolean;
             online_at: string;
             role?: UserRole;
+            discord_id?: string;
           }>();
 
           const users: OnlineUser[] = [];
@@ -260,7 +261,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 avatar: presence.avatar,
                 isChatting: presence.is_chatting,
                 online_at: presence.online_at,
-                role: presence.role
+                role: presence.role,
+                discord_id: presence.discord_id
               });
             }
           });
@@ -279,7 +281,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               avatar: appUser.avatar,
               is_chatting: isChatOpen, // Dynamic status
               online_at: new Date().toISOString(),
-              role: userRole
+              role: userRole,
+              discord_id: appUser.discord_id
             });
           } else if (status === 'CLOSED') {
             setIsGlobalConnected(false);
@@ -341,7 +344,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Send global message with batching and rate limiting
   const sendGlobalMessage = useCallback((
     content: string,
-    user: { id: string; username: string; avatar: string | null }
+    user: { id: string; username: string; avatar: string | null; discord_id?: string }
   ) => {
     if (!isChatEnabled) {
       toast.error('Chat is currently disabled.');
@@ -372,6 +375,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         id: user.id,
         username: user.username,
         avatar: user.avatar,
+        discord_id: user.discord_id,
         role: userRole
       },
       content,

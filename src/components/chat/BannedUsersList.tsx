@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useChat } from '../../contexts/ChatContext';
 import { formatDistanceToNow } from 'date-fns';
+import { getAvatarUrl } from '../../lib/chatService';
 import { Shield, Unlock, Clock, AlertTriangle } from 'lucide-react';
 
 interface BannedUser {
@@ -13,6 +14,7 @@ interface BannedUser {
     user: {
         username: string;
         avatar: string | null;
+        discord_id?: string;
     };
     banner: {
         username: string;
@@ -30,7 +32,7 @@ export function BannedUsersList() {
             .from('chat_bans')
             .select(`
         *,
-        user:users!chat_bans_user_id_fkey(username, avatar),
+        user:users!chat_bans_user_id_fkey(username, avatar, discord_id),
         banner:users!chat_bans_banned_by_fkey(username)
       `)
             .order('created_at', { ascending: false });
@@ -86,7 +88,7 @@ export function BannedUsersList() {
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
                             <img
-                                src={ban.user.avatar || `https://ui-avatars.com/api/?name=${ban.user.username}&background=random`}
+                                src={getAvatarUrl(ban.user) || `https://ui-avatars.com/api/?name=${ban.user.username}&background=random`}
                                 alt={ban.user.username}
                                 className="w-10 h-10 rounded-full object-cover grayscale opacity-70"
                             />

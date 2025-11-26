@@ -10,6 +10,7 @@ import {
   ROLE_EMOJI_HUMAN,
   getXPNeeded,
 } from '../../data/levels';
+import { getAvatarUrl } from '../../lib/chatService';
 import { Gift } from 'lucide-react';
 import buffElf from '../../assets/buff-elf.svg';
 import buffHuman from '../../assets/buff-human.svg';
@@ -340,7 +341,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                 </div>
               </div>
               <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
-                {appUser?.avatar && <AvatarImage src={appUser.avatar} />}
+                {appUser && <AvatarImage src={getAvatarUrl(appUser) || undefined} />}
                 <AvatarFallback>{username?.slice(0, 2).toUpperCase() || '??'}</AvatarFallback>
               </Avatar>
             </div>

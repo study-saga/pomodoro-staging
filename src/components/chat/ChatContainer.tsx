@@ -110,7 +110,8 @@ export function ChatContainer() {
     sendGlobalMessage(content, {
       id: appUser.id,
       username: appUser.username,
-      avatar: appUser.avatar
+      avatar: appUser.avatar,
+      discord_id: appUser.discord_id
     });
 
     recordMessage();

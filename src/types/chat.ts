@@ -6,7 +6,8 @@ export interface ChatMessage {
     id: string;
     username: string;
     avatar: string | null;
-    role?: UserRole;
+    discord_id?: string; // For constructing avatar URLs
+    role: UserRole;
   };
   content: string;
   timestamp: number;
@@ -29,6 +30,7 @@ export interface OnlineUser {
   id: string;
   username: string;
   avatar: string | null;
+  discord_id?: string; // For constructing avatar URLs
   online_at: string;
   isChatting?: boolean;
   role?: UserRole;
