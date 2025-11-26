@@ -248,7 +248,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
           {/* IMPORTANT: Negative sideOffset and zero collisionPadding are intentional for tight positioning.
               Watch for regressions: popover clipping at screen edges or unexpected repositioning. */}
           <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-full max-w-[280px] sm:max-w-[360px] p-0 shadow-2xl"
+            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[90vw] max-w-sm p-0 shadow-2xl"
             align="start"
             side="right"
             sideOffset={-20}
