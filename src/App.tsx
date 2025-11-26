@@ -109,7 +109,7 @@ function AppContent() {
 
   // Authenticated - show main app
   return (
-    <div className="relative h-screen overflow-hidden flex flex-col">
+    <div className="relative w-[1280px] h-[720px] overflow-hidden flex flex-col">
       {/* Video Background */}
       <VideoBackground />
 

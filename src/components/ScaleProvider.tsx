@@ -40,23 +40,23 @@ export const ScaleProvider = (props: ScaleProviderProps) => {
     return (
         <ScaleContext.Provider value={{ scale }}>
             <div
+                id=" scaled-root"
                 style={{
                     width: '100vw',
                     height: '100vh',
                     overflow: 'hidden',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#000',
+                    position: 'relative',
                 }}
             >
                 <div
                     style={{
                         transform: `scale(${scale})`,
-                        transformOrigin: 'center center',
+                        transformOrigin: 'top left',
                         width: `${baseWidth}px`,
                         height: `${baseHeight}px`,
-                        position: 'relative',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
                     }}
                 >
                     {children}
