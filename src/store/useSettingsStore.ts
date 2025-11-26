@@ -49,7 +49,7 @@ interface SettingsStore extends Settings {
 
   // Level system actions
   addXP: (minutes: number) => void;
-  addDailyGiftXP: (xpAmount: number) => void;
+  addDailyGiftXP: (xpAmount: number, skipSync?: boolean) => void;
   setUsername: (username: string, forceWithXP?: boolean) => void;
   setLevelPath: (path: 'elf' | 'human') => void;
   setLevelSystemEnabled: (enabled: boolean) => void;
@@ -308,7 +308,7 @@ export const useSettingsStore = create<SettingsStore>()(
         })();
       },
 
-      addDailyGiftXP: (xpAmount) => {
+      addDailyGiftXP: (xpAmount, skipSync = false) => {
         const state = get();
         let newXP = state.xp + xpAmount;
         let newLevel = state.level;
@@ -333,6 +333,11 @@ export const useSettingsStore = create<SettingsStore>()(
           level: newLevel,
           prestigeLevel: newPrestigeLevel,
         });
+
+        if (skipSync) {
+          console.log(`[addDailyGiftXP] Skipping DB sync (handled externally)`);
+          return;
+        }
 
         // Sync to database in background (fire and forget)
         (async () => {
