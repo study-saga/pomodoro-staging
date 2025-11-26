@@ -21,7 +21,7 @@ export function ChatContainer() {
   const { appUser } = useAuth();
   const { onlineUsers, setChatOpen, isChatEnabled, sendGlobalMessage, isGlobalConnected, isBanned, banReason, banExpiresAt, banUser } = useChat();
   const { canSend, timeUntilReset, recordMessage } = useRateLimit();
-  const { isCompact, isMobile } = useDeviceType();
+  const { isMobile } = useDeviceType();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTab>('local');
