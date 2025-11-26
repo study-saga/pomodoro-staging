@@ -360,7 +360,7 @@ export function SettingsModal() {
         aria-modal="true"
         aria-labelledby="settings-title"
         tabIndex={-1}
-        className={`bg-gray-900 rounded-2xl w-full max-w-xl max-h-[85vh] overflow-hidden border border-white/10 shadow-2xl flex flex-col ${isMobile ? 'max-h-[90vh]' : ''}`}
+        className={`bg-gray-900 rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden border border-white/10 shadow-2xl flex flex-col ${isMobile ? 'max-h-[85vh]' : ''}`}
       >
         {/* Header */}
         <div className={`flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0`}>

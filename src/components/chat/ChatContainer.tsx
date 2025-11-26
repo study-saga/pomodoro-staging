@@ -308,7 +308,7 @@ export function ChatContainer() {
       {isExpanded && (
         <div className={`fixed bottom-24 left-4 z-40 flex flex-col gap-1.5 ${isCompact ? 'w-72' : 'w-96'} max-w-[calc(100vw-2rem)]`}>
           {/* Main Glass Box (Tabs + Content) */}
-          <div className={`${isCompact ? 'h-[350px]' : 'h-[450px]'} max-h-[55vh] bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative transition-all duration-300`}>
+          <div className={`${isCompact ? 'h-[350px]' : 'h-[420px]'} max-h-[50vh] bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative transition-all duration-300`}>
             {/* Minimize Button (Absolute top-right) */}
             <button
               onClick={() => setIsExpanded(false)}
