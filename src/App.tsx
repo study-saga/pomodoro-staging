@@ -109,63 +109,63 @@ function AppContent() {
 
   // Authenticated - show main app
   return (
-    <div className="relative w-[1280px] h-[720px] overflow-hidden flex flex-col">
-      {/* Video Background */}
-      <VideoBackground />
+    <ScaleProvider baseWidth={1280} baseHeight={720}>
+      <div className="relative w-[1280px] h-[720px] overflow-hidden flex flex-col">
+        {/* Video Background */}
+        <VideoBackground />
 
-      {/* Level Display (Top Left) */}
-      <LevelDisplay onOpenDailyGift={() => setShowDailyGift(true)} />
+        {/* Level Display (Top Left) */}
+        <LevelDisplay onOpenDailyGift={() => setShowDailyGift(true)} />
 
-      {/* Online Presence Counter (Top Right, below settings button) */}
-      <div className="fixed top-20 right-4 z-10">
-        <OnlinePresenceCounter />
+        {/* Online Presence Counter (Top Right, below settings button) */}
+        <div className="fixed top-20 right-4 z-10">
+          <OnlinePresenceCounter />
+        </div>
+
+        {/* Main Content - Centered Timer */}
+        <div className="flex-1 flex items-center justify-center px-4">
+          <PomodoroTimer />
+        </div>
+
+        {/* Music Player (Bottom) */}
+        <MusicPlayer playing={musicPlaying} setPlaying={setMusicPlaying} />
+
+        {/* Ambient Sounds Player (Hidden) */}
+        <AmbientSoundsPlayer musicPlaying={musicPlaying} />
+
+        {/* Daily Gift Grid */}
+        <DailyGiftGrid
+          show={showDailyGift}
+          onClose={() => setShowDailyGift(false)}
+        />
+
+        {/* Active Boost Indicator */}
+        <ActiveBoostIndicator />
+
+        {/* Top Right Buttons - Discord & Settings */}
+        <div className="fixed top-4 right-4 z-[60] flex items-center gap-2">
+          <DiscordButton />
+          <SettingsPopover />
+        </div>
+
+        {/* Chat Container (Bottom Left) */}
+        <ChatContainer />
+
+        {/* Toaster for notifications */}
+        <Toaster position="top-center" />
       </div>
-
-      {/* Main Content - Centered Timer */}
-      <div className="flex-1 flex items-center justify-center px-4">
-        <PomodoroTimer />
-      </div>
-
-      {/* Music Player (Bottom) */}
-      <MusicPlayer playing={musicPlaying} setPlaying={setMusicPlaying} />
-
-      {/* Ambient Sounds Player (Hidden) */}
-      <AmbientSoundsPlayer musicPlaying={musicPlaying} />
-
-      {/* Daily Gift Grid */}
-      <DailyGiftGrid
-        show={showDailyGift}
-        onClose={() => setShowDailyGift(false)}
-      />
-
-      {/* Active Boost Indicator */}
-      <ActiveBoostIndicator />
-
-      {/* Top Right Buttons - Discord & Settings */}
-      <div className="fixed top-4 right-4 z-[60] flex items-center gap-2">
-        <DiscordButton />
-        <SettingsPopover />
-      </div>
-
-      {/* Chat Container (Bottom Left) */}
-      <ChatContainer />
-
-      {/* Toaster for notifications */}
-      <Toaster position="top-center" />
-    </div>
+    </ScaleProvider>
   );
 }
 
 // Wrapper component with providers
 function App() {
   return (
-    <ScaleProvider baseWidth={1280} baseHeight={720}>
-      <AuthProvider>
-        <ChatProvider>
-          <AppContent />
-        </ChatProvider>
-      </AuthProvider>
-    </ScaleProvider>
+    <AuthProvider>
+      <ChatProvider>
+        <AppContent />
+      </ChatProvider>
+    </AuthProvider>
   );
 }
 

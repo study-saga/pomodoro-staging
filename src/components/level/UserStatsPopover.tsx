@@ -238,97 +238,43 @@ export const UserStatsPopover = memo(function UserStatsPopover({
 
   return (
     <>
-      {/* Desktop: Popover */}
-      {!isMobile && (
-        <Popover open={open} onOpenChange={onOpenChange}>
-          <PopoverTrigger asChild>
-            {trigger}
-          </PopoverTrigger>
+      <Popover open={open} onOpenChange={onOpenChange}>
+        <PopoverTrigger asChild>
+          {trigger}
+        </PopoverTrigger>
 
-          {/* IMPORTANT: Negative sideOffset and zero collisionPadding are intentional for tight positioning.
-              Watch for regressions: popover clipping at screen edges or unexpected repositioning. */}
-          <PopoverContent
-            container={document.getElementById('scaled-content')}
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[350px] max-h-[600px] overflow-y-auto p-0 shadow-2xl"
-            align="start"
-            side="right"
-            sideOffset={-20}
-            alignOffset={0}
-            collisionPadding={0}
-          >
-            <PopoverBody className="p-0">
-              <div className="relative">
-                <button
-                  onClick={() => onOpenChange?.(false)}
-                  className="absolute top-3 right-3 z-10 p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <ScrollArea
-                  className="max-h-[70vh] sm:max-h-[500px]"
-                  onWheel={() => setShowSinceTooltip(false)}
-                  onTouchMove={() => setShowSinceTooltip(false)}
-                >
-                  <div className="p-4 pt-12 pb-6">
-                    {statsContent}
-                  </div>
-                </ScrollArea>
-              </div>
-            </PopoverBody>
-          </PopoverContent>
-        </Popover>
-      )}
-
-      {/* Mobile: Centered Modal */}
-      {isMobile && (
-        <>
-          <div onClick={() => onOpenChange?.(!open)}>
-            {trigger}
-          </div>
-
-          <AnimatePresence>
-            {open && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-                {/* Backdrop */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                  onClick={() => onOpenChange?.(false)}
-                />
-
-                {/* Modal Content */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="relative bg-gray-900/95 backdrop-blur-xl border-white/10 border rounded-2xl w-full max-w-sm"
-                >
-                  <div className="relative">
-                    <button
-                      onClick={() => onOpenChange?.(false)}
-                      className="absolute top-3 right-3 z-10 p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                    <ScrollArea
-                      className="max-h-[70vh] sm:max-h-[500px]"
-                      onWheel={() => setShowSinceTooltip(false)}
-                      onTouchMove={() => setShowSinceTooltip(false)}
-                    >
-                      <div className="p-4 pt-12 pb-6">
-                        {statsContent}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                </motion.div>
-              </div>
-            )}
-          </AnimatePresence>
-        </>
-      )}
+        {/* IMPORTANT: Negative sideOffset and zero collisionPadding are intentional for tight positioning.
+            Watch for regressions: popover clipping at screen edges or unexpected repositioning. */}
+        <PopoverContent
+          container={document.getElementById('scaled-content')}
+          className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[350px] max-h-[600px] overflow-y-auto p-0 shadow-2xl"
+          align="start"
+          side="right"
+          sideOffset={-20}
+          alignOffset={0}
+          collisionPadding={0}
+        >
+          <PopoverBody className="p-0">
+            <div className="relative">
+              <button
+                onClick={() => onOpenChange?.(false)}
+                className="absolute top-3 right-3 z-10 p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <ScrollArea
+                className="max-h-[70vh] sm:max-h-[500px]"
+                onWheel={() => setShowSinceTooltip(false)}
+                onTouchMove={() => setShowSinceTooltip(false)}
+              >
+                <div className="p-4 pt-12 pb-6">
+                  {statsContent}
+                </div>
+              </ScrollArea>
+            </div>
+          </PopoverBody>
+        </PopoverContent>
+      </Popover>
 
       {/* Role Change Toast Notification */}
       <AnimatePresence>
