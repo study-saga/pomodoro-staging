@@ -27,15 +27,26 @@ export const ScaleProvider = (props: ScaleProviderProps) => {
 
     useEffect(() => {
         const handleResize = () => {
-            const scaleWidth = window.innerWidth / baseWidth;
-            const scaleHeight = window.innerHeight / baseHeight;
-            setScale(Math.min(scaleWidth, scaleHeight));
+            // Calculate scale to ensure logical viewport is AT LEAST baseWidth x baseHeight
+            // This is the "Expand" strategy (similar to Aspect Ratio Fitting in game engines)
+            const scaleX = window.innerWidth / baseWidth;
+            const scaleY = window.innerHeight / baseHeight;
+            const newScale = Math.min(scaleX, scaleY);
+
+            setScale(newScale);
         };
 
+        // Initial calculation
         handleResize();
+
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, [baseWidth, baseHeight]);
+
+    // Calculate logical dimensions based on current window size and scale
+    // This ensures the container fills the screen exactly
+    const logicalWidth = typeof window !== 'undefined' ? window.innerWidth / scale : baseWidth;
+    const logicalHeight = typeof window !== 'undefined' ? window.innerHeight / scale : baseHeight;
 
     return (
         <ScaleContext.Provider value={{ scale }}>
@@ -44,9 +55,6 @@ export const ScaleProvider = (props: ScaleProviderProps) => {
                     width: '100vw',
                     height: '100vh',
                     overflow: 'hidden',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     backgroundColor: '#000',
                 }}
             >
@@ -54,11 +62,10 @@ export const ScaleProvider = (props: ScaleProviderProps) => {
                     id="scaled-content"
                     style={{
                         transform: `scale(${scale})`,
-                        transformOrigin: 'center center',
-                        width: `${baseWidth}px`,
-                        height: `${baseHeight}px`,
+                        transformOrigin: 'top left',
+                        width: `${logicalWidth}px`,
+                        height: `${logicalHeight}px`,
                         position: 'relative',
-                        boxShadow: '0 0 50px rgba(0,0,0,0.5)', // Optional: adds depth
                     }}
                 >
                     {children}

@@ -110,7 +110,7 @@ function AppContent() {
   // Authenticated - show main app
   return (
     <ScaleProvider baseWidth={1280} baseHeight={720}>
-      <div className="relative w-[1280px] h-[720px] overflow-hidden flex flex-col">
+      <div className="relative w-full h-full overflow-hidden flex flex-col">
         {/* Video Background */}
         <VideoBackground />
 
