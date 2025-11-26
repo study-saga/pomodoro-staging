@@ -50,7 +50,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [isBanned, setIsBanned] = useState(false);
   const [banReason, setBanReason] = useState<string | null>(null);
+
   const [banExpiresAt, setBanExpiresAt] = useState<string | null>(null);
+  const [banId, setBanId] = useState<string | null>(null);
 
   // Ref to track banned state without triggering effect re-runs
   const isBannedRef = useRef(isBanned);
@@ -88,7 +90,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Check active bans
       const { data: banData } = await supabase
         .from('chat_bans')
-        .select('reason, expires_at')
+
+        .select('id, reason, expires_at')
         .eq('user_id', appUser.id)
         .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
         .maybeSingle();
@@ -97,10 +100,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setIsBanned(true);
         setBanReason(banData.reason);
         setBanExpiresAt(banData.expires_at);
+        setBanId(banData.id);
       } else {
         setIsBanned(false);
         setBanReason(null);
         setBanExpiresAt(null);
+        setBanId(null);
       }
     };
 
@@ -119,8 +124,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         async () => {
           // Re-check ban status on any change
           const { data: banData } = await supabase
+
             .from('chat_bans')
-            .select('reason, expires_at')
+            .select('id, reason, expires_at')
             .eq('user_id', appUser.id)
             .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
             .maybeSingle();
@@ -129,6 +135,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             setIsBanned(true);
             setBanReason(banData.reason);
             setBanExpiresAt(banData.expires_at);
+            setBanId(banData.id);
             toast.error(`You have been banned: ${banData.reason}`);
             setIsGlobalConnected(false); // Force disconnect
           } else {
@@ -137,6 +144,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               setIsBanned(false);
               setBanReason(null);
               setBanExpiresAt(null);
+              setBanId(null);
               toast.success('Your ban has been lifted.');
             }
           }
@@ -148,6 +156,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       banChannel.unsubscribe();
     };
   }, [appUser]);
+
+  // 0.5. Listen for Unban (Delete) specifically
+  // We need this because the main subscription filters by user_id,
+  // but DELETE events often only contain the PK (id), so the filter fails.
+  useEffect(() => {
+    if (!isBanned || !banId) return;
+
+    const unbanChannel = supabase.channel(`unban:${banId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'chat_bans',
+          filter: `id=eq.${banId}`
+        },
+        () => {
+          setIsBanned(false);
+          setBanReason(null);
+          setBanExpiresAt(null);
+          setBanId(null);
+          toast.success('Your ban has been lifted.');
+        }
+      )
+      .subscribe();
+
+    return () => {
+      unbanChannel.unsubscribe();
+    };
+  }, [isBanned, banId]);
 
   // 1. Admin Kill Switch Listener
   useEffect(() => {
