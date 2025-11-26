@@ -1,5 +1,5 @@
 import { memo, useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Settings as SettingsIcon, X, Palette, Volume2, Sparkles, Bell, FileText, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeviceType } from '../../hooks/useDeviceType';
@@ -45,7 +45,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const modalRef = useRef<HTMLDivElement>(null);
   const rateLimiterRef = useRef(createRateLimiter(720000)); // 12 minutes (5 changes per hour)
 
-  const { isPortrait, isCompact } = useDeviceType();
+  const { isPortrait } = useDeviceType();
 
   // Calculate total track count
   const totalTracks = lofiTracks.length + synthwaveTracks.length;
@@ -404,312 +404,154 @@ export const SettingsPopover = memo(function SettingsPopover() {
 
   return (
     <>
-      {/* Desktop: Popover */}
-      {!isCompact && (
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            {trigger}
-          </PopoverTrigger>
-          <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[594px] p-0 max-h-[85vh] z-[100]"
-            align="end"
-            side="bottom"
-            sideOffset={8}
-          >
-            <PopoverBody className="p-0">
-              <div
-                ref={modalRef}
-                tabIndex={-1}
-                className="flex flex-col max-h-[85vh]"
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
-                  <h2 className="text-lg font-bold text-white">Settings</h2>
-                  <button
-                    onClick={() => setOpen(false)}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                    aria-label="Close settings"
-                  >
-                    <X size={20} className="text-white" />
-                  </button>
-                </div>
-
-                {/* Sidebar + Content Layout */}
-                <div className="flex flex-1 overflow-hidden min-w-0">
-                  {/* Vertical Sidebar */}
-                  <div
-                    role="tablist"
-                    aria-label="Settings categories"
-                    className="w-[160px] border-r border-white/10 shrink-0 py-2"
-                  >
-                    {tabs.map((tab) => {
-                      const Icon = tab.icon;
-                      const isWhatsNew = tab.id === 'whats-new';
-                      return (
-                        <button
-                          key={tab.id}
-                          role="tab"
-                          aria-selected={activeTab === tab.id}
-                          aria-controls={`${tab.id}-panel`}
-                          id={`${tab.id}-tab`}
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`w-full px-4 py-3 text-sm font-medium transition-colors flex items-center gap-3 relative ${isWhatsNew ? 'mt-2 pt-5 border-t border-white/10' : ''
-                            } ${activeTab === tab.id
-                              ? 'text-white bg-white/5'
-                              : 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
-                            }`}
-                        >
-                          {activeTab === tab.id && (
-                            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-purple-500" />
-                          )}
-                          <Icon size={18} className="shrink-0" />
-                          <span className="truncate">{tab.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Content - Scrollable */}
-                  <ScrollArea className="flex-1 overflow-y-auto max-w-full">
-                    <div className="p-6 w-full max-w-full overflow-hidden min-w-0">
-                      <SettingsContent
-                        activeTab={activeTab}
-                        isMobile={false}
-                        tempTimers={tempTimers}
-                        setTempTimers={setTempTimers}
-                        tempPomodorosBeforeLongBreak={tempPomodorosBeforeLongBreak}
-                        setTempPomodorosBeforeLongBreak={setTempPomodorosBeforeLongBreak}
-                        tempAutoStartBreaks={tempAutoStartBreaks}
-                        setTempAutoStartBreaks={setTempAutoStartBreaks}
-                        tempAutoStartPomodoros={tempAutoStartPomodoros}
-                        setTempAutoStartPomodoros={setTempAutoStartPomodoros}
-                        tempSoundEnabled={tempSoundEnabled}
-                        setTempSoundEnabled={setTempSoundEnabled}
-                        tempVolume={tempVolume}
-                        setTempVolume={setTempVolume}
-                        tempLevelSystemEnabled={tempLevelSystemEnabled}
-                        setTempLevelSystemEnabled={setTempLevelSystemEnabled}
-                        notificationPermission={notificationPermission}
-                        tempBackground={tempBackground}
-                        setTempBackground={setTempBackground}
-                        filteredBackgrounds={filteredBackgrounds}
-                        tempMusicVolume={tempMusicVolume}
-                        setTempMusicVolume={setTempMusicVolume}
-                        tempAmbientVolumes={tempAmbientVolumes}
-                        setTempAmbientVolumes={setTempAmbientVolumes}
-                        totalTracks={totalTracks}
-                        setShowMusicCredits={setShowMusicCredits}
-                        level={level}
-                        xp={xp}
-                        prestigeLevel={prestigeLevel}
-                        totalPomodoros={totalPomodoros}
-                        totalStudyMinutes={totalStudyMinutes}
-                        levelPath={levelPath}
-                        handleRoleChange={handleRoleChange}
-                        usernameInput={usernameInput}
-                        setUsernameInput={setUsernameInput}
-                        usernameError={usernameError}
-                        setUsernameError={setUsernameError}
-                        usernameLoading={usernameLoading}
-                        handleSaveUsername={handleSaveUsername}
-                        resetProgress={resetProgress}
-                        totalUniqueDays={totalUniqueDays}
-                        consecutiveLoginDays={consecutiveLoginDays}
-                        pomodoroBoostActive={pomodoroBoostActive}
-                        pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
-                        firstLoginDate={firstLoginDate}
-                      />
-                    </div>
-                  </ScrollArea>
-                </div>
-
-                {/* Footer */}
-                <div className="border-t border-white/10 shrink-0">
-                  {hasUnsavedChanges && (
-                    <div className="px-4 pt-3 pb-1">
-                      <p className="text-xs text-yellow-400">⚠ Unsaved changes</p>
-                    </div>
-                  )}
-                  <div className="flex gap-3 p-4 pt-2">
-                    <button
-                      onClick={handleReset}
-                      className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors"
-                    >
-                      Reset
-                    </button>
-                    <button
-                      onClick={handleSave}
-                      disabled={!hasUnsavedChanges}
-                      className={`flex-1 px-4 py-2 font-medium rounded-lg transition-colors ${hasUnsavedChanges
-                        ? 'bg-white text-black hover:bg-gray-200'
-                        : 'bg-white/20 text-gray-500 cursor-not-allowed'
-                        }`}
-                    >
-                      Save
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </PopoverBody>
-          </PopoverContent>
-        </Popover>
-      )}
-
-      {/* Mobile: Centered Modal */}
-      {isCompact && (
-        <>
-          <div onClick={() => setOpen(!open)}>
-            {trigger}
-          </div>
-
-          <AnimatePresence>
-            {open && (
-              <div className="fixed inset-0 flex items-center justify-center z-[200] p-2">
-                {/* Backdrop */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          {trigger}
+        </PopoverTrigger>
+        <PopoverContent
+          container={document.getElementById('scaled-content')}
+          className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[594px] p-0 max-h-[85vh] z-[100]"
+          align="end"
+          side="bottom"
+          sideOffset={8}
+        >
+          <PopoverBody className="p-0">
+            <div
+              ref={modalRef}
+              tabIndex={-1}
+              className="flex flex-col max-h-[85vh]"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
+                <h2 className="text-lg font-bold text-white">Settings</h2>
+                <button
                   onClick={() => setOpen(false)}
-                />
-
-                {/* Modal Content */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="relative z-[210] bg-gray-900/95 backdrop-blur-xl border-white/10 border rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col overflow-hidden"
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                  aria-label="Close settings"
                 >
-                  {/* Header */}
-                  <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
-                    <h2 className="text-lg font-bold text-white">Settings</h2>
-                    <button
-                      onClick={() => setOpen(false)}
-                      className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                      aria-label="Close settings"
-                    >
-                      <X size={20} className="text-white" />
-                    </button>
-                  </div>
+                  <X size={20} className="text-white" />
+                </button>
+              </div>
 
-                  {/* Tabs */}
-                  <div
-                    role="tablist"
-                    aria-label="Settings categories"
-                    className="flex gap-1 overflow-x-auto scroll-smooth snap-x snap-mandatory px-4 pt-4 border-b border-white/10 shrink-0"
-                  >
-                    {tabs.map((tab) => {
-                      const Icon = tab.icon;
-                      return (
-                        <button
-                          key={tab.id}
-                          role="tab"
-                          aria-selected={activeTab === tab.id}
-                          aria-controls={`${tab.id}-panel`}
-                          id={`${tab.id}-tab`}
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`px-3 py-2 text-sm whitespace-nowrap snap-start font-medium transition-colors relative flex items-center gap-2 ${activeTab === tab.id
-                            ? 'text-white'
-                            : 'text-gray-400 hover:text-gray-300'
-                            }`}
-                        >
-                          <Icon size={16} />
-                          {tab.label}
-                          {activeTab === tab.id && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Content - Scrollable */}
-                  <ScrollArea className="flex-1 overflow-y-auto">
-                    <div className="p-4">
-                      <SettingsContent
-                        activeTab={activeTab}
-                        isMobile={true}
-                        tempTimers={tempTimers}
-                        setTempTimers={setTempTimers}
-                        tempPomodorosBeforeLongBreak={tempPomodorosBeforeLongBreak}
-                        setTempPomodorosBeforeLongBreak={setTempPomodorosBeforeLongBreak}
-                        tempAutoStartBreaks={tempAutoStartBreaks}
-                        setTempAutoStartBreaks={setTempAutoStartBreaks}
-                        tempAutoStartPomodoros={tempAutoStartPomodoros}
-                        setTempAutoStartPomodoros={setTempAutoStartPomodoros}
-                        tempSoundEnabled={tempSoundEnabled}
-                        setTempSoundEnabled={setTempSoundEnabled}
-                        tempVolume={tempVolume}
-                        setTempVolume={setTempVolume}
-                        tempLevelSystemEnabled={tempLevelSystemEnabled}
-                        setTempLevelSystemEnabled={setTempLevelSystemEnabled}
-                        notificationPermission={notificationPermission}
-                        tempBackground={tempBackground}
-                        setTempBackground={setTempBackground}
-                        filteredBackgrounds={filteredBackgrounds}
-                        tempMusicVolume={tempMusicVolume}
-                        setTempMusicVolume={setTempMusicVolume}
-                        tempAmbientVolumes={tempAmbientVolumes}
-                        setTempAmbientVolumes={setTempAmbientVolumes}
-                        totalTracks={totalTracks}
-                        setShowMusicCredits={setShowMusicCredits}
-                        level={level}
-                        xp={xp}
-                        prestigeLevel={prestigeLevel}
-                        totalPomodoros={totalPomodoros}
-                        totalStudyMinutes={totalStudyMinutes}
-                        levelPath={levelPath}
-                        handleRoleChange={handleRoleChange}
-                        usernameInput={usernameInput}
-                        setUsernameInput={setUsernameInput}
-                        usernameError={usernameError}
-                        setUsernameError={setUsernameError}
-                        usernameLoading={usernameLoading}
-                        handleSaveUsername={handleSaveUsername}
-                        resetProgress={resetProgress}
-                        totalUniqueDays={totalUniqueDays}
-                        consecutiveLoginDays={consecutiveLoginDays}
-                        pomodoroBoostActive={pomodoroBoostActive}
-                        pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
-                        firstLoginDate={firstLoginDate}
-                      />
-                    </div>
-                  </ScrollArea>
-
-                  {/* Footer */}
-                  <div className="border-t border-white/10 shrink-0">
-                    {hasUnsavedChanges && (
-                      <div className="px-4 pt-3 pb-1">
-                        <p className="text-xs text-yellow-400">⚠ Unsaved changes</p>
-                      </div>
-                    )}
-                    <div className="flex gap-3 p-4 pt-2">
+              {/* Sidebar + Content Layout */}
+              <div className="flex flex-1 overflow-hidden min-w-0">
+                {/* Vertical Sidebar */}
+                <div
+                  role="tablist"
+                  aria-label="Settings categories"
+                  className="w-[160px] border-r border-white/10 shrink-0 py-2"
+                >
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isWhatsNew = tab.id === 'whats-new';
+                    return (
                       <button
-                        onClick={handleReset}
-                        className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors"
-                      >
-                        Reset
-                      </button>
-                      <button
-                        onClick={handleSave}
-                        disabled={!hasUnsavedChanges}
-                        className={`flex-1 px-4 py-2 font-medium rounded-lg transition-colors ${hasUnsavedChanges
-                          ? 'bg-white text-black hover:bg-gray-200'
-                          : 'bg-white/20 text-gray-500 cursor-not-allowed'
+                        key={tab.id}
+                        role="tab"
+                        aria-selected={activeTab === tab.id}
+                        aria-controls={`${tab.id}-panel`}
+                        id={`${tab.id}-tab`}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`w-full px-4 py-3 text-sm font-medium transition-colors flex items-center gap-3 relative ${isWhatsNew ? 'mt-2 pt-5 border-t border-white/10' : ''
+                          } ${activeTab === tab.id
+                            ? 'text-white bg-white/5'
+                            : 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
                           }`}
                       >
-                        Save
+                        {activeTab === tab.id && (
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-purple-500" />
+                        )}
+                        <Icon size={18} className="shrink-0" />
+                        <span className="truncate">{tab.label}</span>
                       </button>
-                    </div>
+                    );
+                  })}
+                </div>
+
+                {/* Content - Scrollable */}
+                <ScrollArea className="flex-1 overflow-y-auto max-w-full">
+                  <div className="p-6 w-full max-w-full overflow-hidden min-w-0">
+                    <SettingsContent
+                      activeTab={activeTab}
+                      isMobile={false}
+                      tempTimers={tempTimers}
+                      setTempTimers={setTempTimers}
+                      tempPomodorosBeforeLongBreak={tempPomodorosBeforeLongBreak}
+                      setTempPomodorosBeforeLongBreak={setTempPomodorosBeforeLongBreak}
+                      tempAutoStartBreaks={tempAutoStartBreaks}
+                      setTempAutoStartBreaks={setTempAutoStartBreaks}
+                      tempAutoStartPomodoros={tempAutoStartPomodoros}
+                      setTempAutoStartPomodoros={setTempAutoStartPomodoros}
+                      tempSoundEnabled={tempSoundEnabled}
+                      setTempSoundEnabled={setTempSoundEnabled}
+                      tempVolume={tempVolume}
+                      setTempVolume={setTempVolume}
+                      tempLevelSystemEnabled={tempLevelSystemEnabled}
+                      setTempLevelSystemEnabled={setTempLevelSystemEnabled}
+                      notificationPermission={notificationPermission}
+                      tempBackground={tempBackground}
+                      setTempBackground={setTempBackground}
+                      filteredBackgrounds={filteredBackgrounds}
+                      tempMusicVolume={tempMusicVolume}
+                      setTempMusicVolume={setTempMusicVolume}
+                      tempAmbientVolumes={tempAmbientVolumes}
+                      setTempAmbientVolumes={setTempAmbientVolumes}
+                      totalTracks={totalTracks}
+                      setShowMusicCredits={setShowMusicCredits}
+                      level={level}
+                      xp={xp}
+                      prestigeLevel={prestigeLevel}
+                      totalPomodoros={totalPomodoros}
+                      totalStudyMinutes={totalStudyMinutes}
+                      levelPath={levelPath}
+                      handleRoleChange={handleRoleChange}
+                      usernameInput={usernameInput}
+                      setUsernameInput={setUsernameInput}
+                      usernameError={usernameError}
+                      setUsernameError={setUsernameError}
+                      usernameLoading={usernameLoading}
+                      handleSaveUsername={handleSaveUsername}
+                      resetProgress={resetProgress}
+                      totalUniqueDays={totalUniqueDays}
+                      consecutiveLoginDays={consecutiveLoginDays}
+                      pomodoroBoostActive={pomodoroBoostActive}
+                      pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
+                      firstLoginDate={firstLoginDate}
+                    />
                   </div>
-                </motion.div>
+                </ScrollArea>
               </div>
-            )}
-          </AnimatePresence>
-        </>
-      )}
+
+              {/* Footer */}
+              <div className="border-t border-white/10 shrink-0">
+                {hasUnsavedChanges && (
+                  <div className="px-4 pt-3 pb-1">
+                    <p className="text-xs text-yellow-400">⚠ Unsaved changes</p>
+                  </div>
+                )}
+                <div className="flex gap-3 p-4 pt-2">
+                  <button
+                    onClick={handleReset}
+                    className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={!hasUnsavedChanges}
+                    className={`flex-1 px-4 py-2 font-medium rounded-lg transition-colors ${hasUnsavedChanges
+                      ? 'bg-white text-black hover:bg-gray-200'
+                      : 'bg-white/20 text-gray-500 cursor-not-allowed'
+                      }`}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </PopoverBody>
+        </PopoverContent>
+      </Popover>
 
       {/* Role Change Toast Notification */}
       {roleChangeMessage && (
