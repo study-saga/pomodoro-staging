@@ -306,6 +306,10 @@ export function useSettingsSync() {
     }
 
     useSettingsStore.setState({
+      // User identification (for DB operations)
+      userId: appUser.id,
+      discordId: appUser.discord_id,
+
       xp: remainingXP,  // Remaining XP towards next level
       level: calculatedLevel,  // Auto-calculated level
       prestigeLevel: calculatedPrestige,  // Auto-calculated prestige

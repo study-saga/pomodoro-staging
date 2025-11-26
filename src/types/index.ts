@@ -8,6 +8,10 @@ export interface Track {
 }
 
 export interface Settings {
+  // User identification (needed for DB operations)
+  userId: string | null;
+  discordId: string | null;
+
   // Timer settings
   timers: {
     pomodoro: number;

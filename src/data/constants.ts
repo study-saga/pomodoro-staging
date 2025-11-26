@@ -96,6 +96,8 @@ export const getDefaultBackground = (isMobile: boolean) => {
 export const BELL_SOUND = `${R2_EFFECTS_BASE_URL}/bell.mp3`;
 
 export const DEFAULT_SETTINGS = {
+  userId: null,
+  discordId: null,
   timers: {
     pomodoro: 25,
     shortBreak: 5,
