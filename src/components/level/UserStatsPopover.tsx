@@ -144,7 +144,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
   const statsContent = (
     <>
       {/* Path Selection - Hero Stats Style */}
-      <label className="w-full bg-gradient-to-r from-purple-900/40 to-purple-900/20 rounded-xl p-2.5 sm:p-4 border border-purple-500/30 mb-3 sm:mb-4 cursor-pointer block hover:border-purple-500/50 hover:from-purple-900/50 hover:to-purple-900/30 transition-all relative group">
+      <label className="w-full bg-gradient-to-r from-purple-900/40 to-purple-900/20 rounded-xl p-2 sm:p-4 border border-purple-500/30 mb-2 sm:mb-4 cursor-pointer block hover:border-purple-500/50 hover:from-purple-900/50 hover:to-purple-900/30 transition-all relative group">
         <input
           type="checkbox"
           className="opacity-0 w-0 h-0 peer"
@@ -152,11 +152,11 @@ export const UserStatsPopover = memo(function UserStatsPopover({
           onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
         />
         <div className="flex flex-row items-center justify-start gap-3 sm:gap-4">
-          <span className="text-3xl sm:text-5xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">
+          <span className="text-2xl sm:text-5xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">
             {levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}
           </span>
           <div className="flex flex-col items-start text-left">
-            <p className="text-base sm:text-xl font-bold text-white tracking-tight group-hover:text-purple-200 transition-colors">
+            <p className="text-sm sm:text-xl font-bold text-white tracking-tight group-hover:text-purple-200 transition-colors">
               {levelPath === 'elf' ? 'Elf' : 'Human'}
             </p>
             <p className="text-[10px] sm:text-xs text-purple-200/60 font-medium leading-tight">
@@ -248,7 +248,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
           {/* IMPORTANT: Negative sideOffset and zero collisionPadding are intentional for tight positioning.
               Watch for regressions: popover clipping at screen edges or unexpected repositioning. */}
           <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-full max-w-[320px] sm:max-w-[360px] p-0 shadow-2xl"
+            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-full max-w-[280px] sm:max-w-[360px] p-0 shadow-2xl"
             align="start"
             side="right"
             sideOffset={-20}
@@ -394,12 +394,12 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value, color }: StatCardProps) {
   return (
-    <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10 flex flex-col hover:bg-white/10 transition-colors">
-      <div className={`flex items-center gap-1.5 ${color} mb-0.5 sm:mb-1 h-4 sm:h-5`}>
+    <div className="bg-white/5 rounded-lg p-1.5 sm:p-3 border border-white/10 flex flex-col hover:bg-white/10 transition-colors">
+      <div className={`flex items-center gap-1 ${color} mb-0.5 sm:mb-1 h-3.5 sm:h-5`}>
         {icon}
-        <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide font-medium">{label}</span>
+        <span className="text-[9px] sm:text-xs text-gray-400 uppercase tracking-wide font-medium">{label}</span>
       </div>
-      <p className="text-sm sm:text-base font-bold text-white leading-tight text-left">{value}</p>
+      <p className="text-xs sm:text-base font-bold text-white leading-tight text-left">{value}</p>
     </div>
   );
 }

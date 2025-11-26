@@ -306,9 +306,9 @@ export function ChatContainer() {
 
       {/* Expanded: Full chat interface */}
       {isExpanded && (
-        <div className={`fixed bottom-20 left-4 z-40 flex flex-col gap-1.5 w-[280px] sm:w-[320px] md:w-[380px] max-w-[calc(100vw-2rem)] transition-all duration-300`}>
+        <div className={`fixed bottom-20 left-4 z-40 flex flex-col gap-1.5 w-[260px] sm:w-[320px] md:w-[380px] max-w-[calc(100vw-2rem)] transition-all duration-300`}>
           {/* Main Glass Box (Tabs + Content) */}
-          <div className={`h-[400px] sm:h-[500px] max-h-[60vh] bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative transition-all duration-300`}>
+          <div className={`h-[380px] sm:h-[500px] max-h-[60vh] bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative transition-all duration-300`}>
             {/* Minimize Button (Absolute top-right) */}
             <button
               onClick={() => setIsExpanded(false)}

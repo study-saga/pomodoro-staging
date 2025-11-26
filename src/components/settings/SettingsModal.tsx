@@ -360,7 +360,7 @@ export function SettingsModal() {
         aria-modal="true"
         aria-labelledby="settings-title"
         tabIndex={-1}
-        className={`bg-gray-900 rounded-2xl w-full max-w-[90vw] sm:max-w-lg max-h-[85vh] overflow-hidden border border-white/10 shadow-2xl flex flex-col transition-all duration-300`}
+        className={`bg-gray-900 rounded-2xl w-full max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-hidden border border-white/10 shadow-2xl flex flex-col transition-all duration-300`}
       >
         {/* Header */}
         <div className={`flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-white/10 shrink-0`}>
@@ -402,7 +402,7 @@ export function SettingsModal() {
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 text-sm sm:text-base">
           <AnimatePresence mode="wait">
             {activeTab === 'timer' && (
               <motion.div
@@ -417,15 +417,15 @@ export function SettingsModal() {
                 className="space-y-4"
               >
                 <div>
-                  <h3 className="text-white font-bold text-base sm:text-lg mb-3 sm:mb-4">Timer Durations (minutes)</h3>
+                  <h3 className="text-white font-bold text-sm sm:text-lg mb-2 sm:mb-4">Timer Durations (minutes)</h3>
 
                   {/* Pomodoro */}
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
-                    <label className="text-white text-sm sm:text-base">Pomodoro</label>
+                  <div className="flex items-center justify-between mb-2 sm:mb-4">
+                    <label className="text-white text-xs sm:text-base">Pomodoro</label>
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, pomodoro: Math.max(1, t.pomodoro - 1) }))}
-                        className="w-7 h-7 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded text-white text-sm flex items-center justify-center transition-colors"
+                        className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded text-white text-xs sm:text-sm flex items-center justify-center transition-colors"
                       >
                         −
                       </button>
@@ -435,11 +435,11 @@ export function SettingsModal() {
                         max="60"
                         value={tempTimers.pomodoro}
                         onChange={(e) => setTempTimers(t => ({ ...t, pomodoro: Number(e.target.value) }))}
-                        className="w-12 sm:w-16 bg-white/10 text-white text-center px-1 sm:px-2 py-1 rounded border border-white/20 text-sm sm:text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-10 sm:w-16 bg-white/10 text-white text-center px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-white/20 text-xs sm:text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, pomodoro: Math.min(60, t.pomodoro + 1) }))}
-                        className="w-7 h-7 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded text-white text-sm flex items-center justify-center transition-colors"
+                        className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded text-white text-xs sm:text-sm flex items-center justify-center transition-colors"
                       >
                         +
                       </button>
@@ -447,12 +447,12 @@ export function SettingsModal() {
                   </div>
 
                   {/* Short Break */}
-                  <div className="flex items-center justify-between mb-4">
-                    <label className="text-white">Short Break</label>
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between mb-2 sm:mb-4">
+                    <label className="text-white text-xs sm:text-base">Short Break</label>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, shortBreak: Math.max(1, t.shortBreak - 1) }))}
-                        className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
+                        className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded text-white text-xs sm:text-sm flex items-center justify-center transition-colors"
                       >
                         −
                       </button>
@@ -462,11 +462,11 @@ export function SettingsModal() {
                         max="60"
                         value={tempTimers.shortBreak}
                         onChange={(e) => setTempTimers(t => ({ ...t, shortBreak: Number(e.target.value) }))}
-                        className="w-16 bg-white/10 text-white text-center px-2 py-1 rounded border border-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-10 sm:w-16 bg-white/10 text-white text-center px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-white/20 text-xs sm:text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, shortBreak: Math.min(60, t.shortBreak + 1) }))}
-                        className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
+                        className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded text-white text-xs sm:text-sm flex items-center justify-center transition-colors"
                       >
                         +
                       </button>
@@ -474,12 +474,12 @@ export function SettingsModal() {
                   </div>
 
                   {/* Long Break */}
-                  <div className="flex items-center justify-between mb-4">
-                    <label className="text-white">Long Break</label>
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between mb-2 sm:mb-4">
+                    <label className="text-white text-xs sm:text-base">Long Break</label>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, longBreak: Math.max(1, t.longBreak - 1) }))}
-                        className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
+                        className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded text-white text-xs sm:text-sm flex items-center justify-center transition-colors"
                       >
                         −
                       </button>
@@ -489,11 +489,11 @@ export function SettingsModal() {
                         max="60"
                         value={tempTimers.longBreak}
                         onChange={(e) => setTempTimers(t => ({ ...t, longBreak: Number(e.target.value) }))}
-                        className="w-16 bg-white/10 text-white text-center px-2 py-1 rounded border border-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-10 sm:w-16 bg-white/10 text-white text-center px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-white/20 text-xs sm:text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, longBreak: Math.min(60, t.longBreak + 1) }))}
-                        className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
+                        className="w-6 h-6 sm:w-8 sm:h-8 bg-white/10 hover:bg-white/20 rounded text-white text-xs sm:text-sm flex items-center justify-center transition-colors"
                       >
                         +
                       </button>
@@ -502,22 +502,22 @@ export function SettingsModal() {
                 </div>
 
                 <div>
-                  <h3 className="text-white font-bold text-base sm:text-lg mb-3 sm:mb-4">Advanced Settings</h3>
+                  <h3 className="text-white font-bold text-sm sm:text-lg mb-2 sm:mb-4">Advanced Settings</h3>
 
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
-                    <label className="text-white text-sm sm:text-base">Pomodoros before long break</label>
+                  <div className="flex items-center justify-between mb-2 sm:mb-4">
+                    <label className="text-white text-xs sm:text-base">Pomodoros before long break</label>
                     <input
                       type="number"
                       min="1"
                       max="10"
                       value={tempPomodorosBeforeLongBreak}
                       onChange={(e) => setTempPomodorosBeforeLongBreak(Number(e.target.value))}
-                      className="w-12 sm:w-16 bg-white/10 text-white text-center px-1 sm:px-2 py-1 rounded border border-white/20 text-sm sm:text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-10 sm:w-16 bg-white/10 text-white text-center px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-white/20 text-xs sm:text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
 
-                  <div className="flex items-center justify-between mb-4">
-                    <label className="text-white">Auto-start breaks</label>
+                  <div className="flex items-center justify-between mb-2 sm:mb-4">
+                    <label className="text-white text-xs sm:text-base">Auto-start breaks</label>
                     <input
                       type="checkbox"
                       checked={tempAutoStartBreaks}
@@ -526,8 +526,8 @@ export function SettingsModal() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between mb-4">
-                    <label className="text-white">Auto-start pomodoros</label>
+                  <div className="flex items-center justify-between mb-2 sm:mb-4">
+                    <label className="text-white text-xs sm:text-base">Auto-start pomodoros</label>
                     <input
                       type="checkbox"
                       checked={tempAutoStartPomodoros}
@@ -536,8 +536,8 @@ export function SettingsModal() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between mb-4">
-                    <label className="text-white">Enable sound notifications</label>
+                  <div className="flex items-center justify-between mb-2 sm:mb-4">
+                    <label className="text-white text-xs sm:text-base">Enable sound notifications</label>
                     <input
                       type="checkbox"
                       checked={tempSoundEnabled}
@@ -546,8 +546,8 @@ export function SettingsModal() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between mb-4">
-                    <label className="text-white">Enable leveling system</label>
+                  <div className="flex items-center justify-between mb-2 sm:mb-4">
+                    <label className="text-white text-xs sm:text-base">Enable leveling system</label>
                     <input
                       type="checkbox"
                       checked={tempLevelSystemEnabled}
