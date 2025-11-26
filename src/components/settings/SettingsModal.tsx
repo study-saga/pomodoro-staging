@@ -422,10 +422,10 @@ export function SettingsModal() {
                   {/* Pomodoro */}
                   <div className="flex items-center justify-between mb-2 sm:mb-4 gap-4">
                     <label className="text-white text-xs sm:text-base whitespace-nowrap">Pomodoro</label>
-                    <div className="flex items-center gap-1.5 sm:gap-2 flex-1 justify-end max-w-[140px]">
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, pomodoro: Math.max(1, t.pomodoro - 1) }))}
-                        className="aspect-square h-8 sm:h-9 bg-white/10 hover:bg-white/20 rounded text-white text-xs sm:text-sm flex items-center justify-center transition-colors"
+                        className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-l-lg text-white text-sm flex items-center justify-center transition-colors border-r border-white/5"
                       >
                         −
                       </button>
@@ -435,11 +435,11 @@ export function SettingsModal() {
                         max="60"
                         value={tempTimers.pomodoro}
                         onChange={(e) => setTempTimers(t => ({ ...t, pomodoro: Number(e.target.value) }))}
-                        className="flex-1 min-w-[2.5rem] bg-white/10 text-white text-center py-1 rounded border border-white/20 text-xs sm:text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-12 bg-white/10 text-white text-center h-8 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none"
                       />
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, pomodoro: Math.min(60, t.pomodoro + 1) }))}
-                        className="aspect-square h-8 sm:h-9 bg-white/10 hover:bg-white/20 rounded text-white text-xs sm:text-sm flex items-center justify-center transition-colors"
+                        className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-r-lg text-white text-sm flex items-center justify-center transition-colors border-l border-white/5"
                       >
                         +
                       </button>
@@ -449,10 +449,10 @@ export function SettingsModal() {
                   {/* Short Break */}
                   <div className="flex items-center justify-between mb-2 sm:mb-4 gap-4">
                     <label className="text-white text-xs sm:text-base whitespace-nowrap">Short Break</label>
-                    <div className="flex items-center gap-1.5 sm:gap-2 flex-1 justify-end max-w-[140px]">
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, shortBreak: Math.max(1, t.shortBreak - 1) }))}
-                        className="aspect-square h-8 sm:h-9 bg-white/10 hover:bg-white/20 rounded text-white text-xs sm:text-sm flex items-center justify-center transition-colors"
+                        className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-l-lg text-white text-sm flex items-center justify-center transition-colors border-r border-white/5"
                       >
                         −
                       </button>
@@ -462,11 +462,11 @@ export function SettingsModal() {
                         max="60"
                         value={tempTimers.shortBreak}
                         onChange={(e) => setTempTimers(t => ({ ...t, shortBreak: Number(e.target.value) }))}
-                        className="flex-1 min-w-[2.5rem] bg-white/10 text-white text-center py-1 rounded border border-white/20 text-xs sm:text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-12 bg-white/10 text-white text-center h-8 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none"
                       />
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, shortBreak: Math.min(60, t.shortBreak + 1) }))}
-                        className="aspect-square h-8 sm:h-9 bg-white/10 hover:bg-white/20 rounded text-white text-xs sm:text-sm flex items-center justify-center transition-colors"
+                        className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-r-lg text-white text-sm flex items-center justify-center transition-colors border-l border-white/5"
                       >
                         +
                       </button>
@@ -476,10 +476,10 @@ export function SettingsModal() {
                   {/* Long Break */}
                   <div className="flex items-center justify-between mb-2 sm:mb-4 gap-4">
                     <label className="text-white text-xs sm:text-base whitespace-nowrap">Long Break</label>
-                    <div className="flex items-center gap-1.5 sm:gap-2 flex-1 justify-end max-w-[140px]">
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, longBreak: Math.max(1, t.longBreak - 1) }))}
-                        className="aspect-square h-8 sm:h-9 bg-white/10 hover:bg-white/20 rounded text-white text-xs sm:text-sm flex items-center justify-center transition-colors"
+                        className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-l-lg text-white text-sm flex items-center justify-center transition-colors border-r border-white/5"
                       >
                         −
                       </button>
@@ -489,11 +489,11 @@ export function SettingsModal() {
                         max="60"
                         value={tempTimers.longBreak}
                         onChange={(e) => setTempTimers(t => ({ ...t, longBreak: Number(e.target.value) }))}
-                        className="flex-1 min-w-[2.5rem] bg-white/10 text-white text-center py-1 rounded border border-white/20 text-xs sm:text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-12 bg-white/10 text-white text-center h-8 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none"
                       />
                       <button
                         onClick={() => setTempTimers(t => ({ ...t, longBreak: Math.min(60, t.longBreak + 1) }))}
-                        className="aspect-square h-8 sm:h-9 bg-white/10 hover:bg-white/20 rounded text-white text-xs sm:text-sm flex items-center justify-center transition-colors"
+                        className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-r-lg text-white text-sm flex items-center justify-center transition-colors border-l border-white/5"
                       >
                         +
                       </button>
@@ -512,7 +512,7 @@ export function SettingsModal() {
                       max="10"
                       value={tempPomodorosBeforeLongBreak}
                       onChange={(e) => setTempPomodorosBeforeLongBreak(Number(e.target.value))}
-                      className="w-12 sm:w-16 bg-white/10 text-white text-center px-1 sm:px-2 py-1 rounded border border-white/20 text-xs sm:text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-12 bg-white/10 text-white text-center h-8 text-sm rounded border border-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none"
                     />
                   </div>
 
