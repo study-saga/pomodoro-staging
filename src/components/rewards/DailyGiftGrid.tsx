@@ -2,7 +2,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { claimDailyGift } from '../../lib/userSyncAuth';
-import { supabase } from '../../lib/supabase';
 import { getRewardForDay, getDaysInMonth } from '../../config/dailyGiftCalendar';
 import type { RewardType } from '../../config/dailyGiftCalendar';
 
@@ -27,6 +26,8 @@ interface GiftBox {
 
 export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
   const markDailyGiftClaimed = useSettingsStore((state) => state.markDailyGiftClaimed);
+  const userId = useSettingsStore((state) => state.userId);
+  const discordId = useSettingsStore((state) => state.discordId);
 
   // Generate calendar-based gifts for the current month
   const initializeGifts = (): GiftBox[] => {
@@ -108,23 +109,9 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
         const currentGift = gifts.find(g => g.day === currentDayOfMonth);
         if (currentGift?.xpAmount) {
           try {
-            // Get current auth user and app user
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.user) {
-              console.warn('[DailyGift] No authenticated user - gift not claimed');
-              markDailyGiftClaimed(); // Mark locally to prevent re-showing
-              setXpAwarded(true);
-              return;
-            }
-
-            const { data: appUser } = await supabase
-              .from('users')
-              .select('id, discord_id')
-              .eq('auth_user_id', session.user.id)
-              .maybeSingle();
-
-            if (!appUser) {
-              console.warn('[DailyGift] No app user found - gift not claimed');
+            // Check if user is authenticated (either web or Discord mode)
+            if (!userId || !discordId) {
+              console.warn('[DailyGift] No user ID or Discord ID - gift not claimed');
               markDailyGiftClaimed(); // Mark locally to prevent re-showing
               setXpAwarded(true);
               return;
@@ -134,9 +121,10 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
             const isBoostGift = currentGift.type === 'boost';
 
             // Claim gift via server-side validation
+            // RPC function handles both web and Discord auth modes
             const result = await claimDailyGift(
-              appUser.id,
-              appUser.discord_id,
+              userId,
+              discordId,
               currentGift.xpAmount,
               isBoostGift,
               currentGift.boostDuration || 24,

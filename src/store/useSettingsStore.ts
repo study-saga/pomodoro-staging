@@ -283,30 +283,18 @@ export const useSettingsStore = create<SettingsStore>()(
         (async () => {
           try {
             const { saveCompletedPomodoro } = await import('../lib/userSyncAuth');
-            const { supabase } = await import('../lib/supabase');
 
-            // Get current auth user
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.user) {
-              console.warn('[addXP] No authenticated user - XP saved locally only');
-              return;
-            }
-            const user = session.user;
+            // Get userId and discordId from store state
+            const { userId, discordId } = get();
 
-            // Get appUser to find user_id and discord_id
-            const { data: appUser } = await supabase
-              .from('users')
-              .select('id, discord_id')
-              .eq('auth_user_id', user.id)
-              .maybeSingle();
-
-            if (!appUser) {
-              console.warn('[addXP] No app user found - XP saved locally only');
+            if (!userId || !discordId) {
+              console.warn('[addXP] No user ID or Discord ID - XP saved locally only');
               return;
             }
 
             // Save pomodoro to database (this atomically updates XP and stats)
-            await saveCompletedPomodoro(appUser.id, appUser.discord_id, {
+            // RPC function handles both web and Discord auth modes
+            await saveCompletedPomodoro(userId, discordId, {
               duration_minutes: minutes,
               xp_earned: xpGained,
               critical_success: criticalSuccess,
@@ -350,30 +338,18 @@ export const useSettingsStore = create<SettingsStore>()(
         (async () => {
           try {
             const { incrementUserXP } = await import('../lib/userSyncAuth');
-            const { supabase } = await import('../lib/supabase');
 
-            // Get current auth user
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.user) {
-              console.warn('[addDailyGiftXP] No authenticated user - XP saved locally only');
-              return;
-            }
-            const user = session.user;
+            // Get userId from store state
+            const { userId } = get();
 
-            // Get appUser to find user_id
-            const { data: appUser } = await supabase
-              .from('users')
-              .select('id')
-              .eq('auth_user_id', user.id)
-              .maybeSingle();
-
-            if (!appUser) {
-              console.warn('[addDailyGiftXP] No app user found - XP saved locally only');
+            if (!userId) {
+              console.warn('[addDailyGiftXP] No user ID - XP saved locally only');
               return;
             }
 
             // Increment XP in database using the dedicated RPC function
-            await incrementUserXP(appUser.id, xpAmount);
+            // RPC function handles both web and Discord auth modes
+            await incrementUserXP(userId, xpAmount);
 
             console.log(`[addDailyGiftXP] ✓ ${xpAmount} XP synced to database`);
           } catch (error) {
