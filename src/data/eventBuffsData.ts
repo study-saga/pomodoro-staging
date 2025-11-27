@@ -88,6 +88,7 @@ export const EVENT_BUFFS: EventBuff[] = [
     description: '+25% XP on weekends',
     emoji: '💪',
     xpMultiplier: 1.25,
+    previewHours: 12, // Show only 12 hours before weekend starts
     dateRule: {
       type: 'dayOfWeek',
       days: [0, 6], // Sunday and Saturday
@@ -326,16 +327,21 @@ export function getBuffById(buffId: string): EventBuff | undefined {
 /**
  * HELPER: Get buffs starting within next N hours
  * Used for preview/teaser display before buff activates
+ * Respects per-buff previewHours (default: 48)
  */
-export function getUpcomingBuffs(hoursAhead: number = 48, date: Date = new Date()): EventBuff[] {
-  const futureDate = new Date(date.getTime() + hoursAhead * 60 * 60 * 1000);
-
+export function getUpcomingBuffs(defaultHoursAhead: number = 48, date: Date = new Date()): EventBuff[] {
   return EVENT_BUFFS.filter((buff) => {
     const isCurrentlyActive = isBuffActiveOnDate(buff, date);
+    if (isCurrentlyActive) return false; // Already active, not upcoming
+
+    // Use buff-specific preview window or default
+    const buffPreviewHours = buff.previewHours ?? defaultHoursAhead;
+    const futureDate = new Date(date.getTime() + buffPreviewHours * 60 * 60 * 1000);
+
     const willBeActive = isBuffActiveOnDate(buff, futureDate);
 
     // Return buffs that are NOT currently active but WILL BE active within the timeframe
-    return !isCurrentlyActive && willBeActive;
+    return willBeActive;
   });
 }
 

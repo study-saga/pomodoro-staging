@@ -168,4 +168,5 @@ export interface EventBuff {
   flatXPBonus?: number; // Optional: Flat XP added per session (e.g., 15)
   dateRule: DateRule; // When this buff is active
   durationHours?: number; // Optional: expires after N hours
+  previewHours?: number; // Optional: hours before start to show preview (default: 48)
 }
