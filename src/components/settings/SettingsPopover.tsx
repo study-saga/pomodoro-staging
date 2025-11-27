@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Settings as SettingsIcon, X, Palette, Volume2, Music, BarChart, Sparkles, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeviceType } from '../../hooks/useDeviceType';
+import { useMouseActivity } from '../../hooks/useMouseActivity';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { BACKGROUNDS } from '../../data/constants';
 import {
@@ -27,6 +28,7 @@ import {
 import { createRateLimiter } from '../../utils/rateLimiters';
 
 export const SettingsPopover = memo(function SettingsPopover() {
+  const isMouseActive = useMouseActivity(8000);
   const { appUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'notifications' | 'music' | 'progress' | 'whats-new'>('timer');
@@ -381,14 +383,21 @@ export const SettingsPopover = memo(function SettingsPopover() {
 
   // Trigger button component
   const trigger = (
-    <button
-      ref={triggerButtonRef}
-      onClick={() => setOpen(true)}
-      aria-label="Open settings"
-      className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors border border-white/10"
-    >
-      <SettingsIcon size={24} />
-    </button>
+    <div className="flex items-center justify-center">
+      <motion.button
+        ref={triggerButtonRef}
+        onClick={() => setOpen(true)}
+        aria-label="Open settings"
+        animate={{
+          padding: isMouseActive ? '0.75rem' : '0.25rem'
+        }}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
+        className="bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors border border-white/10"
+        style={{ transformOrigin: 'center' }}
+      >
+        <SettingsIcon size={24} />
+      </motion.button>
+    </div>
   );
 
   return (

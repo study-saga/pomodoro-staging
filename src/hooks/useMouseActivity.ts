@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 // Global state shared across all components
 let globalIsActive = true;
 let globalTimeoutRef: ReturnType<typeof setTimeout> | null = null;
-let currentTimeoutMs = 8000; // Default
+let currentTimeoutMs = 2000; // Default (2 seconds)
 const subscribers = new Set<(isActive: boolean) => void>();
 
 // Global activity handler
@@ -52,7 +52,7 @@ const initializeGlobalListeners = () => {
  * Hides UI after specified timeout, shows on mouse move/click
  * All components share the same timer - they hide/show together
  */
-export const useMouseActivity = (timeoutMs: number = 8000) => {
+export const useMouseActivity = (timeoutMs: number = 2000) => {
   const [isActive, setIsActive] = useState(globalIsActive);
 
   useEffect(() => {
