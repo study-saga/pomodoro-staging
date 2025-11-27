@@ -206,20 +206,6 @@ export const EVENT_BUFFS: EventBuff[] = [
     },
   },
 
-  {
-    id: 'new_years_energy',
-    title: 'New Year Energy',
-    description: '+50% XP - New Year week',
-    emoji: '🎊',
-    xpMultiplier: 1.5,
-    dateRule: {
-      type: 'dateRange',
-      startDate: '2025-11-27', // TEMP: was 2025-12-26
-      endDate: '2025-11-27', // TEMP: was 2026-01-02
-      yearlyRecur: false,
-    },
-  },
-
   // ============================================
   // RECURRING EVENTS (Bi-weekly Study Pushes)
   // ============================================
