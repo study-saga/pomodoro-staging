@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useAuth } from '../../contexts/AuthContext';
+import { useMouseActivity } from '../../hooks/useMouseActivity';
 import {
   getLevelName,
   ROLE_EMOJI_ELF,
@@ -24,6 +25,8 @@ interface LevelDisplayProps {
 }
 
 export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: LevelDisplayProps) {
+  const isMouseActive = useMouseActivity(8000); // 8 seconds
+
   const {
     level,
     xp,
@@ -264,8 +267,13 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   return (
     <>
-      {/* Level UI Container - Fixed position */}
-      <div className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
+      {/* Level UI Container - Fixed position with fade animation */}
+      <motion.div
+        initial={{ opacity: 1 }}
+        animate={{ opacity: isMouseActive ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'} ${!isMouseActive ? 'pointer-events-none' : ''}`}
+      >
         {/* Confetti - contained inside Level UI */}
         {showConfetti && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none z-50">
@@ -517,7 +525,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* User Stats - Different components for desktop/mobile */}
       {!isMobile ? (

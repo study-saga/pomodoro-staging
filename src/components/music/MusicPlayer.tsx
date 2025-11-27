@@ -3,10 +3,12 @@ import { useState, useEffect, useRef } from 'react';
 import ReactHowler from 'react-howler';
 import { Howler } from 'howler';
 import { Play, Pause, SkipBack, SkipForward, Volume2, ImageIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { Track } from '../../types';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { BACKGROUNDS } from '../../data/constants';
 import { useDeviceType } from '../../hooks/useDeviceType';
+import { useMouseActivity } from '../../hooks/useMouseActivity';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import lofiTracks from '../../data/lofi.json';
 import synthwaveTracks from '../../data/synthwave.json';
@@ -17,6 +19,8 @@ interface MusicPlayerProps {
 }
 
 export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
+  const isMouseActive = useMouseActivity(8000); // 8 seconds
+
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [playlistState, setPlaylistState] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -155,8 +159,17 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-black/60 backdrop-blur-xl border-t border-white/10">
-      <div className={`max-w-7xl mx-auto ${isMobile ? 'px-2 py-2' : 'px-4 py-3'}`}>
+    <div className="fixed bottom-0 left-0 right-0">
+      {/* Background layer - fades out */}
+      <motion.div
+        initial={{ opacity: 1 }}
+        animate={{ opacity: isMouseActive ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+        className="absolute inset-0 bg-black/60 backdrop-blur-xl border-t border-white/10 pointer-events-none"
+      />
+
+      {/* Controls layer - always visible */}
+      <div className={`relative max-w-7xl mx-auto ${isMobile ? 'px-2 py-2' : 'px-4 py-3'}`}>
         {/* Desktop: Spotify-style 3-column layout */}
         {!isMobile && (
           <div className="grid grid-cols-3 items-center gap-4">
