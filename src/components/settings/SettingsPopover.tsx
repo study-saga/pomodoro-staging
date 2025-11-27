@@ -383,21 +383,18 @@ export const SettingsPopover = memo(function SettingsPopover() {
 
   // Trigger button component
   const trigger = (
-    <div className="flex items-center justify-center">
-      <motion.button
-        ref={triggerButtonRef}
-        onClick={() => setOpen(true)}
-        aria-label="Open settings"
-        animate={{
-          padding: isMouseActive ? '0.75rem' : '0.25rem'
-        }}
-        transition={{ duration: 0.5, ease: "easeInOut" }}
-        className="bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors border border-white/10"
-        style={{ transformOrigin: 'center' }}
-      >
-        <SettingsIcon size={24} />
-      </motion.button>
-    </div>
+    <motion.button
+      ref={triggerButtonRef}
+      onClick={() => setOpen(true)}
+      aria-label="Open settings"
+      animate={{
+        scale: isMouseActive ? 1 : 0.76
+      }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors border border-white/10"
+    >
+      <SettingsIcon size={12} />
+    </motion.button>
   );
 
   return (
