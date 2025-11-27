@@ -156,7 +156,7 @@ export const EVENT_BUFFS: EventBuff[] = [
     xpMultiplier: 1.30,
     dateRule: {
       type: 'dateRange',
-      startDate: '2025-12-10',
+      startDate: '2025-11-29', // TEMP: Set 2 days ahead for preview testing
       endDate: '2026-01-01',
       yearlyRecur: false,
     },
@@ -171,7 +171,7 @@ export const EVENT_BUFFS: EventBuff[] = [
     flatXPBonus: 15,
     dateRule: {
       type: 'dateRange',
-      startDate: '2025-12-10',
+      startDate: '2025-11-29', // TEMP: Set 2 days ahead for preview testing
       endDate: '2026-01-01',
       yearlyRecur: false,
     },
@@ -191,20 +191,20 @@ export const EVENT_BUFFS: EventBuff[] = [
   //   },
   // },
 
-  // TEMP DEV TESTING: Activated for Nov 27
-  {
-    id: 'christmas_special',
-    title: 'Christmas Magic',
-    description: 'Double XP! Dec 22-25',
-    emoji: '🎁',
-    xpMultiplier: 2.0,
-    dateRule: {
-      type: 'dateRange',
-      startDate: '2025-11-27', // TEMP: was 2025-12-22
-      endDate: '2025-11-27', // TEMP: was 2025-12-25
-      yearlyRecur: true,
-    },
-  },
+  // Christmas Magic - commented out for now
+  // {
+  //   id: 'christmas_special',
+  //   title: 'Christmas Magic',
+  //   description: 'Double XP! Dec 22-25',
+  //   emoji: '🎁',
+  //   xpMultiplier: 2.0,
+  //   dateRule: {
+  //     type: 'dateRange',
+  //     startDate: '2025-12-22',
+  //     endDate: '2025-12-25',
+  //     yearlyRecur: true,
+  //   },
+  // },
 
   // ============================================
   // RECURRING EVENTS (Bi-weekly Study Pushes)
