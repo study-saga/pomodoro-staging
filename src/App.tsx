@@ -17,6 +17,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { getEnvironment } from './lib/environment';
 import { canClaimDailyGift } from './lib/userSyncAuth';
 
+
 function AppContent() {
   const { authenticated, loading, error, appUser } = useAuth();
   const settingsSyncComplete = useSettingsStore((state) => state.settingsSyncComplete);
