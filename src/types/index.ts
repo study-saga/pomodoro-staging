@@ -165,6 +165,7 @@ export interface EventBuff {
   emoji: string; // Visual representation (e.g., "💪") - fallback if no iconSrc
   iconSrc?: string; // Optional: Custom SVG/image path (overrides emoji)
   xpMultiplier: number; // XP boost (1.5 = +50%)
+  flatXPBonus?: number; // Optional: Flat XP added per session (e.g., 15)
   dateRule: DateRule; // When this buff is active
   durationHours?: number; // Optional: expires after N hours
 }

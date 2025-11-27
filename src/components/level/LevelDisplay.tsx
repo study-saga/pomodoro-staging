@@ -19,6 +19,7 @@ import { UserStatsPopover } from './UserStatsPopover';
 import { UserStatsModal } from './UserStatsModal';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useActiveEventBuffs } from '../../hooks/useActiveEventBuffs';
+import { getBuffStartDateText } from '../../data/eventBuffsData';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
@@ -53,7 +54,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   const { isMobile } = useDeviceType();
   const { appUser } = useAuth();
-  const { activeBuffs } = useActiveEventBuffs(levelPath);
+  const { activeBuffs, upcomingBuffs } = useActiveEventBuffs(levelPath);
 
   const xpNeeded = getXPNeeded(level);
   const levelName = getLevelName(level, levelPath);
@@ -482,6 +483,50 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                 </div>
               );
             })}
+
+            {/* 4. Upcoming Buffs (Preview, grayed out) */}
+            {upcomingBuffs.map((buff) => {
+              const buffId = `upcoming-${buff.id}`;
+              const isElfBuff = buff.description.includes('(Elf only)');
+
+              return (
+                <div
+                  key={buff.id}
+                  ref={(el) => { eventBuffRefs.current[buffId] = el; }}
+                  className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden opacity-40 grayscale ${isElfBuff
+                    ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30'
+                    : 'bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-cyan-500/20'
+                    } ${!buff.iconSrc ? 'text-xl' : ''}`}
+                  onClick={(e) => {
+                    if (isMobile) {
+                      e.stopPropagation();
+                      const newActiveTooltip = activeBuffTooltip === buffId ? null : buffId;
+                      setActiveBuffTooltip(newActiveTooltip);
+                      if (newActiveTooltip) {
+                        updateTooltipPosition(buffId, { current: eventBuffRefs.current[buffId] });
+                      }
+                    }
+                  }}
+                  onMouseEnter={() => {
+                    if (!isMobile) {
+                      setHoveredBuff(buffId);
+                      updateTooltipPosition(buffId, { current: eventBuffRefs.current[buffId] });
+                    }
+                  }}
+                  onMouseLeave={() => !isMobile && setHoveredBuff(null)}
+                >
+                  {buff.iconSrc ? (
+                    <img
+                      src={buff.iconSrc}
+                      alt={buff.title}
+                      className="w-full h-full rounded-lg"
+                    />
+                  ) : (
+                    buff.emoji
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Prestige Stars */}
@@ -647,6 +692,42 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               <p className={`text-sm font-semibold mb-1 ${isElfBuff ? 'text-green-300' : 'text-cyan-300'
                 }`}>
                 {buff.title}
+              </p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                {buff.description}
+              </p>
+            </div>
+          </div>,
+          document.body
+        );
+      })}
+
+      {/* Upcoming Buff Tooltips (Preview) */}
+      {upcomingBuffs.map((buff) => {
+        const buffId = `upcoming-${buff.id}`;
+        const isActive = isMobile ? activeBuffTooltip === buffId : hoveredBuff === buffId;
+        const isElfBuff = buff.description.includes('(Elf only)');
+
+        if (!tooltipPositions[buffId] || !isActive) return null;
+
+        return createPortal(
+          <div
+            key={buffId}
+            className="fixed transform -translate-x-1/2 pointer-events-none z-40 transition-opacity duration-200"
+            style={{
+              top: `${tooltipPositions[buffId].top}px`,
+              left: `${tooltipPositions[buffId].left}px`,
+              opacity: isMobile ? (activeBuffTooltip === buffId ? 1 : 0) : undefined,
+            }}
+          >
+            <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
+              }`}>
+              <p className={`text-sm font-semibold mb-1 ${isElfBuff ? 'text-green-300' : 'text-cyan-300'
+                }`}>
+                {buff.title}
+              </p>
+              <p className="text-xs text-gray-500 italic mb-1">
+                Unavailable: Starts {getBuffStartDateText(buff)}
               </p>
               <p className="text-xs text-gray-400 leading-relaxed">
                 {buff.description}

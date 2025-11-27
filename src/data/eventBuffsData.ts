@@ -1,6 +1,8 @@
 import type { EventBuff } from '../types';
 import { isBuffActiveOnDate } from '../config/buffActivationRules';
 import buffElfSlingshot from '../assets/buff-elf-slingshot.svg';
+import buffWintersBlessing from '../assets/buff-winters-blessing.svg';
+import buffWinterWisdom from '../assets/buff-winter-wisdom.svg';
 
 /**
  * EVENT BUFFS DATABASE
@@ -144,6 +146,36 @@ export const EVENT_BUFFS: EventBuff[] = [
   // ============================================
   // DECEMBER 2025 - JANUARY 2026 (Holiday Season)
   // ============================================
+  {
+    id: 'winters_blessing_dec_2025',
+    title: "Winter's Blessing",
+    description: '+30% XP - Elven winter magic (Elf only)',
+    emoji: '❄️',
+    iconSrc: buffWintersBlessing,
+    xpMultiplier: 1.30,
+    dateRule: {
+      type: 'dateRange',
+      startDate: '2025-12-10',
+      endDate: '2026-01-01',
+      yearlyRecur: false,
+    },
+  },
+  {
+    id: 'winter_wisdom_dec_2025',
+    title: 'Winter Wisdom',
+    description: '+15 XP per session - Study through winter (Human only)',
+    emoji: '📚',
+    iconSrc: buffWinterWisdom,
+    xpMultiplier: 1.0, // No multiplier
+    flatXPBonus: 15,
+    dateRule: {
+      type: 'dateRange',
+      startDate: '2025-12-10',
+      endDate: '2026-01-01',
+      yearlyRecur: false,
+    },
+  },
+
   // {
   //   id: 'december_festivities',
   //   title: 'December Cheer',
@@ -289,4 +321,44 @@ export function getStackedMultiplier(date: Date = new Date()): number {
  */
 export function getBuffById(buffId: string): EventBuff | undefined {
   return EVENT_BUFFS.find((buff) => buff.id === buffId);
+}
+
+/**
+ * HELPER: Get buffs starting within next N hours
+ * Used for preview/teaser display before buff activates
+ */
+export function getUpcomingBuffs(hoursAhead: number = 48, date: Date = new Date()): EventBuff[] {
+  const futureDate = new Date(date.getTime() + hoursAhead * 60 * 60 * 1000);
+
+  return EVENT_BUFFS.filter((buff) => {
+    const isCurrentlyActive = isBuffActiveOnDate(buff, date);
+    const willBeActive = isBuffActiveOnDate(buff, futureDate);
+
+    // Return buffs that are NOT currently active but WILL BE active within the timeframe
+    return !isCurrentlyActive && willBeActive;
+  });
+}
+
+/**
+ * HELPER: Get buff start date as readable string
+ * Returns formatted start date for display (e.g., "10 of December")
+ */
+export function getBuffStartDateText(buff: EventBuff): string {
+  const rule = buff.dateRule;
+
+  if (rule.type === 'dateRange') {
+    const date = new Date(rule.startDate + 'T00:00:00');
+    const month = date.toLocaleDateString('en-US', { month: 'long' });
+    const day = date.getDate();
+    return `${day} of ${month}`;
+  }
+
+  if (rule.type === 'specificDate') {
+    const date = new Date(rule.date + 'T00:00:00');
+    const month = date.toLocaleDateString('en-US', { month: 'long' });
+    const day = date.getDate();
+    return `${day} of ${month}`;
+  }
+
+  return 'Soon';
 }
