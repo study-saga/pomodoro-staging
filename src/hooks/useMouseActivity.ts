@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 // Global state shared across all components
 let globalIsActive = true;
-let globalTimeoutRef: NodeJS.Timeout | null = null;
+let globalTimeoutRef: ReturnType<typeof setTimeout> | null = null;
 let currentTimeoutMs = 8000; // Default
 const subscribers = new Set<(isActive: boolean) => void>();
 
