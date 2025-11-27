@@ -3,6 +3,7 @@ import { isBuffActiveOnDate } from '../config/buffActivationRules';
 import buffElfSlingshot from '../assets/buff-elf-slingshot.svg';
 import buffWintersBlessing from '../assets/buff-winters-blessing.svg';
 import buffWinterWisdom from '../assets/buff-winter-wisdom.svg';
+import buffWeekendWarrior from '../assets/buff-weekend-warrior.svg';
 
 /**
  * EVENT BUFFS DATABASE
@@ -87,6 +88,7 @@ export const EVENT_BUFFS: EventBuff[] = [
     title: 'Weekend Warrior',
     description: '+25% XP on weekends',
     emoji: '💪',
+    iconSrc: buffWeekendWarrior,
     xpMultiplier: 1.25,
     previewHours: 12, // Show only 12 hours before weekend starts
     dateRule: {
