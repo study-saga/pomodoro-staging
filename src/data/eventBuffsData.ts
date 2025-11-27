@@ -156,7 +156,7 @@ export const EVENT_BUFFS: EventBuff[] = [
     xpMultiplier: 1.30,
     dateRule: {
       type: 'dateRange',
-      startDate: '2025-11-29', // TEMP: Set 2 days ahead for preview testing
+      startDate: '2025-12-10',
       endDate: '2026-01-01',
       yearlyRecur: false,
     },
@@ -171,7 +171,7 @@ export const EVENT_BUFFS: EventBuff[] = [
     flatXPBonus: 15,
     dateRule: {
       type: 'dateRange',
-      startDate: '2025-11-29', // TEMP: Set 2 days ahead for preview testing
+      startDate: '2025-12-10',
       endDate: '2026-01-01',
       yearlyRecur: false,
     },
