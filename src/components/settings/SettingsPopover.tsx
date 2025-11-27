@@ -81,6 +81,13 @@ export const SettingsPopover = memo(function SettingsPopover() {
     }
   }, [open]);
 
+  // Close settings when mouse becomes inactive
+  useEffect(() => {
+    if (!isMouseActive && open) {
+      setOpen(false);
+    }
+  }, [isMouseActive, open]);
+
   // Handle keyboard shortcuts
   useEffect(() => {
     if (!open) return;

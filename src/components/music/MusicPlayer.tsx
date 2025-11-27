@@ -56,6 +56,13 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
     }
   }, [playlist]);
 
+  // Close background selector when mouse becomes inactive
+  useEffect(() => {
+    if (!isMouseActive && showBackgrounds) {
+      setShowBackgrounds(false);
+    }
+  }, [isMouseActive, showBackgrounds]);
+
   // Update seek position
   useEffect(() => {
     if (playing) {

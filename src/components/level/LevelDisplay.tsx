@@ -92,6 +92,13 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const levelBadge = levelName.split(' ')[0]; // Get emoji (first part before space)
   const levelTitle = levelName.split(' ').slice(1).join(' '); // Get text (everything after first space)
 
+  // Close stats popover when mouse becomes inactive
+  useEffect(() => {
+    if (!isMouseActive && showStatsPopover) {
+      setShowStatsPopover(false);
+    }
+  }, [isMouseActive, showStatsPopover]);
+
 
 
   // Calculate boost time remaining with defensive fallbacks
