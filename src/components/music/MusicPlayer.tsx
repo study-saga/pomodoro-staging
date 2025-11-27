@@ -159,17 +159,13 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0">
-      {/* Background layer - fades out */}
-      <motion.div
-        initial={{ opacity: 1 }}
-        animate={{ opacity: isMouseActive ? 1 : 0 }}
-        transition={{ duration: 0.5 }}
-        className="absolute inset-0 bg-black/60 backdrop-blur-xl border-t border-white/10 pointer-events-none"
-      />
-
-      {/* Controls layer - always visible */}
-      <div className={`relative max-w-7xl mx-auto ${isMobile ? 'px-2 py-2' : 'px-4 py-3'}`}>
+    <motion.div
+      initial={{ opacity: 1 }}
+      animate={{ opacity: isMouseActive ? 1 : 0 }}
+      transition={{ duration: 0.5 }}
+      className={`fixed bottom-0 left-0 right-0 bg-black/60 backdrop-blur-xl border-t border-white/10 ${!isMouseActive ? 'pointer-events-none' : ''}`}
+    >
+      <div className={`max-w-7xl mx-auto ${isMobile ? 'px-2 py-2' : 'px-4 py-3'}`}>
         {/* Desktop: Spotify-style 3-column layout */}
         {!isMobile && (
           <div className="grid grid-cols-3 items-center gap-4">
@@ -499,6 +495,6 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
           onLoad={handleLoad}
         />
       )}
-    </div>
+    </motion.div>
   );
 }
