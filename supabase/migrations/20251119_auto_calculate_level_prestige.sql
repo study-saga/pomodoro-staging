@@ -24,7 +24,10 @@ BEGIN
 
     -- Calculate level from remaining XP
     v_level := 1;
-    WHILE v_level < v_max_level AND v_remaining >= (v_level * 100) LOOP
+    WHILE v_level < v_max_level LOOP
+      IF v_remaining < (v_level * 100) THEN
+        EXIT;
+      END IF;
       v_remaining := v_remaining - (v_level * 100);
       v_level := v_level + 1;
     END LOOP;
