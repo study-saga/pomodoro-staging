@@ -1,7 +1,8 @@
 import { memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users } from 'lucide-react'
-import { useOnlinePresence } from '../../hooks/useOnlinePresence'
+import { useChat } from '../../contexts/ChatContext'
+import { useAuth } from '../../contexts/AuthContext'
 import { useMouseActivity } from '../../hooks/useMouseActivity'
 
 const formatCount = (count: number): string => {
@@ -12,7 +13,9 @@ const formatCount = (count: number): string => {
 
 export const OnlinePresenceCounter = memo(function OnlinePresenceCounter() {
   const isMouseActive = useMouseActivity(8000); // 8 seconds
-  const { count, status } = useOnlinePresence()
+  const { onlineUsers, isGlobalConnected } = useChat()
+  const { appUser } = useAuth()
+  const count = onlineUsers.length
 
   // Loading state
   if (!isGlobalConnected || !appUser) {

@@ -107,14 +107,12 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
     })();
   };
 
-  const { isCompact } = useDeviceType();
-
   return (
     <>
       {/* Header */}
-      <div className={`${isCompact ? 'p-3' : 'p-4'} border-b border-gray-700`}>
+      <div className="p-4 border-b border-gray-700">
         <div className="flex items-center justify-between">
-          <h2 className={`${isCompact ? 'text-base' : 'text-lg'} font-bold text-white`}>
+          <h2 className="text-lg font-bold text-white">
             User Info
           </h2>
           <button
@@ -128,9 +126,9 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
 
       {/* Stats Grid with ScrollArea */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className={`${isCompact ? 'p-3 pb-2' : 'p-4 pb-2'}`}>
+        <div className="p-4 pb-2">
           {/* Path Selection - Hero Stats Style */}
-          <label className={`w-full bg-gradient-to-r from-purple-900/40 to-purple-900/20 rounded-xl ${isCompact ? 'p-2' : 'p-3'} border border-purple-500/30 mb-3 cursor-pointer block hover:border-purple-500/50 hover:from-purple-900/50 hover:to-purple-900/30 transition-all relative group`}>
+          <label className="w-full bg-gradient-to-r from-purple-900/40 to-purple-900/20 rounded-xl p-3 border border-purple-500/30 mb-3 cursor-pointer block hover:border-purple-500/50 hover:from-purple-900/50 hover:to-purple-900/30 transition-all relative group">
             <input
               type="checkbox"
               className="opacity-0 w-0 h-0 peer"
@@ -138,14 +136,14 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
               onChange={(e) => handleRoleChange(e.target.checked ? 'human' : 'elf')}
             />
             <div className="flex flex-row items-center justify-start gap-3">
-              <span className={`${isCompact ? 'text-3xl' : 'text-4xl'} filter drop-shadow-md group-hover:scale-110 transition-transform duration-300`}>
+              <span className="text-4xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">
                 {levelPath === 'elf' ? '🧝' : '⚔️'}
               </span>
               <div className="flex flex-col items-start text-left">
-                <p className={`${isCompact ? 'text-base' : 'text-lg'} font-bold text-white tracking-tight group-hover:text-purple-200 transition-colors`}>
+                <p className="text-lg font-bold text-white tracking-tight group-hover:text-purple-200 transition-colors">
                   {levelPath === 'elf' ? 'Elf' : 'Human'}
                 </p>
-                <p className={`${isCompact ? 'text-[10px]' : 'text-[11px]'} text-purple-200/60 font-medium`}>
+                <p className="text-[11px] text-purple-200/60 font-medium">
                   {levelPath === 'elf' ? 'Consistency & Focus' : 'High Risk, High Reward'}
                 </p>
               </div>
