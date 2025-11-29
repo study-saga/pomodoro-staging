@@ -20,6 +20,7 @@ export interface AppUser {
   level: number
   xp: number
   prestige_level: number
+  prestige_stars: { role: 'elf' | 'human'; earnedAt: string }[]
   level_path: 'elf' | 'human'
 
   // Stats tracking (SERVER-CONTROLLED - read-only from client)

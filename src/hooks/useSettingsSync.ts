@@ -309,6 +309,7 @@ export function useSettingsSync() {
       xp: remainingXP,  // Remaining XP towards next level
       level: calculatedLevel,  // Auto-calculated level
       prestigeLevel: calculatedPrestige,  // Auto-calculated prestige
+      prestigeStars: appUser.prestige_stars || [],  // Role-specific prestige stars
       totalPomodoros: appUser.total_pomodoros,
       totalStudyMinutes: appUser.total_study_minutes,
       username: appUser.username,

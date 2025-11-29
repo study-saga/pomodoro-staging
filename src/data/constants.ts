@@ -123,6 +123,7 @@ export const DEFAULT_SETTINGS = {
   xp: 0,
   level: 1,
   prestigeLevel: 0,
+  prestigeStars: [],
   totalPomodoros: 0,
   totalStudyMinutes: 0,
   username: 'User',

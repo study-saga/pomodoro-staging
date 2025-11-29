@@ -20,6 +20,7 @@ import { UserStatsModal } from './UserStatsModal';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useActiveEventBuffs } from '../../hooks/useActiveEventBuffs';
 import { getBuffStartDateText } from '../../data/eventBuffsData';
+import { getPrestigeIcons } from '../../lib/prestigeUtils';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
@@ -32,6 +33,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     level,
     xp,
     prestigeLevel,
+    prestigeStars,
     username,
     levelPath,
     levelSystemEnabled,
@@ -396,6 +398,55 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             </div>
           </div>
 
+          {/* Dev Tools (moved above buffs to avoid covering prestige stars) */}
+          {import.meta.env.DEV && (
+            <div className="space-y-1 mt-2">
+              <div className="flex gap-1">
+                <button
+                  onClick={() => addXP(50)} // Adds 50 XP
+                  className="flex-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                >
+                  +50 XP
+                </button>
+                <button
+                  onClick={() => {
+                    // Add a prestige star for current role
+                    const currentStars = useSettingsStore.getState().prestigeStars || [];
+                    useSettingsStore.setState({
+                      prestigeStars: [
+                        ...currentStars,
+                        { role: levelPath, earnedAt: new Date().toISOString() }
+                      ]
+                    });
+                  }}
+                  className="flex-1 px-2 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors"
+                >
+                  +⭐ Star
+                </button>
+              </div>
+              <div className="flex gap-1">
+                <select
+                  value={selectedDay}
+                  onChange={(e) => setSelectedDay(Number(e.target.value))}
+                  className="px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:outline-none focus:border-pink-500"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((day) => (
+                    <option key={day} value={day}>
+                      Day {day}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={simulateNextDay}
+                  className="flex-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
+                >
+                  <Gift className="w-3 h-3" />
+                  Daily Gift
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Role Buff Icons - Ordered: Permanent first, then by expiration */}
           <div className="flex gap-2">
             {/* 1. Role Buff (Permanent - Always first) */}
@@ -534,46 +585,44 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                 </div>
               );
             })}
+
           </div>
 
-          {/* Prestige Stars */}
-          {prestigeLevel > 0 && (
-            <div className="text-center pt-1">
-              <span className={`text-yellow-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                {"⭐".repeat(Math.min(prestigeLevel, 5))}
-              </span>
-            </div>
-          )}
+          {/* Prestige Stars Row (below buffs, like rating stars) */}
+          {prestigeStars && prestigeStars.length > 0 && (
+            <div className="flex justify-center gap-0.5 mt-2 items-center">
+              {getPrestigeIcons(prestigeStars).map((icon, idx) => {
+                const titles = {
+                  gem: 'Gem (125 Stars)',
+                  diamond: 'Diamond (25 Stars)',
+                  crown: 'Crown (5 Stars)',
+                  star: `Prestige Star (${icon.role === 'elf' ? 'Elf' : 'Human'})`
+                };
 
+                // Render SVG for stars
+                if (icon.type === 'svg') {
+                  return (
+                    <img
+                      key={`prestige-${idx}`}
+                      src={icon.value}
+                      alt={titles[icon.tier]}
+                      title={titles[icon.tier]}
+                      className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
+                    />
+                  );
+                }
 
-          {import.meta.env.DEV && (
-            <div className="space-y-1">
-              <button
-                onClick={() => addXP(50)} // Adds 50 XP
-                className="w-full px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
-              >
-                Add 50 XP (Dev)
-              </button>
-              <div className="flex gap-1">
-                <select
-                  value={selectedDay}
-                  onChange={(e) => setSelectedDay(Number(e.target.value))}
-                  className="px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:outline-none focus:border-pink-500"
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((day) => (
-                    <option key={day} value={day}>
-                      Day {day}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={simulateNextDay}
-                  className="flex-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
-                >
-                  <Gift className="w-3 h-3" />
-                  Daily Gift
-                </button>
-              </div>
+                // Render emoji for crowns/diamonds/gems
+                return (
+                  <span
+                    key={`prestige-${idx}`}
+                    className={`${isMobile ? 'text-lg' : 'text-xl'}`}
+                    title={titles[icon.tier]}
+                  >
+                    {icon.value}
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>

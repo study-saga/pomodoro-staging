@@ -1,3 +1,8 @@
+export interface PrestigeStar {
+  role: 'elf' | 'human';
+  earnedAt: string; // ISO timestamp
+}
+
 export interface Track {
   id: string;
   title: string;
@@ -32,6 +37,7 @@ export interface Settings {
   xp: number;
   level: number;
   prestigeLevel: number;
+  prestigeStars: PrestigeStar[]; // Track stars earned with role info
   totalPomodoros: number;
   totalStudyMinutes: number;
   username: string;

@@ -30,3 +30,5 @@ DEV_IDEAS.md
 *.njsproj
 *.sln
 *.sw?
+*.mcp.json
+.mcp.json
