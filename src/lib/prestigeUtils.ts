@@ -10,8 +10,8 @@
  */
 
 import type { PrestigeStar } from '../types';
-import starElfSvg from '../assets/star-elf.svg';
-import starHumanSvg from '../assets/star-human.svg';
+const starElfSvg = '/assets/buffs/star-elf.svg';
+const starHumanSvg = '/assets/buffs/star-human.svg';
 
 // Icon types
 export type PrestigeIcon = {

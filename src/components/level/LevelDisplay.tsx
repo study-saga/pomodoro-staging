@@ -13,9 +13,9 @@ import {
 } from '../../data/levels';
 import { getAvatarUrl } from '../../lib/chatService';
 import { Gift } from 'lucide-react';
-import buffElf from '../../assets/buff-elf.svg';
-import buffHuman from '../../assets/buff-human.svg';
-import buffBoost from '../../assets/buff-boost.svg';
+const buffElf = '/assets/buffs/buff-elf.svg';
+const buffHuman = '/assets/buffs/buff-human.svg';
+const buffBoost = '/assets/buffs/buff-boost.svg';
 import { UserStatsPopover } from './UserStatsPopover';
 import { UserStatsModal } from './UserStatsModal';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -467,6 +467,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                 alt={`${levelPath} buff`}
                 className="w-full h-full rounded-lg"
                 style={{ filter: 'drop-shadow(0 0 6px rgba(168, 85, 247, 0.5))' }}
+                loading="lazy"
               />
             </div>
 
@@ -491,6 +492,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                   alt="XP Boost"
                   className="w-full h-full rounded-lg"
                   style={{ filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.5))' }}
+                  loading="lazy"
                 />
               </div>
             )}
@@ -534,6 +536,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                       alt={buff.title}
                       className="w-full h-full rounded-lg"
                       style={{ filter: isElfBuff ? 'drop-shadow(0 0 6px rgba(34, 197, 94, 0.5))' : 'drop-shadow(0 0 6px rgba(6, 182, 212, 0.5))' }}
+                      loading="lazy"
                     />
                   ) : (
                     buff.emoji
@@ -578,6 +581,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                       src={buff.iconSrc}
                       alt={buff.title}
                       className="w-full h-full rounded-lg"
+                      loading="lazy"
                     />
                   ) : (
                     buff.emoji
@@ -608,6 +612,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                       alt={titles[icon.tier]}
                       title={titles[icon.tier]}
                       className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
+                      loading="lazy"
                     />
                   );
                 }

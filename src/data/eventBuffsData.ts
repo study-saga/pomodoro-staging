@@ -1,9 +1,9 @@
 import type { EventBuff } from '../types';
 import { isBuffActiveOnDate } from '../config/buffActivationRules';
-import buffElfSlingshot from '../assets/buff-elf-slingshot.svg';
-import buffWintersBlessing from '../assets/buff-winters-blessing.svg';
-import buffWinterWisdom from '../assets/buff-winter-wisdom.svg';
-import buffWeekendWarrior from '../assets/buff-weekend-warrior.svg';
+const buffElfSlingshot = '/assets/buffs/buff-elf-slingshot.svg';
+const buffWintersBlessing = '/assets/buffs/buff-winters-blessing.svg';
+const buffWinterWisdom = '/assets/buffs/buff-winter-wisdom.svg';
+const buffWeekendWarrior = '/assets/buffs/buff-weekend-warrior.svg';
 
 /**
  * EVENT BUFFS DATABASE
