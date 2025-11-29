@@ -8,8 +8,7 @@
 
 import { lazy } from 'react';
 
-// Settings Modal (981 lines) - Settings panel with multiple tabs
-export const SettingsModal = lazy(() => import('./settings/SettingsModal').then(m => ({ default: m.SettingsModal })));
+
 
 // Daily Gift Grid (375 lines) - Rewards calendar
 export const DailyGiftGrid = lazy(() => import('./rewards/DailyGiftGrid').then(m => ({ default: m.DailyGiftGrid })));
