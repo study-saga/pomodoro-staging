@@ -53,6 +53,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const roleBuffRef = useRef<HTMLDivElement>(null);
   const boostRef = useRef<HTMLDivElement>(null);
   const eventBuffRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const rafRef = useRef<number | null>(null);
 
   const { isMobile, isCompact } = useDeviceType();
   const { appUser } = useAuth();
@@ -183,41 +184,52 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     }
   };
 
-  // Update tooltip position based on buff ref with viewport boundary checks
+  // Update tooltip position based on buff ref with viewport boundary checks (Throttled)
   const updateTooltipPosition = (buffId: string, ref: React.RefObject<HTMLDivElement | null>) => {
-    if (typeof window === 'undefined' || !ref.current) return;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
-    const rect = ref.current.getBoundingClientRect();
-    const tooltipHeight = 90; // Estimated tooltip height (increased for larger text)
-    const tooltipWidth = 260; // Min width for event buffs (increased for larger text)
-    const padding = 12; // Safe padding from viewport edges
+    rafRef.current = requestAnimationFrame(() => {
+      if (typeof window === 'undefined' || !ref.current) return;
 
-    let top = rect.bottom + 8;
-    let left = rect.left + rect.width / 2;
+      const rect = ref.current.getBoundingClientRect();
+      const tooltipHeight = 90; // Estimated tooltip height (increased for larger text)
+      const tooltipWidth = 260; // Min width for event buffs (increased for larger text)
+      const padding = 12; // Safe padding from viewport edges
 
-    // Check bottom overflow - if tooltip goes below viewport, position above icon
-    if (top + tooltipHeight > window.innerHeight - padding) {
-      top = rect.top - tooltipHeight - 8;
-    }
+      let top = rect.bottom + 8;
+      let left = rect.left + rect.width / 2;
 
-    // Check top overflow - ensure minimum distance from top
-    if (top < padding) {
-      top = padding;
-    }
+      // Check bottom overflow - if tooltip goes below viewport, position above icon
+      if (top + tooltipHeight > window.innerHeight - padding) {
+        top = rect.top - tooltipHeight - 8;
+      }
 
-    // Check horizontal overflow
-    const halfWidth = tooltipWidth / 2;
-    if (left - halfWidth < padding) {
-      left = halfWidth + padding;
-    } else if (left + halfWidth > window.innerWidth - padding) {
-      left = window.innerWidth - halfWidth - padding;
-    }
+      // Check top overflow - ensure minimum distance from top
+      if (top < padding) {
+        top = padding;
+      }
 
-    setTooltipPositions(prev => ({
-      ...prev,
-      [buffId]: { top, left }
-    }));
+      // Check horizontal overflow
+      const halfWidth = tooltipWidth / 2;
+      if (left - halfWidth < padding) {
+        left = halfWidth + padding;
+      } else if (left + halfWidth > window.innerWidth - padding) {
+        left = window.innerWidth - halfWidth - padding;
+      }
+
+      setTooltipPositions(prev => ({
+        ...prev,
+        [buffId]: { top, left }
+      }));
+    });
   };
+
+  // Cleanup RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   // Handle buff icon click on mobile
   const handleBuffClick = (e: React.MouseEvent, buffId: string, ref: React.RefObject<HTMLDivElement | null>) => {
@@ -298,6 +310,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                   top: '-8px',
                   backgroundColor: particle.color,
                   borderRadius: '2px',
+                  willChange: 'transform, opacity',
+                  transform: 'translateZ(0)',
                 }}
                 initial={{
                   y: 0,
@@ -382,6 +396,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                     style={{
                       background: 'radial-gradient(ellipse at center, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 25%, rgba(255,255,255,0.4) 50%, transparent 80%)',
                       filter: 'blur(3px) brightness(1.3)',
+                      willChange: 'transform',
+                      transform: 'translateZ(0)',
                     }}
                     animate={{
                       x: ['-100%', '250%'],

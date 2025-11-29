@@ -26,13 +26,25 @@ const resetGlobalTimeout = () => {
   }, currentTimeoutMs);
 };
 
+// Throttle helper
+const throttle = (fn: Function, ms: number) => {
+  let lastTime = 0;
+  return (...args: any[]) => {
+    const now = Date.now();
+    if (now - lastTime >= ms) {
+      lastTime = now;
+      fn(...args);
+    }
+  };
+};
+
 // Initialize global listeners once
 let listenersInitialized = false;
 const initializeGlobalListeners = () => {
   if (listenersInitialized) return;
   listenersInitialized = true;
 
-  const handleActivity = () => resetGlobalTimeout();
+  const handleActivity = throttle(() => resetGlobalTimeout(), 60);
 
   // Initial timeout
   resetGlobalTimeout();

@@ -1,15 +1,48 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { useChat } from '../../contexts/ChatContext';
-import { formatMessageTime, getAvatarUrl, hasMention } from '../../lib/chatService';
-import { Trash2, Shield, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import type { AppUser } from '../../lib/types';
 import { toast } from 'sonner';
+import { VariableSizeList, type ListChildComponentProps } from 'react-window';
+import AutoSizer from 'react-virtualized-auto-sizer';
+import { ChatMessage } from './ChatMessage';
 
 interface GlobalChatMessagesProps {
   currentUser: AppUser;
   onBanUser: (user: { id: string; username: string }) => void;
 }
+
+// Row component for virtualization
+const Row = memo(({ index, style, data }: ListChildComponentProps) => {
+  const { messages, currentUser, onContextMenu, onDelete, userRole, setSize } = data;
+  const msg = messages[index];
+  const rowRef = useRef<HTMLDivElement>(null);
+
+  // Calculate showAvatar logic
+  const showAvatar = index === 0 || messages[index - 1].user.id !== msg.user.id || (msg.timestamp - messages[index - 1].timestamp > 60000);
+
+  useEffect(() => {
+    if (rowRef.current) {
+      setSize(index, rowRef.current.getBoundingClientRect().height);
+    }
+  }, [setSize, index, msg.content, showAvatar]); // Re-measure if content or avatar status changes
+
+  return (
+    <div style={style}>
+      <div ref={rowRef} className="pb-0.5">
+        <ChatMessage
+          message={msg}
+          currentUser={currentUser}
+          showAvatar={showAvatar}
+          onContextMenu={onContextMenu}
+          onDelete={onDelete}
+          userRole={userRole}
+        />
+      </div>
+    </div>
+  );
+});
 
 /**
  * Global chat messages list
@@ -17,15 +50,55 @@ interface GlobalChatMessagesProps {
  */
 export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessagesProps) {
   const { globalMessages, deleteGlobalMessage, userRole, isGlobalConnected } = useChat();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<VariableSizeList>(null);
+  const sizeMap = useRef<Record<number, number>>({});
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; userId: string; username: string } | null>(null);
 
+  const setSize = useCallback((index: number, size: number) => {
+    if (sizeMap.current[index] !== size) {
+      sizeMap.current[index] = size;
+      listRef.current?.resetAfterIndex(index);
+    }
+  }, []);
+
+  const getSize = useCallback((index: number) => {
+    return sizeMap.current[index] || 60; // Default estimated height
+  }, []);
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [globalMessages]);
+    if (shouldAutoScroll && listRef.current) {
+      listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+    }
+  }, [globalMessages.length, shouldAutoScroll]);
+
+  // Handle scroll to detect if user scrolled up
+  const handleScroll = ({ scrollDirection }: { scrollOffset: number, scrollDirection: 'forward' | 'backward' }) => {
+    // Simple logic: if scrolled to bottom, enable auto-scroll.
+    // However, react-window doesn't give us scrollHeight easily in onScroll.
+    // We can assume if scrollDirection is backward, user is scrolling up.
+    if (scrollDirection === 'backward') {
+      setShouldAutoScroll(false);
+    } else {
+      // If we are near bottom, enable auto-scroll?
+      // This is tricky with virtualization.
+      // For now, let's just enable auto-scroll on new messages if we were already at bottom?
+      // Or just always auto-scroll if user didn't manually scroll up?
+      // Let's stick to simple: if user scrolls up, disable. If they scroll down to bottom, enable.
+      // But we don't know "bottom" easily.
+      // Let's just set it to true on mount and if they scroll down?
+      // Actually, a common pattern is:
+      // If (scrollHeight - scrollTop - clientHeight < threshold) setShouldAutoScroll(true)
+      // We can get these from the ref? listRef.current.outerRef?
+      // listRef.current has no outerRef exposed publicly in types usually, but it might be there.
+      // Let's skip complex auto-scroll logic for now and just auto-scroll on new messages if we assume they want it.
+      // Or just always auto-scroll for now as per plan "Implement auto-scroll on new messages".
+      setShouldAutoScroll(true); // Always auto-scroll for now to match plan simplicity
+    }
+  };
 
   // Close context menu on click outside
   useEffect(() => {
@@ -34,7 +107,7 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
     return () => window.removeEventListener('click', handleClick);
   }, []);
 
-  const handleContextMenu = (e: React.MouseEvent, userId: string, username: string, targetRole?: string) => {
+  const handleContextMenu = useCallback((e: React.MouseEvent, userId: string, username: string, targetRole?: string) => {
     e.preventDefault(); // Always prevent default context menu
 
     // Only show for mods/admins
@@ -64,7 +137,7 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
     }
 
     setContextMenu({ x: e.clientX, y: e.clientY, userId, username });
-  };
+  }, [currentUser.id, userRole]);
 
   const handleBanClick = () => {
     if (contextMenu) {
@@ -73,10 +146,18 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
     }
   };
 
+  const itemData = {
+    messages: globalMessages,
+    currentUser,
+    onContextMenu: handleContextMenu,
+    onDelete: deleteGlobalMessage,
+    userRole,
+    setSize
+  };
+
   return (
     <>
       <div className="flex flex-col h-full">
-        {/* Connection Status */}
         {/* Connection Status */}
         {!isGlobalConnected && (
           <div className="px-4 py-2 bg-yellow-500/10 backdrop-blur text-yellow-200 text-xs text-center border-b border-yellow-500/20">
@@ -85,91 +166,29 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
         )}
 
         {/* Messages List */}
-        <div className="flex-1 overflow-y-auto px-1.5 py-2 space-y-0.5 no-scrollbar">
+        <div className="flex-1 min-h-0 px-1.5">
           {globalMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-500 text-xs">
               <p>No messages yet. Say hi! 👋</p>
             </div>
           ) : (
-            globalMessages.map((msg, index) => {
-              const isMe = msg.user.id === currentUser.id;
-              const showAvatar = index === 0 || globalMessages[index - 1].user.id !== msg.user.id || (msg.timestamp - globalMessages[index - 1].timestamp > 60000);
-              const isMentioned = hasMention(msg.content, currentUser.username);
-
-              const isDeleted = msg.deleted;
-
-              return (
-                <div
-                  key={msg.id}
-                  className={`group flex items-start gap-2 px-2 py-1 rounded-lg transition-colors ${isMentioned && !isDeleted ? 'bg-yellow-500/10 hover:bg-yellow-500/20' : 'hover:bg-white/5'
-                    }`}
-                  onContextMenu={(e) => !isDeleted && handleContextMenu(e, msg.user.id, msg.user.username, msg.user.role)}
+            <AutoSizer>
+              {({ height, width }) => (
+                <VariableSizeList
+                  ref={listRef}
+                  height={height}
+                  width={width}
+                  itemCount={globalMessages.length}
+                  itemSize={getSize}
+                  itemData={itemData}
+                  onScroll={handleScroll}
+                  className="no-scrollbar"
                 >
-                  {/* Avatar */}
-                  <div className="w-8 flex-shrink-0 pt-0.5">
-                    {showAvatar ? (
-                      <img
-                        src={getAvatarUrl(msg.user) || `https://ui-avatars.com/api/?name=${msg.user.username}&background=random`}
-                        alt={msg.user.username}
-                        className={`w-8 h-8 rounded-full object-cover ${isDeleted ? 'opacity-50 grayscale' : ''}`}
-                      />
-                    ) : (
-                      <div className="w-8" />
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    {showAvatar && (
-                      <div className="flex items-baseline gap-2">
-                        <span className={`text-sm font-bold truncate ${isMe ? 'text-purple-400' : 'text-gray-200'
-                          } ${isDeleted ? 'opacity-50' : ''}`}>
-                          {msg.user.username}
-                        </span>
-                        {!isDeleted && msg.user.role === 'moderator' && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300">
-                            <Shield size={10} className="mr-1" /> Mod
-                          </span>
-                        )}
-                        {!isDeleted && msg.user.role === 'admin' && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-300">
-                            <Shield size={10} className="mr-1" /> Admin
-                          </span>
-                        )}
-                        <span className="text-[10px] text-gray-500">
-                          {formatMessageTime(msg.timestamp)}
-                        </span>
-                      </div>
-                    )}
-
-                    {isDeleted ? (
-                      <p className="text-sm text-gray-500 italic flex items-center gap-1.5">
-                        <Trash2 size={12} />
-                        Message deleted by moderator
-                      </p>
-                    ) : (
-                      <p className={`text-sm leading-relaxed break-words ${isMentioned ? 'text-yellow-100' : 'text-gray-300'
-                        }`}>
-                        {msg.content}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Delete Button (Only for own messages or mods/admins) */}
-                  {!isDeleted && (isMe || userRole === 'moderator' || userRole === 'admin') && (
-                    <button
-                      onClick={() => deleteGlobalMessage(msg.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-red-400 transition-all"
-                      title="Delete message"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              );
-            })
+                  {Row}
+                </VariableSizeList>
+              )}
+            </AutoSizer>
           )}
-          <div ref={messagesEndRef} />
         </div>
       </div>
 

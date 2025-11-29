@@ -36,7 +36,6 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
   const filteredBackgrounds = BACKGROUNDS.filter(bg => bg.orientation === targetOrientation);
 
   const playerRef = useRef<any>(null);
-  const seekIntervalRef = useRef<number | undefined>(undefined);
 
   const musicVolume = useSettingsStore((state) => state.musicVolume);
   const setMusicVolume = useSettingsStore((state) => state.setMusicVolume);
@@ -65,22 +64,25 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
 
   // Update seek position
   useEffect(() => {
-    if (playing) {
-      seekIntervalRef.current = window.setInterval(() => {
-        if (playerRef.current) {
+    let lastUpdate = 0;
+    let rafId: number;
+
+    const updateSeek = (timestamp: number) => {
+      if (timestamp - lastUpdate >= 250) { // 250ms = 4 updates/sec
+        if (playerRef.current && playing) {
           setSeek(playerRef.current.seek() as number);
         }
-      }, 100);
-    } else {
-      if (seekIntervalRef.current) {
-        clearInterval(seekIntervalRef.current);
+        lastUpdate = timestamp;
       }
+      rafId = requestAnimationFrame(updateSeek);
+    };
+
+    if (playing) {
+      rafId = requestAnimationFrame(updateSeek);
     }
 
     return () => {
-      if (seekIntervalRef.current) {
-        clearInterval(seekIntervalRef.current);
-      }
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [playing]);
 
@@ -172,6 +174,7 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
         initial={{ opacity: 1 }}
         animate={{ opacity: isMouseActive ? 1 : 0 }}
         transition={{ duration: 0.5 }}
+        style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
         className="absolute inset-0 bg-black/60 backdrop-blur-xl border-t border-white/10 pointer-events-none"
       />
 
@@ -303,11 +306,10 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
                             setBackground(bg.id);
                             setShowBackgrounds(false);
                           }}
-                          className={`relative rounded-lg overflow-hidden aspect-video border-2 transition-all ${
-                            background === bg.id
-                              ? 'border-purple-500 shadow-lg shadow-purple-500/50'
-                              : 'border-white/20 hover:border-white/40'
-                          }`}
+                          className={`relative rounded-lg overflow-hidden aspect-video border-2 transition-all ${background === bg.id
+                            ? 'border-purple-500 shadow-lg shadow-purple-500/50'
+                            : 'border-white/20 hover:border-white/40'
+                            }`}
                         >
                           <img
                             src={bg.poster}
@@ -468,11 +470,10 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
                               setBackground(bg.id);
                               setShowBackgrounds(false);
                             }}
-                            className={`relative rounded-lg overflow-hidden aspect-video border-2 transition-all ${
-                              background === bg.id
-                                ? 'border-purple-500 shadow-lg shadow-purple-500/50'
-                                : 'border-white/20 hover:border-white/40'
-                            }`}
+                            className={`relative rounded-lg overflow-hidden aspect-video border-2 transition-all ${background === bg.id
+                              ? 'border-purple-500 shadow-lg shadow-purple-500/50'
+                              : 'border-white/20 hover:border-white/40'
+                              }`}
                           >
                             <img
                               src={bg.poster}
@@ -494,17 +495,17 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
           </div>
         )}
 
-      {/* Audio Player */}
-      {currentTrack && (
-        <ReactHowler
-          ref={playerRef}
-          src={getTrackUrl(currentTrack)}
-          playing={playing}
-          volume={musicVolume / 100}
-          onEnd={handleEnd}
-          onLoad={handleLoad}
-        />
-      )}
+        {/* Audio Player */}
+        {currentTrack && (
+          <ReactHowler
+            ref={playerRef}
+            src={getTrackUrl(currentTrack)}
+            playing={playing}
+            volume={musicVolume / 100}
+            onEnd={handleEnd}
+            onLoad={handleLoad}
+          />
+        )}
       </div>
     </div>
   );

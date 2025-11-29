@@ -21,9 +21,22 @@ export default defineConfig({
   },
   build: {
     minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: process.env.NODE_ENV === 'production',
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info'],
+      },
+      format: {
+        comments: false,
+      },
+    },
+    chunkSizeWarningLimit: 600,
     sourcemap: process.env.NODE_ENV !== 'production',
     rollupOptions: {
       output: {
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
           'framer-motion': ['framer-motion'],
