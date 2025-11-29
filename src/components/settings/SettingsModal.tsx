@@ -147,6 +147,8 @@ export function SettingsModal() {
     setLevelSystemEnabled,
     levelPath,
     setLevelPath,
+    playlist,
+    setPlaylist,
   } = useSettingsStore();
 
   const { isMobile, isPortrait } = useDeviceType();
@@ -169,6 +171,7 @@ export function SettingsModal() {
   const [tempAmbientVolumes, setTempAmbientVolumes] = useState(ambientVolumes);
   const [tempBackground, setTempBackground] = useState(background);
   const [tempLevelSystemEnabled, setTempLevelSystemEnabled] = useState(levelSystemEnabled);
+  const [tempPlaylist, setTempPlaylist] = useState(playlist);
   const [usernameInput, setUsernameInput] = useState(username);
 
   // Reset temporary state when modal opens
@@ -184,9 +187,10 @@ export function SettingsModal() {
       setTempAmbientVolumes(ambientVolumes);
       setTempBackground(background);
       setTempLevelSystemEnabled(levelSystemEnabled);
+      setTempPlaylist(playlist);
       setUsernameInput(username);
     }
-  }, [isOpen, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, username]);
+  }, [isOpen, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, playlist, username]);
 
   const handleSaveUsername = async () => {
     if (!appUser) {
@@ -308,6 +312,7 @@ export function SettingsModal() {
     setMusicVolume(tempMusicVolume);
     setBackground(tempBackground);
     setLevelSystemEnabled(tempLevelSystemEnabled);
+    setPlaylist(tempPlaylist);
 
     // Apply ambient volumes
     Object.keys(tempAmbientVolumes).forEach((soundId) => {
@@ -329,6 +334,7 @@ export function SettingsModal() {
     setTempAmbientVolumes(ambientVolumes);
     setTempBackground(background);
     setTempLevelSystemEnabled(levelSystemEnabled);
+    setTempPlaylist(playlist);
     setUsernameInput(username);
   };
 
@@ -441,6 +447,8 @@ export function SettingsModal() {
                 setTempMusicVolume={setTempMusicVolume}
                 tempAmbientVolumes={tempAmbientVolumes}
                 setTempAmbientVolumes={setTempAmbientVolumes}
+                tempPlaylist={tempPlaylist}
+                setTempPlaylist={setTempPlaylist}
                 isMobile={isMobile}
               />
             )}
