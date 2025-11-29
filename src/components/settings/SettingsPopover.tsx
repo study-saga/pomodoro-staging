@@ -196,6 +196,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
     pomodoroBoostActive,
     pomodoroBoostExpiresAt,
     firstLoginDate,
+    playlist,
+    setPlaylist,
   } = useSettingsStore();
 
   // Filter backgrounds based on viewport orientation (portrait vs landscape)
@@ -213,6 +215,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const [tempAmbientVolumes, setTempAmbientVolumes] = useState(ambientVolumes);
   const [tempBackground, setTempBackground] = useState(background);
   const [tempLevelSystemEnabled, setTempLevelSystemEnabled] = useState(levelSystemEnabled);
+  const [tempPlaylist, setTempPlaylist] = useState(playlist);
   const [usernameInput, setUsernameInput] = useState(username);
 
   // Check for unsaved changes
@@ -226,7 +229,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
     tempMusicVolume !== musicVolume ||
     JSON.stringify(tempAmbientVolumes) !== JSON.stringify(ambientVolumes) ||
     tempBackground !== background ||
-    tempLevelSystemEnabled !== levelSystemEnabled;
+    tempLevelSystemEnabled !== levelSystemEnabled ||
+    tempPlaylist !== playlist;
 
   // Reset temporary state when modal opens
   useEffect(() => {
@@ -241,10 +245,11 @@ export const SettingsPopover = memo(function SettingsPopover() {
       setTempAmbientVolumes(ambientVolumes);
       setTempBackground(background);
       setTempLevelSystemEnabled(levelSystemEnabled);
+      setTempPlaylist(playlist);
       setUsernameInput(username);
       setActiveTab('timer'); // Default to General tab
     }
-  }, [open, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, username]);
+  }, [open, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, playlist, username]);
 
   const handleSaveUsername = async () => {
     if (!appUser) {
@@ -366,6 +371,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setMusicVolume(tempMusicVolume);
     setBackground(tempBackground);
     setLevelSystemEnabled(tempLevelSystemEnabled);
+    setPlaylist(tempPlaylist);
 
     // Apply ambient volumes
     Object.keys(tempAmbientVolumes).forEach((soundId) => {
@@ -387,6 +393,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setTempAmbientVolumes(ambientVolumes);
     setTempBackground(background);
     setTempLevelSystemEnabled(levelSystemEnabled);
+    setTempPlaylist(playlist);
     setUsernameInput(username);
   };
 
@@ -511,6 +518,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         setTempMusicVolume={setTempMusicVolume}
                         tempAmbientVolumes={tempAmbientVolumes}
                         setTempAmbientVolumes={setTempAmbientVolumes}
+                        tempPlaylist={tempPlaylist}
+                        setTempPlaylist={setTempPlaylist}
                         totalTracks={totalTracks}
                         setShowMusicCredits={setShowMusicCredits}
                         level={level}
@@ -667,6 +676,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         setTempMusicVolume={setTempMusicVolume}
                         tempAmbientVolumes={tempAmbientVolumes}
                         setTempAmbientVolumes={setTempAmbientVolumes}
+                        tempPlaylist={tempPlaylist}
+                        setTempPlaylist={setTempPlaylist}
                         totalTracks={totalTracks}
                         setShowMusicCredits={setShowMusicCredits}
                         level={level}
