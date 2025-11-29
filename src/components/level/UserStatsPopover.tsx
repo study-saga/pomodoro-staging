@@ -17,7 +17,7 @@ import {
   ROLE_EMOJI_HUMAN,
 } from '../../data/levels';
 import { createRateLimiter, rateLimitedToast } from '../../utils/rateLimiters';
-import { getPrestigeDisplay, getPrestigeIcons } from '../../lib/prestigeUtils';
+import { getPrestigeIcons } from '../../lib/prestigeUtils';
 
 interface UserStatsPopoverProps {
   trigger: React.ReactNode;
@@ -34,7 +34,6 @@ export const UserStatsPopover = memo(function UserStatsPopover({
     level,
     levelPath,
     setLevelPath,
-    prestigeLevel,
     prestigeStars,
     totalPomodoros,
     totalStudyMinutes,

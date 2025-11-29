@@ -33,7 +33,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const {
     level,
     xp,
-    prestigeLevel,
     prestigeStars,
     username,
     levelPath,
