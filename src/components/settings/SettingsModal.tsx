@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Settings as SettingsIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -18,7 +18,8 @@ import { updateUsernameSecure, checkUsernameAvailability } from '../../lib/userS
 // ... (inside component)
 
 import { showGameToast } from '../ui/GameToast';
-import { MusicCreditsModal } from './MusicCreditsModal';
+import { MusicCreditsModal } from '../lazy';
+import { LoadingSpinner } from '../LoadingSpinner';
 import type { Track } from '../../types';
 import lofiTracks from '../../data/lofi.json';
 import synthwaveTracks from '../../data/synthwave.json';
@@ -970,10 +971,12 @@ export function SettingsModal() {
       {/* Music Credits Modal */}
       <AnimatePresence>
         {showMusicCredits && (
-          <MusicCreditsModal
-            tracks={[...lofiTracks, ...synthwaveTracks] as Track[]}
-            onClose={() => setShowMusicCredits(false)}
-          />
+          <Suspense fallback={<LoadingSpinner />}>
+            <MusicCreditsModal
+              tracks={[...lofiTracks, ...synthwaveTracks] as Track[]}
+              onClose={() => setShowMusicCredits(false)}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
     </div>

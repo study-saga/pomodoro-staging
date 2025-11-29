@@ -1,17 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { VideoBackground } from './components/background/VideoBackground';
 import { PomodoroTimer } from './components/timer/PomodoroTimer';
-import { MusicPlayer } from './components/music/MusicPlayer';
+import { MusicPlayer, DailyGiftGrid, ChatContainer } from './components/lazy';
 import { AmbientSoundsPlayer } from './components/music/AmbientSoundsPlayer';
 import { LevelDisplay } from './components/level/LevelDisplay';
 import { SettingsPopover } from './components/settings/SettingsPopover';
 import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCounter';
-import { DailyGiftGrid } from './components/rewards/DailyGiftGrid';
 import { ActiveBoostIndicator } from './components/buffs/ActiveBoostIndicator';
 import { LoginScreen } from './components/auth/LoginScreen';
 import DiscordButton from './components/DiscordButton';
-import { ChatContainer } from './components/chat/ChatContainer';
+import { LoadingSpinner } from './components/LoadingSpinner';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useBuffActivation } from './hooks/useBuffActivation';
 import { useSettingsStore } from './store/useSettingsStore';
@@ -234,16 +233,20 @@ function AppContent() {
       </div>
 
       {/* Music Player (Bottom) */}
-      <MusicPlayer playing={musicPlaying} setPlaying={setMusicPlaying} />
+      <Suspense fallback={<LoadingSpinner />}>
+        <MusicPlayer playing={musicPlaying} setPlaying={setMusicPlaying} />
+      </Suspense>
 
       {/* Ambient Sounds Player (Hidden) */}
       <AmbientSoundsPlayer musicPlaying={musicPlaying} />
 
       {/* Daily Gift Grid */}
-      <DailyGiftGrid
-        show={showDailyGift}
-        onClose={() => setShowDailyGift(false)}
-      />
+      <Suspense fallback={<LoadingSpinner />}>
+        <DailyGiftGrid
+          show={showDailyGift}
+          onClose={() => setShowDailyGift(false)}
+        />
+      </Suspense>
 
       {/* Active Boost Indicator */}
       <ActiveBoostIndicator />
@@ -255,7 +258,9 @@ function AppContent() {
       </div>
 
       {/* Chat Container (Bottom Left) */}
-      <ChatContainer />
+      <Suspense fallback={<LoadingSpinner />}>
+        <ChatContainer />
+      </Suspense>
 
       {/* Toaster for notifications */}
       <Toaster position="top-center" />

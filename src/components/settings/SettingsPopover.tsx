@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useRef } from 'react';
+import { memo, useState, useEffect, useRef, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settings as SettingsIcon, X, Palette, Volume2, Sparkles, Bell, FileText, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
@@ -14,7 +14,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { updateUsernameSecure, checkUsernameAvailability } from '../../lib/userSyncAuth';
 
 import { showGameToast } from '../ui/GameToast';
-import { MusicCreditsModal } from './MusicCreditsModal';
+import { MusicCreditsModal } from '../lazy';
+import { LoadingSpinner } from '../LoadingSpinner';
 import { SettingsContent } from './SettingsContent';
 import { ScrollArea } from '../ui/scroll-area';
 import type { Track } from '../../types';
@@ -740,10 +741,12 @@ export const SettingsPopover = memo(function SettingsPopover() {
       {/* Music Credits Modal */}
       <AnimatePresence>
         {showMusicCredits && (
-          <MusicCreditsModal
-            tracks={[...lofiTracks, ...synthwaveTracks] as Track[]}
-            onClose={() => setShowMusicCredits(false)}
-          />
+          <Suspense fallback={<LoadingSpinner />}>
+            <MusicCreditsModal
+              tracks={[...lofiTracks, ...synthwaveTracks] as Track[]}
+              onClose={() => setShowMusicCredits(false)}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
     </>

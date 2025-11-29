@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { MessageCircle, Minimize2, AlertTriangle, Lock, Clock } from 'lucide-react';
 import { ChatTabs } from './ChatTabs';
@@ -10,7 +10,8 @@ import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRateLimit } from '../../hooks/useRateLimit';
 import type { ChatTab } from '../../types/chat';
-import { BanModal } from './BanModal';
+import { BanModal } from '../lazy';
+import { LoadingSpinner } from '../LoadingSpinner';
 import { useDeviceType } from '../../hooks/useDeviceType';
 
 /**
@@ -261,12 +262,14 @@ export function ChatContainer() {
 
         {/* Ban Modal */}
         {createPortal(
-          <BanModal
-            isOpen={banModalOpen}
-            onClose={() => setBanModalOpen(false)}
-            onBan={handleBanConfirm}
-            username={selectedUserToBan?.username || ''}
-          />,
+          <Suspense fallback={<LoadingSpinner />}>
+            <BanModal
+              isOpen={banModalOpen}
+              onClose={() => setBanModalOpen(false)}
+              onBan={handleBanConfirm}
+              username={selectedUserToBan?.username || ''}
+            />
+          </Suspense>,
           document.body
         )}
       </div>
@@ -397,12 +400,14 @@ export function ChatContainer() {
 
       {/* Ban Modal */}
       {createPortal(
-        <BanModal
-          isOpen={banModalOpen}
-          onClose={() => setBanModalOpen(false)}
-          onBan={handleBanConfirm}
-          username={selectedUserToBan?.username || ''}
-        />,
+        <Suspense fallback={<LoadingSpinner />}>
+          <BanModal
+            isOpen={banModalOpen}
+            onClose={() => setBanModalOpen(false)}
+            onBan={handleBanConfirm}
+            username={selectedUserToBan?.username || ''}
+          />
+        </Suspense>,
         document.body
       )}
     </>
