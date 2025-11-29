@@ -10,7 +10,7 @@ import {
   ROLE_EMOJI_HUMAN,
 } from '../../data/levels';
 import { createRateLimiter, rateLimitedToast } from '../../utils/rateLimiters';
-import { getPrestigeDisplay, getPrestigeIcons } from '../../lib/prestigeUtils';
+import { getPrestigeIcons } from '../../lib/prestigeUtils';
 
 interface UserStatsModalProps {
   onClose: () => void;
@@ -21,7 +21,6 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
     level,
     levelPath,
     setLevelPath,
-    prestigeLevel,
     prestigeStars,
     totalPomodoros,
     totalStudyMinutes,
