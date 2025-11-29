@@ -4,6 +4,7 @@
 */
 
 export type RoleType = 'elf' | 'human';
+export type BuffCategory = 'permanent' | 'event' | 'proc';
 
 export interface RoleBuff {
   id: string;
@@ -11,6 +12,9 @@ export interface RoleBuff {
   description: string;
   icon: string;
   type: 'passive' | 'active' | 'proc'; // passive = always on, active = user triggered, proc = chance-based
+  category: BuffCategory; // permanent = always active, event = time-limited, proc = chance-based
+  roles?: RoleType[]; // Which roles can use this buff (undefined = all roles)
+  xpBonus?: number; // XP multiplier (0.15 = +15%)
 }
 
 export interface RoleStats {
@@ -80,6 +84,8 @@ export const ELF_ROLE: RoleConfig = {
       description: '+0.5 XP per minute (consistent bonus)',
       icon: '🎯',
       type: 'passive',
+      category: 'permanent',
+      xpBonus: 0.5,
     },
   ],
   stats: {
@@ -122,6 +128,7 @@ export const HUMAN_ROLE: RoleConfig = {
       description: '25% chance to double session XP',
       icon: '🎯',
       type: 'proc',
+      category: 'proc',
     }
   ],
   stats: {
@@ -225,6 +232,50 @@ export function calculateRoleXP(
     criticalSuccess,
     bonuses,
   };
+}
+
+// ============================================
+// EVENT BUFFS (TIME-LIMITED, ALL OR SPECIFIC ROLES)
+// ============================================
+
+export const EVENT_BUFFS: RoleBuff[] = [
+  {
+    id: 'day10_boost',
+    name: '+25% XP Boost',
+    description: '24-hour XP boost from day 10 gift',
+    icon: '🍅',
+    type: 'passive',
+    category: 'event',
+    xpBonus: 0.25, // +25%
+    // No roles restriction - applies to all
+  },
+  {
+    id: 'slingshot_nov22',
+    name: 'Elven Slingshot',
+    description: '+25% XP boost (Nov 22-23 event)',
+    icon: '🏹',
+    type: 'passive',
+    category: 'event',
+    roles: ['elf'], // Only elves
+    xpBonus: 0.25, // +25%
+  },
+];
+
+/**
+ * Get event buff by ID
+ */
+export function getEventBuff(buffId: string): RoleBuff | undefined {
+  return EVENT_BUFFS.find(b => b.id === buffId);
+}
+
+/**
+ * Check if an event buff applies to a role
+ */
+export function eventBuffAppliesToRole(buff: RoleBuff, roleType: RoleType): boolean {
+  // If no role restriction, applies to all
+  if (!buff.roles || buff.roles.length === 0) return true;
+  // Check if role is in the allowed list
+  return buff.roles.includes(roleType);
 }
 
 /**

@@ -327,6 +327,7 @@ export function useSettingsSync() {
       xp: remainingXP,  // Remaining XP towards next level
       level: calculatedLevel,  // Auto-calculated level
       prestigeLevel: calculatedPrestige,  // Auto-calculated prestige
+      prestigeStars: appUser.prestige_stars || [],  // Role-specific prestige stars
       totalPomodoros: appUser.total_pomodoros,
       totalStudyMinutes: appUser.total_study_minutes,
       username: appUser.username,
@@ -344,7 +345,19 @@ export function useSettingsSync() {
 
       // Boost tracking (Day 10 gift)
       pomodoroBoostActive: appUser.pomodoro_boost_active || false,
-      pomodoroBoostExpiresAt: appUser.pomodoro_boost_expires_at || null
+      pomodoroBoostExpiresAt: appUser.pomodoro_boost_expires_at || null,
+
+      // Active buffs (from database JSONB) - convert snake_case to camelCase
+      activeBuffs: appUser.active_buffs
+        ? Object.entries(appUser.active_buffs).reduce((acc, [key, buff]) => {
+            acc[key] = {
+              value: buff.value,
+              expiresAt: buff.expires_at,
+              metadata: buff.metadata
+            };
+            return acc;
+          }, {} as Record<string, { value: number; expiresAt: number | null; metadata?: Record<string, any> }>)
+        : {}
     })
 
     // CRITICAL: Set initial synced state from STORE (not from appUser)

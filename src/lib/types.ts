@@ -21,6 +21,7 @@ export interface AppUser {
   level: number
   xp: number
   prestige_level: number
+  prestige_stars: { role: 'elf' | 'human'; earnedAt: string }[]
   level_path: 'elf' | 'human'
 
   // Stats tracking (SERVER-CONTROLLED - read-only from client)
@@ -42,6 +43,13 @@ export interface AppUser {
   pomodoro_boost_expires_at: number | null
   pomodoro_boost_multiplier: number
   last_daily_gift_date: string | null
+
+  // Active buffs (SERVER-CONTROLLED - read-only from client)
+  active_buffs: Record<string, {
+    value: number;
+    expires_at: number | null;
+    metadata?: Record<string, any>;
+  }>
 
   // Audio settings (CLIENT-CONTROLLED - read/write)
   sound_enabled: boolean

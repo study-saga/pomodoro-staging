@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useAuth } from '../../contexts/AuthContext';
+import { useMouseActivity } from '../../hooks/useMouseActivity';
 import {
   getLevelName,
   ROLE_EMOJI_ELF,
@@ -19,16 +20,21 @@ import { UserStatsPopover } from './UserStatsPopover';
 import { UserStatsModal } from './UserStatsModal';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useActiveEventBuffs } from '../../hooks/useActiveEventBuffs';
+import { getBuffStartDateText } from '../../data/eventBuffsData';
+import { getPrestigeIcons } from '../../lib/prestigeUtils';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
 }
 
 export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: LevelDisplayProps) {
+  const isMouseActive = useMouseActivity(8000); // 8 seconds
+
   const {
     level,
     xp,
     prestigeLevel,
+    prestigeStars,
     username,
     levelPath,
     levelSystemEnabled,
@@ -51,7 +57,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   const { isMobile, isCompact } = useDeviceType();
   const { appUser } = useAuth();
-  const { activeBuffs } = useActiveEventBuffs(levelPath);
+  const { activeBuffs, upcomingBuffs } = useActiveEventBuffs(levelPath);
 
   const xpNeeded = getXPNeeded(level);
   const levelName = getLevelName(level, levelPath);
@@ -88,6 +94,13 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   // Extract emoji and text from levelName
   const levelBadge = levelName.split(' ')[0]; // Get emoji (first part before space)
   const levelTitle = levelName.split(' ').slice(1).join(' '); // Get text (everything after first space)
+
+  // Close stats popover when mouse becomes inactive
+  useEffect(() => {
+    if (!isMouseActive && showStatsPopover) {
+      setShowStatsPopover(false);
+    }
+  }, [isMouseActive, showStatsPopover]);
 
 
 
@@ -265,8 +278,13 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   return (
     <>
-      {/* Level UI Container - Fixed position */}
-      <div className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isCompact ? 'p-2 min-w-[140px] max-w-[180px] scale-90 origin-top-left' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
+      {/* Level UI Container - Fixed position with fade animation */}
+      <motion.div
+        initial={{ opacity: 1 }}
+        animate={{ opacity: isMouseActive ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'} ${!isMouseActive ? 'pointer-events-none' : ''}`}
+      >
         {/* Confetti - contained inside Level UI */}
         {showConfetti && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none z-50">
@@ -381,6 +399,55 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             </div>
           </div>
 
+          {/* Dev Tools (moved above buffs to avoid covering prestige stars) */}
+          {import.meta.env.DEV && (
+            <div className="space-y-1 mt-2">
+              <div className="flex gap-1">
+                <button
+                  onClick={() => addXP(50)} // Adds 50 XP
+                  className="flex-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                >
+                  +50 XP
+                </button>
+                <button
+                  onClick={() => {
+                    // Add a prestige star for current role
+                    const currentStars = useSettingsStore.getState().prestigeStars || [];
+                    useSettingsStore.setState({
+                      prestigeStars: [
+                        ...currentStars,
+                        { role: levelPath, earnedAt: new Date().toISOString() }
+                      ]
+                    });
+                  }}
+                  className="flex-1 px-2 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors"
+                >
+                  +⭐ Star
+                </button>
+              </div>
+              <div className="flex gap-1">
+                <select
+                  value={selectedDay}
+                  onChange={(e) => setSelectedDay(Number(e.target.value))}
+                  className="px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:outline-none focus:border-pink-500"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((day) => (
+                    <option key={day} value={day}>
+                      Day {day}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={simulateNextDay}
+                  className="flex-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
+                >
+                  <Gift className="w-3 h-3" />
+                  Daily Gift
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Role Buff Icons - Ordered: Permanent first, then by expiration */}
           <div className="flex gap-2">
             {/* 1. Role Buff (Permanent - Always first) */}
@@ -475,50 +542,92 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                 </div>
               );
             })}
+
+            {/* 4. Upcoming Buffs (Preview, grayed out) */}
+            {upcomingBuffs.map((buff) => {
+              const buffId = `upcoming-${buff.id}`;
+              const isElfBuff = buff.description.includes('(Elf only)');
+
+              return (
+                <div
+                  key={buff.id}
+                  ref={(el) => { eventBuffRefs.current[buffId] = el; }}
+                  className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden opacity-40 grayscale ${isElfBuff
+                    ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30'
+                    : 'bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-cyan-500/20'
+                    } ${!buff.iconSrc ? 'text-xl' : ''}`}
+                  onClick={(e) => {
+                    if (isMobile) {
+                      e.stopPropagation();
+                      const newActiveTooltip = activeBuffTooltip === buffId ? null : buffId;
+                      setActiveBuffTooltip(newActiveTooltip);
+                      if (newActiveTooltip) {
+                        updateTooltipPosition(buffId, { current: eventBuffRefs.current[buffId] });
+                      }
+                    }
+                  }}
+                  onMouseEnter={() => {
+                    if (!isMobile) {
+                      setHoveredBuff(buffId);
+                      updateTooltipPosition(buffId, { current: eventBuffRefs.current[buffId] });
+                    }
+                  }}
+                  onMouseLeave={() => !isMobile && setHoveredBuff(null)}
+                >
+                  {buff.iconSrc ? (
+                    <img
+                      src={buff.iconSrc}
+                      alt={buff.title}
+                      className="w-full h-full rounded-lg"
+                    />
+                  ) : (
+                    buff.emoji
+                  )}
+                </div>
+              );
+            })}
+
           </div>
 
-          {/* Prestige Stars */}
-          {prestigeLevel > 0 && (
-            <div className="text-center pt-1">
-              <span className={`text-yellow-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                {"⭐".repeat(Math.min(prestigeLevel, 5))}
-              </span>
-            </div>
-          )}
+          {/* Prestige Stars Row (below buffs, like rating stars) */}
+          {prestigeStars && prestigeStars.length > 0 && (
+            <div className="flex justify-center gap-0.5 mt-2 items-center">
+              {getPrestigeIcons(prestigeStars).map((icon, idx) => {
+                const titles = {
+                  gem: 'Gem (125 Stars)',
+                  diamond: 'Diamond (25 Stars)',
+                  crown: 'Crown (5 Stars)',
+                  star: `Prestige Star (${icon.role === 'elf' ? 'Elf' : 'Human'})`
+                };
 
+                // Render SVG for stars
+                if (icon.type === 'svg') {
+                  return (
+                    <img
+                      key={`prestige-${idx}`}
+                      src={icon.value}
+                      alt={titles[icon.tier]}
+                      title={titles[icon.tier]}
+                      className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
+                    />
+                  );
+                }
 
-          {import.meta.env.DEV && (
-            <div className="space-y-1">
-              <button
-                onClick={() => addXP(50)} // Adds 50 XP
-                className="w-full px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
-              >
-                Add 50 XP (Dev)
-              </button>
-              <div className="flex gap-1">
-                <select
-                  value={selectedDay}
-                  onChange={(e) => setSelectedDay(Number(e.target.value))}
-                  className="px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:outline-none focus:border-pink-500"
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((day) => (
-                    <option key={day} value={day}>
-                      Day {day}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={simulateNextDay}
-                  className="flex-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
-                >
-                  <Gift className="w-3 h-3" />
-                  Daily Gift
-                </button>
-              </div>
+                // Render emoji for crowns/diamonds/gems
+                return (
+                  <span
+                    key={`prestige-${idx}`}
+                    className={`${isMobile ? 'text-lg' : 'text-xl'}`}
+                    title={titles[icon.tier]}
+                  >
+                    {icon.value}
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* User Stats - Different components for desktop/mobile */}
       {!isCompact ? (
@@ -640,6 +749,42 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               <p className={`text-sm font-semibold mb-1 ${isElfBuff ? 'text-green-300' : 'text-cyan-300'
                 }`}>
                 {buff.title}
+              </p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                {buff.description}
+              </p>
+            </div>
+          </div>,
+          document.body
+        );
+      })}
+
+      {/* Upcoming Buff Tooltips (Preview) */}
+      {upcomingBuffs.map((buff) => {
+        const buffId = `upcoming-${buff.id}`;
+        const isActive = isMobile ? activeBuffTooltip === buffId : hoveredBuff === buffId;
+        const isElfBuff = buff.description.includes('(Elf only)');
+
+        if (!tooltipPositions[buffId] || !isActive) return null;
+
+        return createPortal(
+          <div
+            key={buffId}
+            className="fixed transform -translate-x-1/2 pointer-events-none z-40 transition-opacity duration-200"
+            style={{
+              top: `${tooltipPositions[buffId].top}px`,
+              left: `${tooltipPositions[buffId].left}px`,
+              opacity: isMobile ? (activeBuffTooltip === buffId ? 1 : 0) : undefined,
+            }}
+          >
+            <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
+              }`}>
+              <p className={`text-sm font-semibold mb-1 ${isElfBuff ? 'text-green-300' : 'text-cyan-300'
+                }`}>
+                {buff.title}
+              </p>
+              <p className="text-xs text-gray-500 italic mb-1">
+                Unavailable: Starts {getBuffStartDateText(buff)}
               </p>
               <p className="text-xs text-gray-400 leading-relaxed">
                 {buff.description}

@@ -1,3 +1,8 @@
+export interface PrestigeStar {
+  role: 'elf' | 'human';
+  earnedAt: string; // ISO timestamp
+}
+
 export interface Track {
   id: string;
   title: string;
@@ -36,6 +41,7 @@ export interface Settings {
   xp: number;
   level: number;
   prestigeLevel: number;
+  prestigeStars: PrestigeStar[]; // Track stars earned with role info
   totalPomodoros: number;
   totalStudyMinutes: number;
   username: string;
@@ -64,6 +70,13 @@ export interface Settings {
   todayPomodoros: number; // Pomodoros completed today (for elf perfect day event)
   comebackActive: boolean; // Human comeback buff active
   comebackPomodoros: number; // Remaining pomodoros with comeback buff
+
+  // Active buffs (from database)
+  activeBuffs: Record<string, {
+    value: number;
+    expiresAt: number | null;
+    metadata?: Record<string, any>;
+  }>;
 }
 
 export interface LevelData {
@@ -162,6 +175,8 @@ export interface EventBuff {
   emoji: string; // Visual representation (e.g., "💪") - fallback if no iconSrc
   iconSrc?: string; // Optional: Custom SVG/image path (overrides emoji)
   xpMultiplier: number; // XP boost (1.5 = +50%)
+  flatXPBonus?: number; // Optional: Flat XP added per session (e.g., 15)
   dateRule: DateRule; // When this buff is active
   durationHours?: number; // Optional: expires after N hours
+  previewHours?: number; // Optional: hours before start to show preview (default: 48)
 }

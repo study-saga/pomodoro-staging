@@ -18,7 +18,8 @@ A Pomodoro timer application built as a Discord Activity, featuring study tracki
 This is a feature-rich Pomodoro timer that runs as a Discord Activity, allowing friends to study together in voice channels. The app includes:
 
 - **Pomodoro Timer**: Custom durations (1-120 min), auto-start options
-- **XP & Leveling**: 2 XP/min (pomodoro), 1 XP/min (breaks), max level 20
+- **XP & Leveling**: 2 XP/min (pomodoro), 1 XP/min (breaks), max level 50
+- **Event Buff System**: Extensible JSONB-based buffs with additive stacking (see [BUFF_SYSTEM.md](BUFF_SYSTEM.md))
 - **Daily Gifts**: Random XP rewards (10-100) for logging in, day 10 = +25% boost (24hrs)
 - **Break XP Sync**: Breaks award 1 XP/min synced to DB with +25% boost support
 - **Music & Sounds**: 2 playlists (Lofi, Synthwave), 9 ambient sounds
@@ -122,8 +123,34 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
 
 ## Version History
 
-**Last Updated**: 2025-11-22
-**Version**: 2.3.3 (Role System + UI Improvements)
+**Last Updated**: 2025-11-29
+**Version**: 2.3.5 (Role-Based Prestige Stars)
+
+**Major Changes in 2.3.5**:
+- **Implemented**: Role-specific prestige star system with tiered progression
+  - Each prestige star tracks which role (elf/human) user had when earning it
+  - Role-specific SVG icons: custom star-elf.svg, star-human.svg
+  - Tiered progression system:
+    - Tier 1: Stars - role-specific SVG icons
+    - Tier 2: 5 stars = 1 Crown 👑
+    - Tier 3: 5 crowns = 1 Diamond 💎 (25 stars)
+    - Tier 4: 5 diamonds = 1 Gem 💠 (125 stars)
+  - Display: Horizontal row below buffs (gems → diamonds → crowns → stars)
+  - Mixed rendering: SVG for stars, emoji for crowns/diamonds/gems
+  - DB: Added `prestige_stars` JSONB column with trigger on level 20
+  - Backfilled existing users' stars based on current prestige_level
+  - Updated: `prestigeUtils.ts`, `types.ts`, `AppUser`, all display components
+  - Migration: `20251129000000_add_prestige_stars.sql`
+  - Assets: `star-elf.svg`, `star-human.svg`
+
+**Major Changes in 2.3.4**:
+- **Redesigned**: Prestige level display system
+  - Replaced capped 5-star display with base-5 tiered progression
+  - Symbol tiers: ⭐ Star (P1-4) → 👑 Crown (P5+) → 💎 Diamond (P25+) → 💠 Gem (P125+)
+  - Every 5 prestige levels converts to next tier symbol
+  - Example: P6 = 👑⭐, P10 = 👑👑, P25 = 💎, P30 = 💎👑
+  - New helper: `getPrestigeDisplay()` in `src/lib/prestigeUtils.ts`
+  - Updated displays: LevelDisplay, UserStatsPopover, UserStatsModal
 
 **Major Changes in 2.3.3**:
 - **Added**: Role/Path system (Human vs Elf) with buff mechanics

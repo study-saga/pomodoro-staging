@@ -1,8 +1,8 @@
 import { memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users } from 'lucide-react'
-import { useChat } from '../../contexts/ChatContext'
-import { useAuth } from '../../contexts/AuthContext'
+import { useOnlinePresence } from '../../hooks/useOnlinePresence'
+import { useMouseActivity } from '../../hooks/useMouseActivity'
 
 const formatCount = (count: number): string => {
   if (count < 1000) return count.toString()
@@ -11,18 +11,22 @@ const formatCount = (count: number): string => {
 }
 
 export const OnlinePresenceCounter = memo(function OnlinePresenceCounter() {
-  const { appUser } = useAuth()
-  const { onlineUsers, isGlobalConnected } = useChat()
-  const count = onlineUsers.length
+  const isMouseActive = useMouseActivity(8000); // 8 seconds
+  const { count, status } = useOnlinePresence()
 
   // Loading state
   if (!isGlobalConnected || !appUser) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10">
+      <motion.div
+        initial={{ opacity: 1 }}
+        animate={{ opacity: isMouseActive ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 ${!isMouseActive ? 'pointer-events-none' : ''}`}
+      >
         <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse" />
         <Users size={14} className="opacity-50 text-gray-400" />
         <span className="text-sm text-gray-400 tabular-nums">--</span>
-      </div>
+      </motion.div>
     )
   }
 
@@ -30,8 +34,12 @@ export const OnlinePresenceCounter = memo(function OnlinePresenceCounter() {
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10"
+      animate={{
+        opacity: isMouseActive ? 1 : 0,
+        y: isMouseActive ? 0 : -10
+      }}
+      transition={{ duration: 0.5 }}
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 ${!isMouseActive ? 'pointer-events-none' : ''}`}
       role="status"
       aria-live="polite"
       aria-atomic="true"

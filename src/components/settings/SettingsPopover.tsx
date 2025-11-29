@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Settings as SettingsIcon, X, Palette, Volume2, Sparkles, Bell, FileText, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeviceType } from '../../hooks/useDeviceType';
+import { useMouseActivity } from '../../hooks/useMouseActivity';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { BACKGROUNDS } from '../../data/constants';
 import {
@@ -28,6 +29,7 @@ import {
 import { createRateLimiter } from '../../utils/rateLimiters';
 
 export const SettingsPopover = memo(function SettingsPopover() {
+  const isMouseActive = useMouseActivity(8000);
   const { appUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'notifications' | 'music' | 'progress' | 'whats-new'>('timer');
@@ -79,6 +81,13 @@ export const SettingsPopover = memo(function SettingsPopover() {
       triggerButtonRef.current?.focus();
     }
   }, [open]);
+
+  // Close settings when mouse becomes inactive
+  useEffect(() => {
+    if (!isMouseActive && open) {
+      setOpen(false);
+    }
+  }, [isMouseActive, open]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -392,14 +401,18 @@ export const SettingsPopover = memo(function SettingsPopover() {
 
   // Trigger button component
   const trigger = (
-    <button
+    <motion.button
       ref={triggerButtonRef}
       onClick={() => setOpen(true)}
       aria-label="Open settings"
-      className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors border border-white/10"
+      animate={{
+        padding: isMouseActive ? '0.75rem' : '0.25rem'
+      }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
+      className="bg-black/40 backdrop-blur-md rounded-full text-gray-400 hover:bg-black/60 transition-colors border border-gray-400/60"
     >
       <SettingsIcon size={24} />
-    </button>
+    </motion.button>
   );
 
   return (

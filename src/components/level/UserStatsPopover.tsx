@@ -17,6 +17,7 @@ import {
   ROLE_EMOJI_HUMAN,
 } from '../../data/levels';
 import { createRateLimiter, rateLimitedToast } from '../../utils/rateLimiters';
+import { getPrestigeDisplay, getPrestigeIcons } from '../../lib/prestigeUtils';
 
 interface UserStatsPopoverProps {
   trigger: React.ReactNode;
@@ -34,6 +35,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
     levelPath,
     setLevelPath,
     prestigeLevel,
+    prestigeStars,
     totalPomodoros,
     totalStudyMinutes,
     totalUniqueDays,
@@ -171,8 +173,19 @@ export const UserStatsPopover = memo(function UserStatsPopover({
         <StatCard
           icon={<Target className="w-4 h-4" />}
           label="Level"
-          value={`${level}${prestigeLevel > 0 ? ` ⭐${prestigeLevel}` : ''}`}
+          value={level.toString()}
           color="text-blue-400"
+          extra={prestigeStars && prestigeStars.length > 0 ? (
+            <div className="flex gap-0.5 items-center justify-center mt-1">
+              {getPrestigeIcons(prestigeStars).map((icon, idx) =>
+                icon.type === 'svg' ? (
+                  <img key={idx} src={icon.value} alt="star" className="w-4 h-4" />
+                ) : (
+                  <span key={idx} className="text-xs">{icon.value}</span>
+                )
+              )}
+            </div>
+          ) : undefined}
         />
         <StatCard
           icon={<span className="text-base">🍅</span>}
@@ -337,7 +350,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="fixed bottom-4 left-4 right-4 sm:bottom-8 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[100] sm:max-w-md sm:w-full"
+            className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-[100] max-w-md w-[calc(100%-2rem)] sm:w-96"
           >
             <div className="relative bg-gradient-to-br from-purple-900/40 to-blue-900/40 backdrop-blur-xl border border-white/20 rounded-2xl p-4 sm:p-5 shadow-2xl overflow-hidden">
               {/* Glow effect */}
@@ -390,9 +403,10 @@ interface StatCardProps {
   label: string;
   value: string;
   color: string;
+  extra?: React.ReactNode;
 }
 
-function StatCard({ icon, label, value, color }: StatCardProps) {
+function StatCard({ icon, label, value, color, extra }: StatCardProps) {
   return (
     <div className="bg-white/5 rounded-lg p-2 border border-white/10 flex flex-col">
       <div className={`flex items-center gap-1.5 ${color} mb-1 h-5`}>
@@ -400,6 +414,7 @@ function StatCard({ icon, label, value, color }: StatCardProps) {
         <span className="text-xs text-gray-400 uppercase tracking-wide">{label}</span>
       </div>
       <p className="text-base font-bold text-white leading-tight text-left">{value}</p>
+      {extra}
     </div>
   );
 }
