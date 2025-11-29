@@ -7,14 +7,13 @@ import { generateMessageId } from '../lib/chatService';
 import { useAuth } from './AuthContext';
 
 const MAX_MESSAGES = 50;
-const BATCH_DELAY_MS = 150; // Message batching window
-const RATE_LIMIT_MS = 2000; // 2 seconds between messages
+const RATE_LIMIT_MS = 1000; // 1 second between messages (enforced by DB too, but good for UI feedback)
 
 interface ChatContextValue {
   // Global chat
   globalMessages: ChatMessage[];
-  sendGlobalMessage: (content: string, user: { id: string; username: string; avatar: string | null; discord_id?: string }) => void;
-  deleteGlobalMessage: (messageId: string) => void;
+  sendGlobalMessage: (content: string, user: { id: string; username: string; avatar: string | null; discord_id?: string }) => Promise<void>;
+  deleteGlobalMessage: (messageId: string) => Promise<void>;
   isGlobalConnected: boolean;
   isChatEnabled: boolean; // Admin kill switch status
 
@@ -50,20 +49,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [isBanned, setIsBanned] = useState(false);
   const [banReason, setBanReason] = useState<string | null>(null);
-
   const [banExpiresAt, setBanExpiresAt] = useState<string | null>(null);
   const [banId, setBanId] = useState<string | null>(null);
+
+  // Rate limiting ref
+  const lastMessageTimeRef = useRef<number>(0);
 
   // Ref to track banned state without triggering effect re-runs
   const isBannedRef = useRef(isBanned);
   useEffect(() => {
     isBannedRef.current = isBanned;
   }, [isBanned]);
-
-  // Message batching & Rate limiting
-  const messageBatchRef = useRef<ChatMessage[]>([]);
-  const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastMessageTimeRef = useRef<number>(0);
 
   // 0. Fetch User Role & Check Ban Status
   useEffect(() => {
@@ -90,7 +86,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Check active bans
       const { data: banData } = await supabase
         .from('chat_bans')
-
         .select('id, reason, expires_at')
         .eq('user_id', appUser.id)
         .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
@@ -124,7 +119,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         async () => {
           // Re-check ban status on any change
           const { data: banData } = await supabase
-
             .from('chat_bans')
             .select('id, reason, expires_at')
             .eq('user_id', appUser.id)
@@ -158,8 +152,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [appUser]);
 
   // 0.5. Listen for Unban (Delete) specifically
-  // We need this because the main subscription filters by user_id,
-  // but DELETE events often only contain the PK (id), so the filter fails.
   useEffect(() => {
     if (!isBanned || !banId) return;
 
@@ -189,7 +181,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // 1. Admin Kill Switch Listener
   useEffect(() => {
-    // Fetch initial config
     const fetchConfig = async () => {
       const { data } = await supabase
         .from('system_settings')
@@ -198,13 +189,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (data?.value) {
-        setIsChatEnabled(data.value.enabled !== false); // Default true if missing
+        setIsChatEnabled(data.value.enabled !== false);
       }
     };
 
     fetchConfig();
 
-    // Subscribe to changes
     const settingsChannel = supabase.channel('system-settings')
       .on(
         'postgres_changes',
@@ -234,9 +224,60 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // 2. Single Channel Subscription (Global + Chat)
+  // 2. Load Initial Messages
   useEffect(() => {
-    if (!appUser || !isChatEnabled || isBanned) { // Disconnect if chat disabled or banned
+    if (!isChatEnabled || isBanned) return;
+
+    const fetchMessages = async () => {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select(`
+          id,
+          content,
+          created_at,
+          is_deleted,
+          user_id,
+          users (
+            id,
+            username,
+            avatar,
+            discord_id,
+            role
+          )
+        `)
+        .eq('is_deleted', false) // Only fetch non-deleted
+        .order('created_at', { ascending: false })
+        .limit(MAX_MESSAGES);
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        return;
+      }
+
+      // Transform to ChatMessage type
+      const messages: ChatMessage[] = data.map((msg: any) => ({
+        id: msg.id,
+        content: msg.content,
+        timestamp: new Date(msg.created_at).getTime(),
+        deleted: msg.is_deleted,
+        user: {
+          id: msg.users?.id || msg.user_id,
+          username: msg.users?.username || 'Unknown',
+          avatar: msg.users?.avatar || null,
+          discord_id: msg.users?.discord_id,
+          role: msg.users?.role || 'user'
+        }
+      })).reverse(); // Reverse to show oldest first (top) -> newest (bottom)
+
+      setGlobalMessages(messages);
+    };
+
+    fetchMessages();
+  }, [isChatEnabled, isBanned]);
+
+  // 3. Realtime Subscription (Postgres Changes + Presence)
+  useEffect(() => {
+    if (!appUser || !isChatEnabled || isBanned) {
       setOnlineUsers([]);
       setIsGlobalConnected(false);
       return;
@@ -245,37 +286,81 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     let channel: RealtimeChannel | null = null;
 
     const connect = async () => {
-      // Single channel for everything
-      channel = supabase.channel('global', {
+      // Channel for Presence AND Database Changes
+      channel = supabase.channel('global_chat_db', {
         config: {
-          broadcast: { self: true },
           presence: { key: appUser.id }
         }
       });
 
       channel
-        // Messages
-        .on('broadcast', { event: 'message' }, ({ payload }) => {
-          const message = payload as ChatMessage;
-          setGlobalMessages(prev => {
-            const updated = [...prev, message];
-            return updated.slice(-MAX_MESSAGES);
-          });
-        })
-        .on('broadcast', { event: 'message_batch' }, ({ payload }) => {
-          const messages = payload as ChatMessage[];
-          setGlobalMessages(prev => {
-            const updated = [...prev, ...messages];
-            return updated.slice(-MAX_MESSAGES);
-          });
-        })
-        .on('broadcast', { event: 'delete' }, ({ payload }) => {
-          const { messageId } = payload as { messageId: string };
-          setGlobalMessages(prev => prev.map(msg =>
-            msg.id === messageId ? { ...msg, deleted: true } : msg
-          ));
-        })
-        // Presence (Syncs both "Online" and "In Chat" status via metadata)
+        // Listen for NEW messages (INSERT)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chat_messages'
+          },
+          async (payload) => {
+            console.log('[Chat] Received INSERT payload:', payload);
+            const newMsg = payload.new as any;
+
+            // Fetch user details for the new message
+            // (RLS policies might restrict payload data, so safest to fetch or use what we have)
+            // Ideally we join, but realtime payload is just the row.
+            // We can optimistic update if it's us, or fetch user info.
+            // For now, let's fetch the user info to be safe and correct.
+            const { data: userData, error: userError } = await supabase
+              .from('users')
+              .select('username, avatar, discord_id, role')
+              .eq('id', newMsg.user_id)
+              .single();
+
+            if (userError) {
+              console.error('[Chat] Error fetching user for message:', userError);
+            }
+
+            const message: ChatMessage = {
+              id: newMsg.id,
+              content: newMsg.content,
+              timestamp: new Date(newMsg.created_at).getTime(),
+              deleted: newMsg.is_deleted,
+              user: {
+                id: newMsg.user_id,
+                username: userData?.username || 'Unknown',
+                avatar: userData?.avatar || null,
+                discord_id: userData?.discord_id,
+                role: userData?.role || 'user'
+              }
+            };
+
+            setGlobalMessages(prev => {
+              // Deduplicate just in case
+              if (prev.some(m => m.id === message.id)) return prev;
+              const updated = [...prev, message];
+              return updated.slice(-MAX_MESSAGES);
+            });
+          }
+        )
+        // Listen for DELETED/UPDATED messages (Soft Delete)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'chat_messages'
+          },
+          (payload) => {
+            const updatedMsg = payload.new as any;
+            if (updatedMsg.is_deleted) {
+              setGlobalMessages(prev => prev.map(msg =>
+                msg.id === updatedMsg.id ? { ...msg, deleted: true } : msg
+              ));
+            }
+          }
+        )
+        // Presence Sync
         .on('presence', { event: 'sync' }, () => {
           const state = channel!.presenceState<{
             id: string;
@@ -288,9 +373,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }>();
 
           const users: OnlineUser[] = [];
-
           Object.values(state).forEach((presences) => {
-            // Use the most recent presence state for this user
             const presence = presences[0];
             if (presence) {
               users.push({
@@ -304,20 +387,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               });
             }
           });
-
           setOnlineUsers(users);
         })
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             setIsGlobalConnected(true);
-            console.log('Connected to global channel');
+            console.log('Connected to global chat (DB-backed)');
 
-            // Track presence with metadata
             await channel!.track({
               id: appUser.id,
               username: appUser.username,
               avatar: appUser.avatar,
-              is_chatting: isChatOpen, // Dynamic status
+              is_chatting: isChatOpen,
               online_at: new Date().toISOString(),
               role: userRole,
               discord_id: appUser.discord_id
@@ -337,7 +418,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Inactive tab detection
     const handleVisibilityChange = () => {
       if (document.hidden) {
         disconnect();
@@ -353,34 +433,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       disconnect();
     };
-  }, [appUser, isChatOpen, isChatEnabled, isBanned, userRole]); // Re-connect when status changes
+  }, [appUser, isChatOpen, isChatEnabled, isBanned, userRole]);
 
-  // Flush message batch
-  const flushMessageBatch = useCallback(() => {
-    if (messageBatchRef.current.length === 0 || !channelRef.current) {
-      return;
-    }
-
-    if (messageBatchRef.current.length === 1) {
-      channelRef.current.send({
-        type: 'broadcast',
-        event: 'message',
-        payload: messageBatchRef.current[0]
-      });
-    } else {
-      channelRef.current.send({
-        type: 'broadcast',
-        event: 'message_batch',
-        payload: messageBatchRef.current
-      });
-    }
-
-    messageBatchRef.current = [];
-    batchTimerRef.current = null;
-  }, []);
-
-  // Send global message with batching and rate limiting
-  const sendGlobalMessage = useCallback((
+  // Send Global Message (Database Insert)
+  const sendGlobalMessage = useCallback(async (
     content: string,
     user: { id: string; username: string; avatar: string | null; discord_id?: string }
   ) => {
@@ -394,11 +450,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (!channelRef.current || !isGlobalConnected) {
-      console.error('Not connected to global chat');
-      return;
-    }
-
     // Rate Limiting
     const now = Date.now();
     if (now - lastMessageTimeRef.current < RATE_LIMIT_MS) {
@@ -407,48 +458,68 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
     lastMessageTimeRef.current = now;
 
-    const message: ChatMessage = {
-      id: generateMessageId(),
+    // Optimistic Update
+    const messageId = crypto.randomUUID(); // Generate UUID on client
+    const optimisticMessage: ChatMessage = {
+      id: messageId,
+      content: content.trim(),
+      timestamp: now,
+      deleted: false,
       user: {
         id: user.id,
         username: user.username,
         avatar: user.avatar,
         discord_id: user.discord_id,
         role: userRole
-      },
-      content,
-      timestamp: now
+      }
     };
 
-    messageBatchRef.current.push(message);
+    setGlobalMessages(prev => [...prev, optimisticMessage].slice(-MAX_MESSAGES));
 
-    if (batchTimerRef.current) {
-      clearTimeout(batchTimerRef.current);
+    // Insert into DB with the SAME ID
+    const { error } = await supabase
+      .from('chat_messages')
+      .insert({
+        id: messageId, // Use the client-generated ID
+        user_id: user.id,
+        content: content.trim(),
+        // Metadata for history preservation (optional)
+        username: user.username,
+        user_role: userRole
+      });
+
+    if (error) {
+      console.error('Error sending message:', error);
+      // Rollback optimistic update
+      setGlobalMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+
+      if (error.code === '42501') { // RLS violation
+        toast.error('Failed to send message. You may be banned or timed out.');
+      } else {
+        toast.error('Failed to send message.');
+      }
     }
+  }, [isChatEnabled, isBanned, banReason, userRole]);
 
-    batchTimerRef.current = setTimeout(() => {
-      flushMessageBatch();
-    }, BATCH_DELAY_MS);
-  }, [isGlobalConnected, flushMessageBatch, isChatEnabled, isBanned, banReason, userRole]);
-
-  // Delete global message
-  const deleteGlobalMessage = useCallback((messageId: string) => {
-    if (!channelRef.current || !isGlobalConnected) {
-      return;
-    }
-
-    // Only admins and moderators can delete messages
+  // Delete Global Message (Soft Delete)
+  const deleteGlobalMessage = useCallback(async (messageId: string) => {
     if (userRole !== 'admin' && userRole !== 'moderator') {
       toast.error('You do not have permission to delete messages.');
       return;
     }
 
-    channelRef.current.send({
-      type: 'broadcast',
-      event: 'delete',
-      payload: { messageId }
-    });
-  }, [isGlobalConnected, userRole]);
+    const { error } = await supabase
+      .from('chat_messages')
+      .update({ is_deleted: true })
+      .eq('id', messageId);
+
+    if (error) {
+      console.error('Error deleting message:', error);
+      toast.error('Failed to delete message.');
+    } else {
+      toast.success('Message deleted.');
+    }
+  }, [userRole]);
 
   // Ban User Function
   const banUser = useCallback(async (userId: string, durationMinutes: number | null, reason: string) => {
@@ -471,12 +542,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     if (targetUser) {
       const targetRole = targetUser.role as UserRole;
-      // Admins cannot be banned by anyone (except maybe super-admins, but we treat admin as top)
       if (targetRole === 'admin') {
         toast.error('Administrators cannot be banned.');
         return;
       }
-      // Moderators cannot ban other moderators
       if (userRole === 'moderator' && targetRole === 'moderator') {
         toast.error('Moderators cannot ban other moderators.');
         return;
@@ -514,7 +583,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Check who banned this user and enforce hierarchy
     const { data: banRecord } = await supabase
       .from('chat_bans')
       .select('banned_by, users!chat_bans_banned_by_fkey(role)')
@@ -522,17 +590,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (banRecord?.banned_by) {
-      // Supabase returns an array for the relation if not explicitly 1:1 mapped in types, or just handle both
       const bannerUser = Array.isArray(banRecord.users) ? banRecord.users[0] : banRecord.users;
       const bannerRole = bannerUser?.role as UserRole | undefined;
-      // Moderators cannot unban if banned by admin
       if (userRole === 'moderator' && bannerRole === 'admin') {
         toast.error('You cannot unban users that were banned by administrators.');
         return;
       }
     }
 
-    // Delete the ban record
     const { error } = await supabase
       .from('chat_bans')
       .delete()

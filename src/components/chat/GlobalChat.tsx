@@ -75,6 +75,17 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
     }
   }, [globalMessages.length, shouldAutoScroll]);
 
+  // Initial scroll to bottom on mount (restore position)
+  useEffect(() => {
+    // Small timeout to ensure list is fully rendered/measured
+    const timer = setTimeout(() => {
+      if (listRef.current && globalMessages.length > 0) {
+        listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Handle scroll to detect if user scrolled up
   const handleScroll = ({ scrollDirection }: { scrollOffset: number, scrollDirection: 'forward' | 'backward' }) => {
     // Simple logic: if scrolled to bottom, enable auto-scroll.
