@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { useChat } from '../../contexts/ChatContext';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Shield } from 'lucide-react';
 import type { AppUser } from '../../lib/types';
-import { toast } from 'sonner';
 import { VariableSizeList, type ListChildComponentProps } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { ChatMessage } from './ChatMessage';
@@ -50,13 +49,13 @@ const Row = memo(({ index, style, data }: ListChildComponentProps) => {
  * Displays the list of messages and handles auto-scrolling
  */
 export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessagesProps) {
-  const { globalMessages, deleteGlobalMessage, userRole, isGlobalConnected } = useChat();
+  const { globalMessages, deleteGlobalMessage, userRole, reportMessage, isGlobalConnected } = useChat();
   const listRef = useRef<VariableSizeList>(null);
   const sizeMap = useRef<Record<number, number>>({});
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
   // Context Menu State
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; userId: string; username: string } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; userId: string; username: string; messageId: string; content: string } | null>(null);
 
   const setSize = useCallback((index: number, size: number) => {
     if (sizeMap.current[index] !== size) {
@@ -119,38 +118,23 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
     return () => window.removeEventListener('click', handleClick);
   }, []);
 
-  const handleContextMenu = useCallback((e: React.MouseEvent, userId: string, username: string, targetRole?: string) => {
+  const handleContextMenu = useCallback((e: React.MouseEvent, userId: string, username: string, _targetRole?: string, messageId?: string, content?: string) => {
     e.preventDefault(); // Always prevent default context menu
     console.log('[GlobalChat] Context menu triggered for:', username, 'by role:', userRole);
 
-    // Only show for mods/admins
-    if (userRole !== 'moderator' && userRole !== 'admin') {
-      console.log('[GlobalChat] Access denied: User is not mod/admin');
-      return;
-    }
-
-    // Prevent banning self
+    // Prevent banning self (or reporting self via context menu, though UI hides it)
     if (userId === currentUser.id) {
-      toast.error("You cannot ban yourself.");
       return;
     }
 
-    // Role-based protection
-    if (userRole === 'moderator') {
-      if (targetRole === 'moderator' || targetRole === 'admin') {
-        toast.error("You cannot ban other moderators or admins.");
-        return;
-      }
-    }
+    // Role-based protection for BANNING is handled in handleBanClick and the UI rendering
+    // We allow the menu to open for everyone so they can Report
 
-    if (userRole === 'admin') {
-      if (targetRole === 'admin') {
-        toast.error("You cannot ban other admins.");
-        return;
-      }
+    if (messageId && content) {
+      setContextMenu({ x: e.clientX, y: e.clientY, userId, username, messageId, content });
+    } else {
+      setContextMenu({ x: e.clientX, y: e.clientY, userId, username, messageId: '', content: '' });
     }
-
-    setContextMenu({ x: e.clientX, y: e.clientY, userId, username });
   }, [currentUser.id, userRole]);
 
   const handleBanClick = () => {
@@ -160,11 +144,18 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
     }
   };
 
+  const handleContextReportClick = () => {
+    if (contextMenu && contextMenu.messageId) {
+      handleReportClick(contextMenu.messageId, contextMenu.userId, contextMenu.username, contextMenu.content);
+      setContextMenu(null);
+    }
+  };
+
   // Report Modal State
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [selectedUserToReport, setSelectedUserToReport] = useState<{ id: string; username: string; messageId: string; content: string } | null>(null);
 
-  const { reportMessage } = useChat();
+
 
   const handleReportClick = (messageId: string, userId: string, username: string, content: string) => {
     setSelectedUserToReport({ id: userId, username, messageId, content });
@@ -235,23 +226,57 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
       {createPortal(
         <>
           {/* Context Menu */}
-          {contextMenu && (
-            <div
-              className="fixed z-[9999] bg-gray-900 border border-white/10 rounded-lg shadow-xl py-1 min-w-[160px] animate-in fade-in zoom-in duration-100"
-              style={{ top: contextMenu.y, left: contextMenu.x }}
-            >
-              <div className="px-3 py-2 border-b border-white/5 mb-1">
-                <span className="text-xs text-gray-500">Actions for @{contextMenu.username}</span>
-              </div>
-              <button
-                onClick={handleBanClick}
-                className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 flex items-center gap-2 transition-colors"
+          {contextMenu && (() => {
+            // Viewport-aware positioning
+            const MENU_WIDTH = 180;
+            const MENU_HEIGHT = 100;
+            const padding = 10;
+
+            const style: React.CSSProperties = {};
+
+            // Horizontal positioning
+            if (contextMenu.x + MENU_WIDTH > window.innerWidth - padding) {
+              style.right = window.innerWidth - contextMenu.x;
+            } else {
+              style.left = contextMenu.x;
+            }
+
+            // Vertical positioning
+            if (contextMenu.y + MENU_HEIGHT > window.innerHeight - padding) {
+              style.bottom = window.innerHeight - contextMenu.y;
+            } else {
+              style.top = contextMenu.y;
+            }
+
+            return (
+              <div
+                className="fixed z-[9999] bg-gray-900 border border-white/10 rounded-lg shadow-xl py-1 min-w-[160px] animate-in fade-in zoom-in duration-100"
+                style={style}
               >
-                <AlertTriangle size={14} />
-                Ban User
-              </button>
-            </div>
-          )}
+                <div className="px-3 py-2 border-b border-white/5 mb-1">
+                  <span className="text-xs text-gray-500">Actions for @{contextMenu.username}</span>
+                </div>
+
+                <button
+                  onClick={handleContextReportClick}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-yellow-400 flex items-center gap-2 transition-colors"
+                >
+                  <AlertTriangle size={14} />
+                  Report Message
+                </button>
+
+                {(userRole === 'moderator' || userRole === 'admin') && (
+                  <button
+                    onClick={handleBanClick}
+                    className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 flex items-center gap-2 transition-colors"
+                  >
+                    <Shield size={14} />
+                    Ban User
+                  </button>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Report Modal */}
           <ReportModal

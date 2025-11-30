@@ -8,7 +8,7 @@ interface ChatMessageProps {
     message: ChatMessageType;
     currentUser: AppUser;
     showAvatar: boolean;
-    onContextMenu: (e: React.MouseEvent, userId: string, username: string, role?: string) => void;
+    onContextMenu: (e: React.MouseEvent, userId: string, username: string, role?: string, messageId?: string, content?: string) => void;
     onDelete: (messageId: string) => void;
     onReport?: (messageId: string, userId: string, username: string, content: string) => void;
     userRole: string;
@@ -31,7 +31,7 @@ export const ChatMessage = memo(({
         <div
             className={`group flex items-start gap-2 px-2 py-1 rounded-lg transition-colors ${isMentioned && !isDeleted ? 'bg-yellow-500/10 hover:bg-yellow-500/20' : 'hover:bg-white/5'
                 }`}
-            onContextMenu={(e) => !isDeleted && onContextMenu(e, message.user.id, message.user.username, message.user.role)}
+            onContextMenu={(e) => !isDeleted && onContextMenu(e, message.user.id, message.user.username, message.user.role, message.id, message.content)}
         >
             {/* Avatar */}
             <div className="w-8 flex-shrink-0 pt-0.5">
@@ -86,15 +86,15 @@ export const ChatMessage = memo(({
             {/* Actions Button (Delete/Report) */}
             {!isDeleted && (
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {/* Context Menu Button (For Mods/Admins on other users) */}
-                    {!isMe && (userRole === 'moderator' || userRole === 'admin') && (
+                    {/* Context Menu Button (For everyone on other users) */}
+                    {!isMe && (
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                onContextMenu(e, message.user.id, message.user.username, message.user.role);
+                                onContextMenu(e, message.user.id, message.user.username, message.user.role, message.id, message.content);
                             }}
                             className="p-1 text-gray-500 hover:text-white transition-colors"
-                            title="User Actions"
+                            title="More Actions"
                         >
                             <MoreVertical size={14} />
                         </button>
