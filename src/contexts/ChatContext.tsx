@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { ChatMessage, OnlineUser, UserRole } from '../types/chat';
-import { generateMessageId } from '../lib/chatService';
 import { useAuth } from './AuthContext';
 
 const MAX_MESSAGES = 50;
@@ -28,6 +27,7 @@ interface ChatContextValue {
   banExpiresAt: string | null;
   banUser: (userId: string, durationMinutes: number | null, reason: string) => Promise<void>;
   unbanUser: (userId: string) => Promise<void>;
+  reportMessage: (messageId: string, reason: string, reportedUserId: string, reportedUsername: string, reportedContent: string) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null);
@@ -624,7 +624,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     banReason,
     banExpiresAt,
     banUser,
-    unbanUser
+    unbanUser,
+    reportMessage: async (messageId: string, reason: string, reportedUserId: string, reportedUsername: string, reportedContent: string) => {
+      if (!appUser) return;
+
+      try {
+        const { error } = await supabase.functions.invoke('report-message', {
+          body: {
+            messageId,
+            reason,
+            reportedUserId,
+            reportedUsername,
+            reportedContent
+          }
+        });
+
+        if (error) throw error;
+        toast.success('Report submitted. Thank you for helping keep the chat safe.');
+      } catch (err) {
+        console.error('Error submitting report:', err);
+        toast.error('Failed to submit report. Please try again.');
+      }
+    }
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

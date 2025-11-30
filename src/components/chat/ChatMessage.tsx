@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Trash2, Shield, MoreVertical } from 'lucide-react';
+import { Trash2, Shield, MoreVertical, AlertTriangle } from 'lucide-react';
 import { formatMessageTime, getAvatarUrl, hasMention } from '../../lib/chatService';
 import type { AppUser } from '../../lib/types';
 import type { ChatMessage as ChatMessageType } from '../../types/chat';
@@ -10,6 +10,7 @@ interface ChatMessageProps {
     showAvatar: boolean;
     onContextMenu: (e: React.MouseEvent, userId: string, username: string, role?: string) => void;
     onDelete: (messageId: string) => void;
+    onReport?: (messageId: string, userId: string, username: string, content: string) => void;
     userRole: string;
 }
 
@@ -19,6 +20,7 @@ export const ChatMessage = memo(({
     showAvatar,
     onContextMenu,
     onDelete,
+    onReport,
     userRole
 }: ChatMessageProps) => {
     const isMe = message.user.id === currentUser.id;
@@ -81,8 +83,8 @@ export const ChatMessage = memo(({
                 )}
             </div>
 
-            {/* Delete Button (Only for own messages or mods/admins) */}
-            {!isDeleted && (isMe || userRole === 'moderator' || userRole === 'admin') && (
+            {/* Actions Button (Delete/Report) */}
+            {!isDeleted && (
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {/* Context Menu Button (For Mods/Admins on other users) */}
                     {!isMe && (userRole === 'moderator' || userRole === 'admin') && (
@@ -98,14 +100,27 @@ export const ChatMessage = memo(({
                         </button>
                     )}
 
-                    {/* Delete Button */}
-                    <button
-                        onClick={() => onDelete(message.id)}
-                        className="p-1 text-gray-500 hover:text-red-400 transition-colors"
-                        title="Delete message"
-                    >
-                        <Trash2 size={14} />
-                    </button>
+                    {/* Report Button (For everyone on other users) */}
+                    {!isMe && onReport && (
+                        <button
+                            onClick={() => onReport(message.id, message.user.id, message.user.username, message.content)}
+                            className="p-1 text-gray-500 hover:text-yellow-400 transition-colors"
+                            title="Report Message"
+                        >
+                            <AlertTriangle size={14} />
+                        </button>
+                    )}
+
+                    {/* Delete Button (Own messages or Mods/Admins) */}
+                    {(isMe || userRole === 'moderator' || userRole === 'admin') && (
+                        <button
+                            onClick={() => onDelete(message.id)}
+                            className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                            title="Delete message"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    )}
                 </div>
             )}
         </div>

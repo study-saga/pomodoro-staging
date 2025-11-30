@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { VariableSizeList, type ListChildComponentProps } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { ChatMessage } from './ChatMessage';
+import { ReportModal } from './ReportModal';
 
 interface GlobalChatMessagesProps {
   currentUser: AppUser;
@@ -159,11 +160,37 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
     }
   };
 
+  // Report Modal State
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [selectedUserToReport, setSelectedUserToReport] = useState<{ id: string; username: string; messageId: string; content: string } | null>(null);
+
+  const { reportMessage } = useChat();
+
+  const handleReportClick = (messageId: string, userId: string, username: string, content: string) => {
+    setSelectedUserToReport({ id: userId, username, messageId, content });
+    setReportModalOpen(true);
+  };
+
+  const handleReportConfirm = async (reason: string) => {
+    if (selectedUserToReport) {
+      await reportMessage(
+        selectedUserToReport.messageId,
+        reason,
+        selectedUserToReport.id,
+        selectedUserToReport.username,
+        selectedUserToReport.content
+      );
+      setReportModalOpen(false);
+      setSelectedUserToReport(null);
+    }
+  };
+
   const itemData = {
     messages: globalMessages,
     currentUser,
     onContextMenu: handleContextMenu,
     onDelete: deleteGlobalMessage,
+    onReport: handleReportClick,
     userRole,
     setSize
   };
@@ -225,6 +252,14 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
               </button>
             </div>
           )}
+
+          {/* Report Modal */}
+          <ReportModal
+            isOpen={reportModalOpen}
+            onClose={() => setReportModalOpen(false)}
+            onReport={handleReportConfirm}
+            username={selectedUserToReport?.username || ''}
+          />
         </>,
         document.body
       )}
