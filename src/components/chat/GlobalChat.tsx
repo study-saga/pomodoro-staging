@@ -11,6 +11,7 @@ import { ChatContextMenu } from './ChatContextMenu';
 interface GlobalChatMessagesProps {
   currentUser: AppUser;
   onBanUser: (user: { id: string; username: string }) => void;
+  isExpanded: boolean;
 }
 
 // Row component for virtualization
@@ -48,12 +49,13 @@ const Row = memo(({ index, style, data }: ListChildComponentProps) => {
  * Global chat messages list
  * Displays the list of messages and handles auto-scrolling
  */
-export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessagesProps) {
+export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: GlobalChatMessagesProps) {
   const { globalMessages, deleteGlobalMessage, userRole, reportMessage, isGlobalConnected } = useChat();
   const listRef = useRef<VariableSizeList>(null);
   const sizeMap = useRef<Record<number, number>>({});
   const [showScrollButton, setShowScrollButton] = useState(false);
   const shouldAutoScrollRef = useRef(true);
+  const prevIsExpandedRef = useRef(isExpanded);
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; userId: string; username: string; messageId: string; content: string } | null>(null);
@@ -96,6 +98,35 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
       shouldAutoScrollRef.current = true;
     }
   }, []); // Empty deps = run once on mount
+
+  // Scroll to bottom when chat is reopened (detects false -> true transition)
+  useLayoutEffect(() => {
+    const wasExpanded = prevIsExpandedRef.current;
+    prevIsExpandedRef.current = isExpanded;
+
+    // Only scroll if chat was just opened (false -> true)
+    if (!wasExpanded && isExpanded && globalMessages.length > 0) {
+      // Use direct scrollTop manipulation which is more reliable than scrollToItem
+      const scrollToBottomDirect = () => {
+        const listInstance = listRef.current as any;
+        const outerElement = listInstance?.outerRef?.current as HTMLDivElement;
+
+        if (outerElement) {
+          // Set scrollTop to a very large number to force scroll to bottom
+          outerElement.scrollTop = 999999;
+          shouldAutoScrollRef.current = true;
+          setShowScrollButton(false);
+        }
+      };
+
+      // Try multiple times to ensure it catches the render
+      scrollToBottomDirect(); // Immediate
+      requestAnimationFrame(scrollToBottomDirect); // Next frame
+      setTimeout(scrollToBottomDirect, 50); // Safety
+      setTimeout(scrollToBottomDirect, 100); // Final
+      setTimeout(scrollToBottomDirect, 200); // Extra safety
+    }
+  }, [isExpanded, globalMessages.length]);
 
   // Handle scroll - detect if user scrolled up
   const handleScroll = useCallback((props: { scrollDirection: 'forward' | 'backward'; scrollOffset: number; scrollUpdateWasRequested: boolean }) => {
@@ -229,7 +260,8 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
                   itemCount={globalMessages.length}
                   itemSize={getSize}
                   itemData={itemData}
-                  className="scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  className="[&::-webkit-scrollbar]:hidden"
                   onScroll={handleScroll}
                 >
                   {Row}

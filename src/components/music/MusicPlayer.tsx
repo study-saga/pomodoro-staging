@@ -188,7 +188,7 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
               {/* Genre Badge */}
               <button
                 onClick={() => setPlaylist(playlist === 'lofi' ? 'synthwave' : 'lofi')}
-                className="px-3 py-1 bg-purple-600 text-white text-sm font-medium rounded-full hover:bg-purple-700 transition-colors flex-shrink-0"
+                className="px-3 py-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white text-sm font-medium rounded-full transition-all duration-200 hover:border-white/30 flex-shrink-0"
               >
                 {playlist === 'lofi' ? 'Lofi' : 'Synthwave'}
               </button>
@@ -389,7 +389,7 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
               {/* Genre Badge */}
               <button
                 onClick={() => setPlaylist(playlist === 'lofi' ? 'synthwave' : 'lofi')}
-                className="px-3 py-1 bg-purple-600 text-white text-xs font-medium rounded-full hover:bg-purple-700 transition-colors"
+                className="px-3 py-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white text-xs font-medium rounded-full transition-all duration-200 hover:border-white/30"
               >
                 {playlist === 'lofi' ? 'Lofi' : 'Synthwave'}
               </button>

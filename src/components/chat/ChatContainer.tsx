@@ -232,6 +232,7 @@ export function ChatContainer() {
                 <GlobalChatMessages
                   currentUser={appUser}
                   onBanUser={handleOpenBanModal}
+                  isExpanded={isExpanded}
                 />
               )}
               {activeTab === 'online' && (
@@ -369,6 +370,7 @@ export function ChatContainer() {
                 <GlobalChatMessages
                   currentUser={appUser}
                   onBanUser={handleOpenBanModal}
+                  isExpanded={isExpanded}
                 />
               )}
               {activeTab === 'online' && (
