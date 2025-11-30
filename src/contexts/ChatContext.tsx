@@ -352,6 +352,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             table: 'chat_messages'
           },
           (payload) => {
+            console.log('[Chat] Received UPDATE payload:', payload);
             const updatedMsg = payload.new as any;
             if (updatedMsg.is_deleted) {
               // Remove the message entirely
@@ -361,6 +362,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               setGlobalMessages(prev => prev.map(msg =>
                 msg.id === updatedMsg.id ? { ...msg, content: updatedMsg.content } : msg
               ));
+            }
+          }
+        )
+        // Listen for DELETE (in case RLS makes it look like a delete)
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'chat_messages'
+          },
+          (payload) => {
+            console.log('[Chat] Received DELETE payload:', payload);
+            const deletedId = payload.old.id;
+            if (deletedId) {
+              setGlobalMessages(prev => prev.filter(msg => msg.id !== deletedId));
             }
           }
         )

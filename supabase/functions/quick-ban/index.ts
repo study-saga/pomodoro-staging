@@ -107,6 +107,28 @@ serve(async (req) => {
             return new Response(`Failed to ban user: ${error.message}`, { status: 500 })
         }
 
+        // Explicitly soft-delete user's messages
+        const { error: deleteError, data: deletedRows } = await supabaseAdmin
+            .from('chat_messages')
+            .update({ is_deleted: true })
+            .eq('user_id', userId)
+            .select('id')
+
+        const deletedCount = deletedRows?.length || 0;
+
+        // Verify remaining non-deleted messages
+        const { count: remainingCount } = await supabaseAdmin
+            .from('chat_messages')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('is_deleted', false)
+
+        if (deleteError) {
+            console.error('Failed to auto-delete messages:', deleteError)
+        }
+
+        console.log(`[Quick Ban] User ${userId}: Deleted ${deletedCount} messages, ${remainingCount} remaining`)
+
         // Return a simple HTML success page
         const html = `<!DOCTYPE html>
         <html>
@@ -115,19 +137,39 @@ serve(async (req) => {
             <title>User Banned</title>
             <style>
                 body { background: #111; color: #fff; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-                .card { background: #222; padding: 2rem; border-radius: 1rem; text-align: center; border: 1px solid #333; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+                .card { background: #222; padding: 2rem; border-radius: 1rem; text-align: center; border: 1px solid #333; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; }
                 h1 { color: #ef4444; margin: 0 0 1rem 0; }
-                p { color: #888; }
-                .success { color: #22c55e; font-weight: bold; font-size: 1.2rem; }
+                p { color: #888; margin: 0.5rem 0; }
+                .success { color: #22c55e; font-weight: bold; font-size: 1.2rem; margin: 1rem 0; }
+                .debug { margin-top: 1.5rem; padding: 1rem; background: #000; border-radius: 0.5rem; font-family: monospace; text-align: left; font-size: 0.85rem; color: #aaa; line-height: 1.6; }
+                .debug strong { color: #fff; display: block; margin-bottom: 0.5rem; }
+                .debug .error { color: #ef4444; }
+                .debug .success { color: #22c55e; }
             </style>
         </head>
         <body>
             <div class="card">
                 <h1>🛡️ Ban Executed</h1>
-                <p>User ID: ${userId}</p>
-                <p>Duration: ${duration}</p>
+                <p><strong>User ID:</strong> ${userId}</p>
+                <p><strong>Duration:</strong> ${duration}</p>
                 <div class="success">✓ User has been banned successfully</div>
-                <p style="font-size: 0.8rem; margin-top: 2rem;">You can close this window.</p>
+                
+                <div class="debug">
+                    <strong>Debug Information:</strong>
+                    ${deleteError ? `<div class="error">❌ Delete Error: ${deleteError.message}</div>` : '<div class="success">✓ No errors</div>'}
+                    <div>📊 Messages Deleted: ${deletedCount}</div>
+                    <div>📊 Messages Remaining (non-deleted): ${remainingCount || 0}</div>
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #333; font-size: 0.75rem; color: #666;">
+                        ${deletedCount > 0 && remainingCount === 0 ?
+                '<div class="success">✓ All messages successfully removed</div>' :
+                deletedCount === 0 ?
+                    '<div style="color: #ff9800;">⚠ No messages found to delete</div>' :
+                    '<div class="error">⚠ Some messages may still exist</div>'
+            }
+                    </div>
+                </div>
+
+                <p style="font-size: 0.8rem; margin-top: 2rem; color: #666;">You can close this window.</p>
             </div>
         </body>
         </html>`

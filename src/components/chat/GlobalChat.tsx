@@ -70,8 +70,13 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (shouldAutoScroll && listRef.current) {
-      listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+    if (shouldAutoScroll && listRef.current && globalMessages.length > 0) {
+      // Use RAF to ensure scroll happens after layout
+      requestAnimationFrame(() => {
+        if (listRef.current) {
+          listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+        }
+      });
     }
   }, [globalMessages.length, shouldAutoScroll]);
 
@@ -87,27 +92,26 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
   }, []);
 
   // Handle scroll to detect if user scrolled up
-  const handleScroll = ({ scrollDirection }: { scrollOffset: number, scrollDirection: 'forward' | 'backward' }) => {
-    // Simple logic: if scrolled to bottom, enable auto-scroll.
-    // However, react-window doesn't give us scrollHeight easily in onScroll.
-    // We can assume if scrollDirection is backward, user is scrolling up.
+  const handleScroll = ({ scrollDirection }: { scrollDirection: 'forward' | 'backward' }) => {
+    // If user scrolls up (backward), disable auto-scroll
     if (scrollDirection === 'backward') {
       setShouldAutoScroll(false);
     } else {
-      // If we are near bottom, enable auto-scroll?
-      // This is tricky with virtualization.
-      // For now, let's just enable auto-scroll on new messages if we were already at bottom?
-      // Or just always auto-scroll if user didn't manually scroll up?
-      // Let's stick to simple: if user scrolls up, disable. If they scroll down to bottom, enable.
-      // But we don't know "bottom" easily.
-      // Let's just set it to true on mount and if they scroll down?
-      // Actually, a common pattern is:
-      // If (scrollHeight - scrollTop - clientHeight < threshold) setShouldAutoScroll(true)
-      // We can get these from the ref? listRef.current.outerRef?
-      // listRef.current has no outerRef exposed publicly in types usually, but it might be there.
-      // Let's skip complex auto-scroll logic for now and just auto-scroll on new messages if we assume they want it.
-      // Or just always auto-scroll for now as per plan "Implement auto-scroll on new messages".
-      setShouldAutoScroll(true); // Always auto-scroll for now to match plan simplicity
+      // If user scrolls down, check if they are near the bottom
+      // Access outerRef via type assertion since it's not in the public types but exists at runtime
+      const listInstance = listRef.current as any;
+      const outerElement = listInstance?.outerRef?.current as HTMLDivElement;
+
+      if (outerElement) {
+        const { scrollHeight, clientHeight, scrollTop } = outerElement;
+        // If we are within 100px of the bottom, re-enable auto-scroll
+        if (scrollHeight - (scrollTop + clientHeight) < 100) {
+          setShouldAutoScroll(true);
+        }
+      } else {
+        // Fallback if ref is missing
+        setShouldAutoScroll(true);
+      }
     }
   };
 
@@ -212,8 +216,8 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
                   itemCount={globalMessages.length}
                   itemSize={getSize}
                   itemData={itemData}
+                  className="scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20"
                   onScroll={handleScroll}
-                  className="no-scrollbar"
                 >
                   {Row}
                 </VariableSizeList>
