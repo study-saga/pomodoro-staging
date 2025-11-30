@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, memo } from 'react';
+import { useEffect, useRef, useState, useCallback, memo, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useChat } from '../../contexts/ChatContext';
 import type { AppUser } from '../../lib/types';
@@ -52,8 +52,8 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
   const { globalMessages, deleteGlobalMessage, userRole, reportMessage, isGlobalConnected } = useChat();
   const listRef = useRef<VariableSizeList>(null);
   const sizeMap = useRef<Record<number, number>>({});
-  const [isAtBottom, setIsAtBottom] = useState(true);
-  const isAtBottomRef = useRef(true); // Track in ref for immediate reads
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const shouldAutoScrollRef = useRef(true);
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; userId: string; username: string; messageId: string; content: string } | null>(null);
@@ -69,63 +69,64 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
     return sizeMap.current[index] || 60; // Default estimated height
   }, []);
 
-  // Scroll to bottom function
+  // Scroll to bottom - ALWAYS works
   const scrollToBottom = useCallback(() => {
-    const listInstance = listRef.current as any;
-    const outerElement = listInstance?.outerRef?.current as HTMLDivElement;
+    if (listRef.current && globalMessages.length > 0) {
+      listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+      shouldAutoScrollRef.current = true;
+      setShowScrollButton(false);
+    }
+  }, [globalMessages.length]);
 
-    if (outerElement) {
-      // Use double RAF for better reliability with dynamic content
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (outerElement) {
-            outerElement.scrollTop = outerElement.scrollHeight;
-          }
-        });
-      });
+  // Auto-scroll on new messages (using useLayoutEffect for immediate execution)
+  useLayoutEffect(() => {
+    if (globalMessages.length > 0 && shouldAutoScrollRef.current) {
+      // Scroll immediately in layout phase
+      if (listRef.current) {
+        listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+      }
+    }
+  }, [globalMessages.length]);
+
+  // Initial scroll on mount
+  useLayoutEffect(() => {
+    if (globalMessages.length > 0 && listRef.current) {
+      // Initial scroll to bottom
+      listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+      shouldAutoScrollRef.current = true;
+    }
+  }, []); // Empty deps = run once on mount
+
+  // Handle scroll - detect if user scrolled up
+  const handleScroll = useCallback((props: { scrollDirection: 'forward' | 'backward'; scrollOffset: number; scrollUpdateWasRequested: boolean }) => {
+    const { scrollDirection, scrollUpdateWasRequested } = props;
+
+    // If this was a programmatic scroll (auto-scroll), don't change state
+    if (scrollUpdateWasRequested) {
+      return;
+    }
+
+    // User manually scrolled
+    if (scrollDirection === 'backward') {
+      // Scrolled up - disable auto-scroll and show button
+      shouldAutoScrollRef.current = false;
+      setShowScrollButton(true);
+    } else {
+      // Scrolled down - check if near bottom
+      const listInstance = listRef.current as any;
+      const outerElement = listInstance?.outerRef?.current as HTMLDivElement;
+
+      if (outerElement) {
+        const { scrollHeight, clientHeight, scrollTop } = outerElement;
+        const isNearBottom = scrollHeight - (scrollTop + clientHeight) < 100;
+
+        if (isNearBottom) {
+          shouldAutoScrollRef.current = true;
+          setShowScrollButton(false);
+        }
+      }
     }
   }, []);
-
-  // Check if user is at bottom
-  const checkIfAtBottom = useCallback(() => {
-    const listInstance = listRef.current as any;
-    const outerElement = listInstance?.outerRef?.current as HTMLDivElement;
-
-    if (outerElement) {
-      const { scrollHeight, clientHeight, scrollTop } = outerElement;
-      const atBottom = scrollHeight - (scrollTop + clientHeight) < 50; // Within 50px
-
-      if (atBottom !== isAtBottomRef.current) {
-        isAtBottomRef.current = atBottom;
-        setIsAtBottom(atBottom);
-      }
-
-      return atBottom;
-    }
-    return true;
-  }, []);
-
-  // Auto-scroll when new messages arrive (only if at bottom)
-  useEffect(() => {
-    if (globalMessages.length > 0 && isAtBottomRef.current) {
-      scrollToBottom();
-    }
-  }, [globalMessages.length, scrollToBottom]);
-
-  // Initial scroll to bottom on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (globalMessages.length > 0) {
-        scrollToBottom();
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [globalMessages.length > 0]); // Only once when first messages load
-
-  // Handle scroll events
-  const handleScroll = useCallback(() => {
-    checkIfAtBottom();
-  }, [checkIfAtBottom]);
 
   // Close context menu on click outside
   useEffect(() => {
@@ -238,11 +239,11 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
           )}
         </div>
 
-        {/* Scroll to Bottom Button - appears when not at bottom */}
-        {!isAtBottom && globalMessages.length > 0 && (
+        {/* Scroll to Bottom Button - appears when scrolled up */}
+        {showScrollButton && globalMessages.length > 0 && (
           <button
             onClick={scrollToBottom}
-            className="absolute bottom-4 right-4 bg-purple-600 hover:bg-purple-700 text-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110 z-10"
+            className="absolute bottom-4 right-4 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white rounded-full p-3 shadow-xl transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:border-white/30 z-10 group"
             aria-label="Scroll to bottom"
           >
             <svg
@@ -252,9 +253,10 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
+              className="transition-transform duration-300 group-hover:translate-y-0.5"
             >
               <path d="M12 5v14M19 12l-7 7-7-7" />
             </svg>
