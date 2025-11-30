@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { useChat } from '../../contexts/ChatContext';
-import { AlertTriangle, Shield } from 'lucide-react';
 import type { AppUser } from '../../lib/types';
 import { VariableSizeList, type ListChildComponentProps } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { ChatMessage } from './ChatMessage';
 import { ReportModal } from './ReportModal';
+import { ChatContextMenu } from './ChatContextMenu';
 
 interface GlobalChatMessagesProps {
   currentUser: AppUser;
@@ -226,57 +226,13 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
       {createPortal(
         <>
           {/* Context Menu */}
-          {contextMenu && (() => {
-            // Viewport-aware positioning
-            const MENU_WIDTH = 180;
-            const MENU_HEIGHT = 100;
-            const padding = 10;
-
-            const style: React.CSSProperties = {};
-
-            // Horizontal positioning
-            if (contextMenu.x + MENU_WIDTH > window.innerWidth - padding) {
-              style.right = window.innerWidth - contextMenu.x;
-            } else {
-              style.left = contextMenu.x;
-            }
-
-            // Vertical positioning
-            if (contextMenu.y + MENU_HEIGHT > window.innerHeight - padding) {
-              style.bottom = window.innerHeight - contextMenu.y;
-            } else {
-              style.top = contextMenu.y;
-            }
-
-            return (
-              <div
-                className="fixed z-[9999] bg-gray-900 border border-white/10 rounded-lg shadow-xl py-1 min-w-[160px] animate-in fade-in zoom-in duration-100"
-                style={style}
-              >
-                <div className="px-3 py-2 border-b border-white/5 mb-1">
-                  <span className="text-xs text-gray-500">Actions for @{contextMenu.username}</span>
-                </div>
-
-                <button
-                  onClick={handleContextReportClick}
-                  className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-yellow-400 flex items-center gap-2 transition-colors"
-                >
-                  <AlertTriangle size={14} />
-                  Report Message
-                </button>
-
-                {(userRole === 'moderator' || userRole === 'admin') && (
-                  <button
-                    onClick={handleBanClick}
-                    className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 flex items-center gap-2 transition-colors"
-                  >
-                    <Shield size={14} />
-                    Ban User
-                  </button>
-                )}
-              </div>
-            );
-          })()}
+          <ChatContextMenu
+            contextMenu={contextMenu}
+            onClose={() => setContextMenu(null)}
+            onReport={handleContextReportClick}
+            onBan={handleBanClick}
+            userRole={userRole}
+          />
 
           {/* Report Modal */}
           <ReportModal

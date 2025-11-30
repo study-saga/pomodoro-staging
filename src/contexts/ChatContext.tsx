@@ -354,8 +354,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           (payload) => {
             const updatedMsg = payload.new as any;
             if (updatedMsg.is_deleted) {
+              // Remove the message entirely
+              setGlobalMessages(prev => prev.filter(msg => msg.id !== updatedMsg.id));
+            } else {
+              // Handle other updates (e.g. edits if we had them)
               setGlobalMessages(prev => prev.map(msg =>
-                msg.id === updatedMsg.id ? { ...msg, deleted: true } : msg
+                msg.id === updatedMsg.id ? { ...msg, content: updatedMsg.content } : msg
               ));
             }
           }
@@ -635,7 +639,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             reason,
             reportedUserId,
             reportedUsername,
-            reportedContent
+            reportedContent,
+            origin: window.location.origin
           }
         });
 

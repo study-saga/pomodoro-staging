@@ -28,19 +28,14 @@ serve(async (req) => {
             throw new Error('Unauthorized')
         }
 
-        const { messageId, reason, reportedUserId, reportedUsername, reportedContent } = await req.json()
+        const { messageId, reason, reportedUserId, reportedUsername, reportedContent, origin } = await req.json()
 
         if (!messageId || !reason) {
             throw new Error('Missing required fields')
         }
 
-        // 1. Insert report into database (using service role to bypass RLS if needed, or just user auth)
-        // We'll use a service role client to ensure we can fetch user details if needed, 
-        // but for insertion, the user's client is fine if RLS allows it.
-        // However, to be safe and robust, let's use the user's client for the insert to respect RLS,
-        // and then use the input data for the webhook.
-
-        // Actually, we need to fetch the reporter's internal ID (public.users.id) from their auth ID
+        // 1. Insert report into database
+        // We need to fetch the reporter's internal ID (public.users.id) from their auth ID
         const { data: reporterData, error: reporterError } = await supabaseClient
             .from('users')
             .select('id, username')
@@ -69,36 +64,105 @@ serve(async (req) => {
         const webhookUrl = Deno.env.get('DISCORD_REPORT_WEBHOOK_URL')
 
         if (webhookUrl) {
+            const fields = [
+                {
+                    name: "Reported User",
+                    value: `${reportedUsername} (ID: ${reportedUserId})`,
+                    inline: true
+                },
+                {
+                    name: "Reporter",
+                    value: `${reporterData.username} (ID: ${reporterData.id})`,
+                    inline: true
+                },
+                {
+                    name: "Reason",
+                    value: reason,
+                    inline: false
+                },
+                {
+                    name: "Message Content",
+                    value: reportedContent || "*[No content or deleted]*",
+                    inline: false
+                },
+                {
+                    name: "Message ID",
+                    value: messageId,
+                    inline: false
+                }
+            ];
+
+            // Add Quick Ban links if origin is present
+            // We use the 'quick-ban' Edge Function for one-click bans from Discord
+            const quickBanUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/quick-ban`;
+            const quickBanSecret = Deno.env.get('QUICK_BAN_SECRET');
+
+            if (quickBanUrl && quickBanSecret) {
+                // Helper to create HMAC-SHA256 signature
+                const createSignature = async (data: string, secret: string) => {
+                    const encoder = new TextEncoder();
+                    const key = await crypto.subtle.importKey(
+                        "raw",
+                        encoder.encode(secret),
+                        { name: "HMAC", hash: "SHA-256" },
+                        false,
+                        ["sign"]
+                    );
+                    const signature = await crypto.subtle.sign(
+                        "HMAC",
+                        key,
+                        encoder.encode(data)
+                    );
+                    return Array.from(new Uint8Array(signature))
+                        .map((b) => b.toString(16).padStart(2, "0"))
+                        .join("");
+                };
+
+                const banLink = async (duration: string, label: string) => {
+                    // Sign the data: userId:duration
+                    const signature = await createSignature(`${reportedUserId}:${duration}`, quickBanSecret);
+                    
+                    const params = new URLSearchParams({
+                        userId: reportedUserId,
+                        duration: duration,
+                        signature: signature
+                    });
+                    return `[${label}](${quickBanUrl}?${params.toString()})`;
+                };
+
+                // We need to await the links since crypto is async
+                const link24h = await banLink('24h', 'Ban 24h');
+                const link1w = await banLink('168h', 'Ban 1 Week');
+                const linkPerm = await banLink('permanent', 'Permaban');
+
+                fields.push({
+                    name: "🛡️ Quick Actions",
+                    value: `${link24h} • ${link1w} • ${linkPerm}`,
+                    inline: false
+                });
+            } else if (origin) {
+                // Fallback to frontend links if quick-ban is not configured
+                const banLink = (duration: string, label: string) => {
+                    const params = new URLSearchParams({
+                        action: 'ban',
+                        userId: reportedUserId,
+                        username: reportedUsername,
+                        duration: duration
+                    });
+                    return `[${label}](${origin}?${params.toString()})`;
+                };
+
+                fields.push({
+                    name: "🛡️ Quick Actions (Frontend)",
+                    value: `${banLink('24h', 'Ban 24h')} • ${banLink('168h', 'Ban 1 Week')} • ${banLink('permanent', 'Permaban')}`,
+                    inline: false
+                });
+            }
+
             const embed = {
                 title: "🚨 New Chat Report",
                 color: 16711680, // Red
-                fields: [
-                    {
-                        name: "Reported User",
-                        value: `${reportedUsername} (ID: ${reportedUserId})`,
-                        inline: true
-                    },
-                    {
-                        name: "Reporter",
-                        value: `${reporterData.username} (ID: ${reporterData.id})`,
-                        inline: true
-                    },
-                    {
-                        name: "Reason",
-                        value: reason,
-                        inline: false
-                    },
-                    {
-                        name: "Message Content",
-                        value: reportedContent || "*[No content or deleted]*",
-                        inline: false
-                    },
-                    {
-                        name: "Message ID",
-                        value: messageId,
-                        inline: false
-                    }
-                ],
+                fields: fields,
                 timestamp: new Date().toISOString()
             }
 

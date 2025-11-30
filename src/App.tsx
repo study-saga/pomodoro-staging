@@ -11,6 +11,7 @@ import { ActiveBoostIndicator } from './components/buffs/ActiveBoostIndicator';
 import { LoginScreen } from './components/auth/LoginScreen';
 import DiscordButton from './components/DiscordButton';
 import { LoadingSpinner } from './components/LoadingSpinner';
+import { AdminActionHandler } from './components/admin/AdminActionHandler';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useBuffActivation } from './hooks/useBuffActivation';
 import { useSettingsStore } from './store/useSettingsStore';
@@ -264,6 +265,9 @@ function AppContent() {
 
       {/* Toaster for notifications */}
       <Toaster position="top-center" />
+
+      {/* Admin Action Handler (URL params) */}
+      <AdminActionHandler />
     </div>
   );
 }
