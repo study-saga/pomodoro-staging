@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Trash2, Shield } from 'lucide-react';
+import { Trash2, Shield, MoreVertical } from 'lucide-react';
 import { formatMessageTime, getAvatarUrl, hasMention } from '../../lib/chatService';
 import type { AppUser } from '../../lib/types';
 import type { ChatMessage as ChatMessageType } from '../../types/chat';
@@ -83,13 +83,30 @@ export const ChatMessage = memo(({
 
             {/* Delete Button (Only for own messages or mods/admins) */}
             {!isDeleted && (isMe || userRole === 'moderator' || userRole === 'admin') && (
-                <button
-                    onClick={() => onDelete(message.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-red-400 transition-all"
-                    title="Delete message"
-                >
-                    <Trash2 size={14} />
-                </button>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Context Menu Button (For Mods/Admins on other users) */}
+                    {!isMe && (userRole === 'moderator' || userRole === 'admin') && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onContextMenu(e, message.user.id, message.user.username, message.user.role);
+                            }}
+                            className="p-1 text-gray-500 hover:text-white transition-colors"
+                            title="User Actions"
+                        >
+                            <MoreVertical size={14} />
+                        </button>
+                    )}
+
+                    {/* Delete Button */}
+                    <button
+                        onClick={() => onDelete(message.id)}
+                        className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                        title="Delete message"
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                </div>
             )}
         </div>
     );

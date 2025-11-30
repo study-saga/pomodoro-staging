@@ -120,9 +120,11 @@ export function GlobalChatMessages({ currentUser, onBanUser }: GlobalChatMessage
 
   const handleContextMenu = useCallback((e: React.MouseEvent, userId: string, username: string, targetRole?: string) => {
     e.preventDefault(); // Always prevent default context menu
+    console.log('[GlobalChat] Context menu triggered for:', username, 'by role:', userRole);
 
     // Only show for mods/admins
     if (userRole !== 'moderator' && userRole !== 'admin') {
+      console.log('[GlobalChat] Access denied: User is not mod/admin');
       return;
     }
 
