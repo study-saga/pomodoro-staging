@@ -198,7 +198,7 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
                   <p className="text-white text-sm font-medium truncate">
                     {currentTrack.title}
                   </p>
-                  <p className="text-gray-400 text-xs truncate">{currentTrack.artist}</p>
+                  <p className="text-white text-xs truncate">{currentTrack.artist}</p>
                 </div>
               )}
             </div>
@@ -339,7 +339,7 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
                 <p className="text-white text-sm font-semibold truncate">
                   {currentTrack.title}
                 </p>
-                <p className="text-gray-400 text-xs truncate mt-0.5">
+                <p className="text-white text-xs truncate mt-0.5">
                   {currentTrack.artist}
                 </p>
               </div>

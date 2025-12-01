@@ -1,6 +1,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { MessageCircle, Minimize2, AlertTriangle, Lock, Clock } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { ChatTabs } from './ChatTabs';
 import { GlobalChatMessages } from './GlobalChat';
 import { MessageInput } from './MessageInput';
@@ -9,6 +10,7 @@ import { BannedUsersList } from './BannedUsersList';
 import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRateLimit } from '../../hooks/useRateLimit';
+import { useMouseActivity } from '../../hooks/useMouseActivity';
 import type { ChatTab } from '../../types/chat';
 import { BanModal } from '../lazy';
 import { LoadingSpinner } from '../LoadingSpinner';
@@ -23,6 +25,7 @@ export function ChatContainer() {
   const { onlineUsers, setChatOpen, isChatEnabled, sendGlobalMessage, isGlobalConnected, isBanned, banReason, banExpiresAt, banUser } = useChat();
   const { canSend, timeUntilReset, recordMessage } = useRateLimit();
   const { isCompact, isMobile } = useDeviceType();
+  const isMouseActive = useMouseActivity(8000); // 8 seconds
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTab>('local');
@@ -142,9 +145,11 @@ export function ChatContainer() {
 
   if (isMobile && !isExpanded) {
     return (
-      <button
+      <motion.button
         onClick={() => setIsExpanded(true)}
-        className={`fixed bottom-20 right-4 z-50 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${isChatEnabled && !isBanned
+        animate={{ opacity: isMouseActive ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+        className={`fixed bottom-20 right-4 z-50 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${!isMouseActive ? 'pointer-events-none' : ''} ${isChatEnabled && !isBanned
           ? 'text-white hover:text-white drop-shadow-2xl'
           : 'text-red-400 hover:text-red-300 drop-shadow-lg'
           }`}
@@ -164,7 +169,7 @@ export function ChatContainer() {
             </span>
           )}
         </div>
-      </button>
+      </motion.button>
     );
   }
 
@@ -283,9 +288,11 @@ export function ChatContainer() {
     <>
       {/* Collapsed: Floating chat button */}
       {!isExpanded && (
-        <button
+        <motion.button
           onClick={() => setIsExpanded(true)}
-          className={`fixed bottom-24 left-4 z-40 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${isChatEnabled && !isBanned
+          animate={{ opacity: isMouseActive ? 1 : 0 }}
+          transition={{ duration: 0.5 }}
+          className={`fixed bottom-24 left-4 z-40 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${!isMouseActive ? 'pointer-events-none' : ''} ${isChatEnabled && !isBanned
             ? 'text-white hover:text-white drop-shadow-2xl'
             : 'text-red-400 hover:text-red-300 drop-shadow-lg'
             }`}
@@ -305,12 +312,16 @@ export function ChatContainer() {
               </span>
             )}
           </div>
-        </button>
+        </motion.button>
       )}
 
       {/* Expanded: Full chat interface */}
       {isExpanded && (
-        <div className={`fixed bottom-24 left-4 z-40 flex flex-col gap-1.5 ${isCompact ? 'w-72' : 'w-96'} max-w-[calc(100vw-2rem)]`}>
+        <motion.div
+          animate={{ opacity: isMouseActive ? 1 : 0 }}
+          transition={{ duration: 0.5 }}
+          className={`fixed bottom-24 left-4 z-40 flex flex-col gap-1.5 ${isCompact ? 'w-72' : 'w-96'} max-w-[calc(100vw-2rem)] ${!isMouseActive ? 'pointer-events-none' : ''}`}
+        >
           {/* Main Glass Box (Tabs + Content) */}
           <div className={`${isCompact ? 'h-[350px]' : 'h-[450px]'} max-h-[55vh] bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative transition-all duration-300`}>
             {/* Minimize Button (Absolute top-right) */}
@@ -397,7 +408,7 @@ export function ChatContainer() {
               />
             </div>
           )}
-        </div>
+        </motion.div>
       )}
 
       {/* Ban Modal */}
