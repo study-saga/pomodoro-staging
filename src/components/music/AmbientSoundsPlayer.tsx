@@ -20,7 +20,7 @@ export const AmbientSoundsPlayer = memo(function AmbientSoundsPlayer({ musicPlay
 
         return (
           <ReactHowler
-            key={sound.id}
+            key={`${sound.id}-${isPlaying ? 'playing' : 'stopped'}`}
             ref={(ref: any) => {
               if (ref) playerRefs.current[sound.id] = ref;
             }}
