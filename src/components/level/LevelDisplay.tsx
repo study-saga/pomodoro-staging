@@ -463,8 +463,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             </div>
           )}
 
-          {/* Role Buff Icons - Ordered: Permanent first, then by expiration */}
-          <div className="flex gap-2">
+          {/* Role Buff Icons - Grid layout with 6 per row */}
+          <div className="grid grid-cols-6 gap-1">
             {/* 1. Role Buff (Permanent - Always first) */}
             <div
               ref={roleBuffRef}
