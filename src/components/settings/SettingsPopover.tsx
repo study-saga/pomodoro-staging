@@ -48,22 +48,26 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const modalRef = useRef<HTMLDivElement>(null);
   const rateLimiterRef = useRef(createRateLimiter(720000)); // 12 minutes (5 changes per hour)
   const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
+  const [viewportHeight, setViewportHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 1080);
 
   const { isPortrait, isMobile } = useDeviceType();
 
-  // Track viewport width for scaling logic
+  // Track viewport dimensions for scaling logic
   useEffect(() => {
-    const handleResize = () => setViewportWidth(window.innerWidth);
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+      setViewportHeight(window.innerHeight);
+    };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Determine scaling factor based on viewport width
+  // Determine scaling factor based on viewport dimensions
   // We want to force desktop layout but scale it down to fit
   let scaleClass = '';
-  if (viewportWidth < 800) {
+  if (viewportWidth < 800 || viewportHeight < 600) {
     scaleClass = 'scale-[0.75] origin-top-right';
-  } else if (viewportWidth < 1200) {
+  } else if (viewportWidth < 1200 || viewportHeight < 800) {
     scaleClass = 'scale-[0.85] origin-top-right';
   }
 
