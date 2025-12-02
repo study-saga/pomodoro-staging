@@ -18,7 +18,7 @@ A Pomodoro timer application built as a Discord Activity, featuring study tracki
 This is a feature-rich Pomodoro timer that runs as a Discord Activity, allowing friends to study together in voice channels. The app includes:
 
 - **Pomodoro Timer**: Custom durations (1-120 min), auto-start options
-- **XP & Leveling**: 2 XP/min (pomodoro), 1 XP/min (breaks), max level 50
+- **XP & Leveling**: 2 XP/min (pomodoro), 1 XP/min (breaks), max level 50. Auto-calculates via trigger when XP exact threshold met
 - **Event Buff System**: Extensible JSONB-based buffs with additive stacking (see [BUFF_SYSTEM.md](BUFF_SYSTEM.md))
 - **Daily Gifts**: Random XP rewards (10-100) for logging in, day 10 = +25% boost (24hrs)
 - **Break XP Sync**: Breaks award 1 XP/min synced to DB with +25% boost support
