@@ -121,7 +121,7 @@ serve(async (req) => {
                 const banLink = async (duration: string, label: string) => {
                     // Sign the data: userId:duration
                     const signature = await createSignature(`${reportedUserId}:${duration}`, quickBanSecret);
-                    
+
                     const params = new URLSearchParams({
                         userId: reportedUserId,
                         duration: duration,
