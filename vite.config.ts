@@ -32,6 +32,7 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 600,
+    modulePreload: false,
     sourcemap: process.env.NODE_ENV !== 'production',
     rollupOptions: {
       output: {
