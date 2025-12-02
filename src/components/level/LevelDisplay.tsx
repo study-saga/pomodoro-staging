@@ -112,11 +112,11 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   }, []);
 
   // Use PIP mode hook (hides UI completely when very small)
-  const isPIPMode = usePIPMode(600);
+  const isPIPMode = usePIPMode(750);
 
-  // Determine if we need to scale down the UI (between 600px and 800px)
+  // Determine if we need to scale down the UI (between 750px and 1200px)
   // This prevents overlap without squishing the layout
-  const shouldScaleDown = viewportWidth < 800 && !isPIPMode;
+  const shouldScaleDown = viewportWidth < 1200 && !isPIPMode;
 
 
   // Calculate boost time remaining with defensive fallbacks

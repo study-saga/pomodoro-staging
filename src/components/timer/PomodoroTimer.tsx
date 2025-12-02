@@ -16,7 +16,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [isFlashing, setIsFlashing] = useState(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const isPIPMode = usePIPMode(600);
+  const isPIPMode = usePIPMode(750);
 
   const { appUser, isDiscordActivity } = useAuth();
 

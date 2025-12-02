@@ -35,7 +35,7 @@ function AppContent() {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [showDailyGift, setShowDailyGift] = useState(false);
   const [dailyGiftClaimed, setDailyGiftClaimed] = useState(false);
-  const isPIPMode = usePIPMode(600);
+  const isPIPMode = usePIPMode(750);
 
   // Check if daily gift available (actual claim happens in DailyGiftGrid to prevent double-claiming)
   useEffect(() => {
