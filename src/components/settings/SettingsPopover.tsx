@@ -47,8 +47,29 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const rateLimiterRef = useRef(createRateLimiter(720000)); // 12 minutes (5 changes per hour)
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
 
-  const { isPortrait, isCompact } = useDeviceType();
+  const { isPortrait, isMobile } = useDeviceType();
+
+  // Track viewport width for scaling logic
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Determine scaling factor based on viewport width
+  // We want to force desktop layout but scale it down to fit
+  let scaleClass = '';
+  if (viewportWidth < 800) {
+    scaleClass = 'scale-[0.75] origin-top-right';
+  } else if (viewportWidth < 1200) {
+    scaleClass = 'scale-[0.85] origin-top-right';
+  }
+
+  // Force desktop layout unless it's an actual mobile device (User Agent check)
+  // The user wants the 2-column layout even on small desktop windows
+  const showDesktopLayout = !isMobile;
 
   // Calculate total track count
   const totalTracks = lofiTracks.length + synthwaveTracks.length;
@@ -457,13 +478,13 @@ export const SettingsPopover = memo(function SettingsPopover() {
   return (
     <>
       {/* Desktop: Popover */}
-      {!isCompact && (
+      {showDesktopLayout && (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             {trigger}
           </PopoverTrigger>
           <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[594px] p-0 max-h-[85vh] z-[100]"
+            className={`bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[594px] p-0 max-h-[85vh] z-[100] ${scaleClass}`}
             align="end"
             side="bottom"
             sideOffset={8}
@@ -610,7 +631,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
       )}
 
       {/* Mobile: Centered Modal */}
-      {isCompact && (
+      {!showDesktopLayout && (
         <>
           <div onClick={() => setOpen(!open)}>
             {trigger}
