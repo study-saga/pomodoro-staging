@@ -50,7 +50,17 @@ serve(async (req) => {
             return new Response('Unauthorized: Invalid signature', { status: 401, headers: corsHeaders })
         }
 
-        const isValid = await crypto.subtle.timingSafeEqual(
+        // Timing-safe comparison implementation
+        const timingSafeEqual = (a: Uint8Array, b: Uint8Array) => {
+            if (a.byteLength !== b.byteLength) return false;
+            let mismatch = 0;
+            for (let i = 0; i < a.length; i++) {
+                mismatch |= a[i] ^ b[i];
+            }
+            return mismatch === 0;
+        };
+
+        const isValid = timingSafeEqual(
             signatureBuffer,
             expectedSignatureStringBuffer
         );
