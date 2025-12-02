@@ -136,58 +136,53 @@ serve(async (req) => {
         const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
-        // Find user by discord_id
+        // Find user by discord_id to see if they already have an auth_user_id
         const { data: existingUser, error: fetchError } = await supabaseAdmin
           .from('users')
-          .select('id')
+          .select('id, auth_user_id')
           .eq('discord_id', discordId)
           .maybeSingle()
 
-        let userId = existingUser?.id
+        let authUserId = existingUser?.auth_user_id
 
-        if (!userId) {
-          console.log('[Discord Token] User not found, creating new user for Discord ID:', discordId)
-          // Create new user
-          const { data: newUser, error: createError } = await supabaseAdmin
-            .from('users')
-            .insert({
-              discord_id: discordId,
-              username: discordUser.username,
-              avatar: discordUser.avatar,
-              // Set defaults
-              level: 1,
-              xp: 0,
-              prestige_level: 0,
-              level_path: 'human',
-              consecutive_login_days: 1,
-              total_unique_days: 1,
-              total_pomodoros: 0,
-              total_study_minutes: 0,
-              sound_enabled: true,
-              volume: 80,
-              music_volume: 50,
-              level_system_enabled: true,
-              last_login: new Date().toISOString(),
-              last_login_date: new Date().toISOString().split('T')[0],
-              role: 'user' // Default role
-            })
-            .select('id')
-            .single()
+        if (!authUserId) {
+          console.log('[Discord Token] Auth user not found, creating new Auth user for Discord ID:', discordId)
+
+          // Create new Auth user
+          // We use a dummy email because we don't have the real one, and we don't need it for Discord auth
+          const dummyEmail = `${discordId}@discord.placeholder.com`
+
+          const { data: newAuthUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+            email: dummyEmail,
+            password: crypto.randomUUID(), // Random password, they won't use it
+            email_confirm: true,
+            user_metadata: {
+              provider_id: discordId, // CRITICAL: This triggers handle_new_user to link accounts
+              full_name: discordUser.username,
+              avatar_url: discordUser.avatar,
+              discord_id: discordId // Redundant but helpful
+            }
+          })
 
           if (createError) {
-            console.error('[Discord Token] Failed to create user:', createError)
-          } else {
-            userId = newUser.id
-            console.log('[Discord Token] Created new user:', userId)
+            console.error('[Discord Token] Failed to create auth user:', createError)
+            // If error is "Email already registered", we should try to find that user
+            // But for now, let's just return error
+          } else if (newAuthUser.user) {
+            authUserId = newAuthUser.user.id
+            console.log('[Discord Token] Created new Auth user:', authUserId)
+
+            // The handle_new_user trigger should have run and linked the accounts.
+            // But it might take a ms. We don't need to wait for it for the token to be valid.
           }
         }
 
-        if (userId) {
-          // User exists (or was created), mint token for this UUID
+        if (authUserId) {
+          // User exists in auth.users, mint token for this UUID
           const payload = {
             aud: 'authenticated',
             role: 'authenticated',
-            sub: userId,
+            sub: authUserId,
             exp: getNumericDate(60 * 60 * 24), // 24 hours
             app_metadata: { provider: 'discord', discord_id: discordId },
             user_metadata: { discord_id: discordId }
