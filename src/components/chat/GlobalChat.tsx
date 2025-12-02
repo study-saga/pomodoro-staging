@@ -86,13 +86,27 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
       const lastMessage = globalMessages[globalMessages.length - 1];
       const isMyMessage = lastMessage.user.id === currentUser.id;
 
-      // Scroll if auto-scroll is enabled OR if it's my own message
-      if (shouldAutoScrollRef.current || isMyMessage) {
-        // If I sent the message, force re-enable auto-scroll
-        if (isMyMessage) {
-          shouldAutoScrollRef.current = true;
-          setShowScrollButton(false);
+      let shouldScroll = shouldAutoScrollRef.current || isMyMessage;
+
+      // Fallback: Check if we are physically near the bottom (e.g. within 150px)
+      // This handles cases where state might be desynced but user is effectively at the bottom
+      if (!shouldScroll && listRef.current) {
+        const listInstance = listRef.current as any;
+        const outerElement = listInstance?.outerRef?.current as HTMLDivElement;
+        if (outerElement) {
+          const { scrollHeight, clientHeight, scrollTop } = outerElement;
+          const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+          if (distanceToBottom < 150) {
+            shouldScroll = true;
+          }
         }
+      }
+
+      // Scroll if auto-scroll is enabled OR if it's my own message OR if near bottom
+      if (shouldScroll) {
+        // If we are scrolling, ensure state is synced
+        shouldAutoScrollRef.current = true;
+        setShowScrollButton(false);
 
         if (listRef.current) {
           listRef.current.scrollToItem(globalMessages.length - 1, 'end');
