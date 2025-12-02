@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Toaster } from 'sonner';
-import * as Sentry from '@sentry/react';
+
 import { VideoBackground } from './components/background/VideoBackground';
 import { PomodoroTimer } from './components/timer/PomodoroTimer';
 import { MusicPlayer, DailyGiftGrid, ChatContainer } from './components/lazy';
@@ -264,18 +264,7 @@ function AppContent() {
       {!isPIPMode && (
         <div className="fixed top-4 right-4 z-[60] flex items-center gap-2">
           {/* Sentry Test Button */}
-          <button
-            onClick={() => {
-              console.log('[Sentry Test] Throwing test error...');
-              Sentry.captureException(new Error('Sentry Test Error - Discord Activity'));
-              Sentry.captureMessage('Sentry Test Message - Discord Activity', 'info');
-              alert('Sentry test error sent! Check Sentry dashboard.');
-            }}
-            className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg border border-red-500/30 transition-colors text-sm font-medium"
-            title="Test Sentry Error Tracking"
-          >
-            🐛
-          </button>
+
           <DiscordButton />
           <SettingsPopover />
         </div>
