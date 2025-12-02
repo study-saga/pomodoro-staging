@@ -22,6 +22,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useActiveEventBuffs } from '../../hooks/useActiveEventBuffs';
 import { getBuffStartDateText } from '../../data/eventBuffsData';
 import { getPrestigeIcons } from '../../lib/prestigeUtils';
+import { usePIPMode } from '../../hooks/usePIPMode';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
@@ -101,6 +102,9 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       setShowStatsPopover(false);
     }
   }, [isMouseActive, showStatsPopover]);
+
+  // Use PIP mode hook
+  const isPIPMode = usePIPMode(600);
 
 
   // Calculate boost time remaining with defensive fallbacks
@@ -293,7 +297,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         initial={{ opacity: 1 }}
         animate={{ opacity: isMouseActive ? 1 : 0 }}
         transition={{ duration: 0.5 }}
-        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 w-[min(240px,20vw)] max-w-[240px]' : 'p-4 w-[min(320px,25vw)] max-w-[320px]'} ${!isMouseActive ? 'pointer-events-none' : ''}`}
+        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 w-[min(200px,15vw)] max-w-[200px]' : 'p-4 w-[min(260px,15vw)] max-w-[260px]'} ${!isMouseActive || isPIPMode ? 'pointer-events-none opacity-0' : ''}`}
       >
         {/* Confetti - contained inside Level UI */}
         {showConfetti && (

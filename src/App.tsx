@@ -19,6 +19,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { getEnvironment } from './lib/environment';
 import { canClaimDailyGift } from './lib/userSyncAuth';
+import { usePIPMode } from './hooks/usePIPMode';
 
 
 function AppContent() {
@@ -34,6 +35,7 @@ function AppContent() {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [showDailyGift, setShowDailyGift] = useState(false);
   const [dailyGiftClaimed, setDailyGiftClaimed] = useState(false);
+  const isPIPMode = usePIPMode(600);
 
   // Check if daily gift available (actual claim happens in DailyGiftGrid to prevent double-claiming)
   useEffect(() => {
@@ -225,9 +227,11 @@ function AppContent() {
       <LevelDisplay onOpenDailyGift={() => setShowDailyGift(true)} />
 
       {/* Online Presence Counter (Top Right, below settings button) */}
-      <div className="fixed top-20 right-4 z-10">
-        <OnlinePresenceCounter />
-      </div>
+      {!isPIPMode && (
+        <div className="fixed top-20 right-4 z-10">
+          <OnlinePresenceCounter />
+        </div>
+      )}
 
       {/* Main Content - Centered Timer */}
       <div className="flex-1 flex items-center justify-center px-4">
@@ -235,12 +239,14 @@ function AppContent() {
       </div>
 
       {/* Music Player (Bottom) */}
-      <Suspense fallback={<LoadingSpinner />}>
-        <MusicPlayer playing={musicPlaying} setPlaying={setMusicPlaying} />
-      </Suspense>
+      {!isPIPMode && (
+        <Suspense fallback={<LoadingSpinner />}>
+          <MusicPlayer playing={musicPlaying} setPlaying={setMusicPlaying} />
+        </Suspense>
+      )}
 
       {/* Ambient Sounds Player (Hidden) */}
-      <AmbientSoundsPlayer musicPlaying={musicPlaying} />
+      {!isPIPMode && <AmbientSoundsPlayer musicPlaying={musicPlaying} />}
 
       {/* Daily Gift Grid */}
       <Suspense fallback={<LoadingSpinner />}>
@@ -251,18 +257,22 @@ function AppContent() {
       </Suspense>
 
       {/* Active Boost Indicator */}
-      <ActiveBoostIndicator />
+      {!isPIPMode && <ActiveBoostIndicator />}
 
       {/* Top Right Buttons - Discord & Settings */}
-      <div className="fixed top-4 right-4 z-[60] flex items-center gap-2">
-        <DiscordButton />
-        <SettingsPopover />
-      </div>
+      {!isPIPMode && (
+        <div className="fixed top-4 right-4 z-[60] flex items-center gap-2">
+          <DiscordButton />
+          <SettingsPopover />
+        </div>
+      )}
 
       {/* Chat Container (Bottom Left) */}
-      <Suspense fallback={<LoadingSpinner />}>
-        <ChatContainer />
-      </Suspense>
+      {!isPIPMode && (
+        <Suspense fallback={<LoadingSpinner />}>
+          <ChatContainer />
+        </Suspense>
+      )}
 
       {/* Toaster for notifications */}
       <Toaster position="top-center" />
