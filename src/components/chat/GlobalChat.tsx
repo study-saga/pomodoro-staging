@@ -82,13 +82,24 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
 
   // Auto-scroll on new messages (using useLayoutEffect for immediate execution)
   useLayoutEffect(() => {
-    if (globalMessages.length > 0 && shouldAutoScrollRef.current) {
-      // Scroll immediately in layout phase
-      if (listRef.current) {
-        listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+    if (globalMessages.length > 0) {
+      const lastMessage = globalMessages[globalMessages.length - 1];
+      const isMyMessage = lastMessage.user.id === currentUser.id;
+
+      // Scroll if auto-scroll is enabled OR if it's my own message
+      if (shouldAutoScrollRef.current || isMyMessage) {
+        // If I sent the message, force re-enable auto-scroll
+        if (isMyMessage) {
+          shouldAutoScrollRef.current = true;
+          setShowScrollButton(false);
+        }
+
+        if (listRef.current) {
+          listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+        }
       }
     }
-  }, [globalMessages.length]);
+  }, [globalMessages.length, currentUser.id]);
 
   // Initial scroll on mount
   useLayoutEffect(() => {
@@ -106,25 +117,14 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
 
     // Only scroll if chat was just opened (false -> true)
     if (!wasExpanded && isExpanded && globalMessages.length > 0) {
-      // Use direct scrollTop manipulation which is more reliable than scrollToItem
-      const scrollToBottomDirect = () => {
-        const listInstance = listRef.current as any;
-        const outerElement = listInstance?.outerRef?.current as HTMLDivElement;
-
-        if (outerElement) {
-          // Set scrollTop to a very large number to force scroll to bottom
-          outerElement.scrollTop = 999999;
+      // Small timeout to ensure list is rendered and measured
+      setTimeout(() => {
+        if (listRef.current) {
+          listRef.current.scrollToItem(globalMessages.length - 1, 'end');
           shouldAutoScrollRef.current = true;
           setShowScrollButton(false);
         }
-      };
-
-      // Try multiple times to ensure it catches the render
-      scrollToBottomDirect(); // Immediate
-      requestAnimationFrame(scrollToBottomDirect); // Next frame
-      setTimeout(scrollToBottomDirect, 50); // Safety
-      setTimeout(scrollToBottomDirect, 100); // Final
-      setTimeout(scrollToBottomDirect, 200); // Extra safety
+      }, 10);
     }
   }, [isExpanded, globalMessages.length]);
 
