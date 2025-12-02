@@ -57,7 +57,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const eventBuffRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const rafRef = useRef<number | null>(null);
 
-  const { isMobile, isCompact } = useDeviceType();
+  const { isMobile, isTablet, isCompact } = useDeviceType();
   const { appUser } = useAuth();
   const { activeBuffs, upcomingBuffs } = useActiveEventBuffs(levelPath);
 
@@ -309,8 +309,10 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         initial={{ opacity: 1 }}
         animate={{ opacity: isPIPMode ? 0 : (isMouseActive ? 1 : 0) }}
         transition={{ duration: isPIPMode ? 0 : 0.5 }}
-        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden 
-          ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'} 
+        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden
+          ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' :
+            isTablet ? 'p-3.5 min-w-[220px] max-w-[280px]' :
+            'p-4 min-w-[280px] max-w-[320px]'}
           ${!isMouseActive || isPIPMode ? 'pointer-events-none opacity-0' : ''}
           ${shouldScaleDown ? 'scale-[0.65] origin-top-left' : ''}`}
       >
@@ -381,15 +383,15 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div className={isCompact ? 'text-xl' : 'text-3xl'}>{levelBadge}</div>
+                <div className={isMobile ? 'text-xl' : isTablet ? 'text-2xl' : 'text-3xl'}>{levelBadge}</div>
                 <div className="min-w-0 overflow-hidden flex-1">
-                  <h2 className={`font-bold text-white truncate ${isCompact ? 'text-base' : 'text-xl'}`}>
+                  <h2 className={`font-bold text-white truncate ${isMobile ? 'text-base' : isTablet ? 'text-lg' : 'text-xl'}`}>
                     {username}
                   </h2>
-                  <p className={`text-gray-300 ${isCompact ? 'text-xs' : 'text-sm'}`}>{levelTitle}</p>
+                  <p className={`text-gray-300 ${isMobile ? 'text-xs' : isTablet ? 'text-sm' : 'text-sm'}`}>{levelTitle}</p>
                 </div>
               </div>
-              <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
+              <Avatar className={isMobile ? 'h-8 w-8' : isTablet ? 'h-9 w-9' : 'h-10 w-10'}>
                 {appUser && <AvatarImage src={getAvatarUrl(appUser) || undefined} />}
                 <AvatarFallback>{username?.slice(0, 2).toUpperCase() || '??'}</AvatarFallback>
               </Avatar>
@@ -486,7 +488,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             {/* 1. Role Buff (Permanent - Always first) */}
             <div
               ref={roleBuffRef}
-              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}
+              className={`${isMobile ? 'w-7 h-7' : isTablet ? 'w-[30px] h-[30px]' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}
               onClick={(e) => handleBuffClick(e, 'role-buff', roleBuffRef)}
               onMouseEnter={() => {
                 if (!isMobile) {
@@ -511,7 +513,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             {pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (
               <div
                 ref={boostRef}
-                className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500`}
+                className={`${isMobile ? 'w-7 h-7' : isTablet ? 'w-[30px] h-[30px]' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500`}
                 onClick={(e) => handleBuffClick(e, 'boost', boostRef)}
                 onMouseEnter={() => {
                   if (!isMobile) {
@@ -645,7 +647,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                       src={icon.value}
                       alt={titles[icon.tier]}
                       title={titles[icon.tier]}
-                      className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
+                      className={`${isMobile ? 'w-5 h-5' : isTablet ? 'w-[22px] h-[22px]' : 'w-6 h-6'}`}
                       loading="lazy"
                     />
                   );
@@ -655,7 +657,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                 return (
                   <span
                     key={`prestige-${idx}`}
-                    className={`${isMobile ? 'text-lg' : 'text-xl'}`}
+                    className={`${isMobile ? 'text-lg' : isTablet ? 'text-[19px]' : 'text-xl'}`}
                     title={titles[icon.tier]}
                   >
                     {icon.value}
