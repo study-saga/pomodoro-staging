@@ -181,6 +181,15 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
 - **Fixed**: Double XP save bug - removed duplicate database call
 - **Fixed**: OAuth redirect issues for local IP development
 
+**Major Changes in 2.4.0**:
+- **Added**: Daily role change restriction (once per 24h, synced globally)
+  - Store: `canChangeRole()`, `getTimeUntilRoleChange()` validators
+  - DB: `last_role_change_date` column + RPC params
+  - UI: Error toast shows time remaining (e.g., "Try again in 8h 23m")
+  - Removed 12min rate limiter, replaced with daily DB-synced cooldown
+  - Files: 2 migrations, 11 components/libs updated
+- **UI**: Removed prestige stars from LevelDisplay (still in stats modal)
+
 **Major Changes in 2.3.2**:
 - **Fixed**: Daily gifts trigger on every refresh for Discord Activity users
   - Root cause: `claim_daily_gift()` RPC only validated web users via `auth.uid()`
