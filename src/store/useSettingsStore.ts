@@ -409,7 +409,21 @@ export const useSettingsStore = create<SettingsStore>()(
         }
       },
 
-      setLevelPath: (path) => set({ levelPath: path }),
+      setLevelPath: (path) => {
+        // Block if cooldown active (already changed today)
+        if (!get().canChangeRole()) {
+          console.log('[setLevelPath] Role change blocked - already changed today');
+          return;
+        }
+
+        // Update role and record change date
+        const today = new Date().toISOString().split('T')[0];
+        console.log('[setLevelPath] Role changed to:', path, 'at', today);
+        set({
+          levelPath: path,
+          lastRoleChangeDate: today,
+        });
+      },
 
       setLevelSystemEnabled: (enabled) => set({ levelSystemEnabled: enabled }),
 
@@ -537,6 +551,30 @@ export const useSettingsStore = create<SettingsStore>()(
         const state = get();
         if (!state.lastUsernameChange) return true;
         return Date.now() - state.lastUsernameChange >= USERNAME_EDIT_COOLDOWN;
+      },
+
+      canChangeRole: () => {
+        const state = get();
+        if (!state.lastRoleChangeDate) return true; // Never changed before
+        const today = new Date().toISOString().split('T')[0];
+        return state.lastRoleChangeDate !== today; // Can change if not changed today
+      },
+
+      getTimeUntilRoleChange: () => {
+        const state = get();
+        if (state.canChangeRole()) return null; // Can change now
+
+        // Calculate time until midnight (next day)
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        const msRemaining = tomorrow.getTime() - now.getTime();
+        const hours = Math.floor(msRemaining / (1000 * 60 * 60));
+        const minutes = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+
+        return { hours, minutes };
       },
 
       getXPCost: () => USERNAME_EDIT_COST,

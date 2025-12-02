@@ -46,6 +46,7 @@ export interface Settings {
   totalStudyMinutes: number;
   username: string;
   lastUsernameChange: number | null;
+  lastRoleChangeDate: string | null; // ISO date (YYYY-MM-DD) - cooldown tracking
   levelPath: 'elf' | 'human';
   levelSystemEnabled: boolean;
 

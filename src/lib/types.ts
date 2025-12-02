@@ -77,6 +77,9 @@ export interface AppUser {
   // Username change tracking
   last_username_change: string | null
 
+  // Role change tracking (CLIENT-CONTROLLED - cooldown enforcement)
+  last_role_change_date: string | null  // ISO date (YYYY-MM-DD)
+
   // Timestamps
   last_login: string | null
   created_at: string

@@ -123,9 +123,10 @@ export async function updateUserPreferences(
     volume?: number
     music_volume?: number
 
-    // System preferences (2 fields) - SAFE to sync from client
+    // System preferences (3 fields) - SAFE to sync from client
     level_system_enabled?: boolean
     level_path?: 'elf' | 'human'  // Visual preference only
+    last_role_change_date?: string | null  // ISO date (YYYY-MM-DD) for cooldown
   }
 ): Promise<AppUser> {
   console.log(`[User Sync] Updating user settings for user ${userId}`)
@@ -162,7 +163,8 @@ export async function updateUserPreferences(
 
       // System preferences
       p_level_system_enabled: preferences.level_system_enabled ?? null,
-      p_level_path: preferences.level_path ?? null
+      p_level_path: preferences.level_path ?? null,
+      p_last_role_change_date: preferences.last_role_change_date ?? null
     })
 
     if (error) {
@@ -201,7 +203,8 @@ export async function updateUserPreferences(
 
       // System preferences
       p_level_system_enabled: preferences.level_system_enabled ?? null,
-      p_level_path: preferences.level_path ?? null
+      p_level_path: preferences.level_path ?? null,
+      p_last_role_change_date: preferences.last_role_change_date ?? null
     })
 
     if (error) {

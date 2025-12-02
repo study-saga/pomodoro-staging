@@ -80,9 +80,10 @@ export function useSettingsSync() {
       volume: s.volume,
       music_volume: s.musicVolume,
 
-      // System preferences (2 fields) - CLIENT-CONTROLLED
+      // System preferences (3 fields) - CLIENT-CONTROLLED
       level_system_enabled: s.levelSystemEnabled,
-      level_path: s.levelPath
+      level_path: s.levelPath,
+      last_role_change_date: s.lastRoleChangeDate
 
       // NOT INCLUDED (server-controlled, read-only from client):
       // - xp, level, prestige_level
@@ -145,9 +146,10 @@ export function useSettingsSync() {
           p_volume: currentSettings.volume,
           p_music_volume: currentSettings.musicVolume,
 
-          // System preferences (2 fields)
+          // System preferences (3 fields)
           p_level_system_enabled: currentSettings.levelSystemEnabled,
-          p_level_path: currentSettings.levelPath
+          p_level_path: currentSettings.levelPath,
+          p_last_role_change_date: currentSettings.lastRoleChangeDate
         }
 
         // Build payload based on auth mode
@@ -234,9 +236,10 @@ export function useSettingsSync() {
         volume: currentSettings.volume,
         music_volume: currentSettings.musicVolume,
 
-        // System preferences (2 fields)
+        // System preferences (3 fields)
         level_system_enabled: currentSettings.levelSystemEnabled,
-        level_path: currentSettings.levelPath
+        level_path: currentSettings.levelPath,
+        last_role_change_date: currentSettings.lastRoleChangeDate
       })
 
       // Update last synced state and clear dirty flag
@@ -331,7 +334,9 @@ export function useSettingsSync() {
       totalPomodoros: appUser.total_pomodoros,
       totalStudyMinutes: appUser.total_study_minutes,
       username: appUser.username,
+      lastUsernameChange: appUser.last_username_change ? new Date(appUser.last_username_change).getTime() : null,
       levelPath: appUser.level_path,
+      lastRoleChangeDate: appUser.last_role_change_date,
 
       // Milestone tracking
       totalUniqueDays: appUser.total_unique_days,

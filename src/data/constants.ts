@@ -130,6 +130,7 @@ export const DEFAULT_SETTINGS = {
   totalStudyMinutes: 0,
   username: 'User',
   lastUsernameChange: null,
+  lastRoleChangeDate: null,
   levelPath: 'elf' as const,
   levelSystemEnabled: true,
   totalUniqueDays: 0,

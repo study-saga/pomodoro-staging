@@ -27,7 +27,6 @@ import {
   PopoverContent,
   PopoverBody,
 } from '../ui/popover';
-import { createRateLimiter } from '../../utils/rateLimiters';
 
 export const SettingsPopover = memo(function SettingsPopover() {
   const isMouseActive = useMouseActivity(8000);
@@ -46,7 +45,6 @@ export const SettingsPopover = memo(function SettingsPopover() {
   });
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
-  const rateLimiterRef = useRef(createRateLimiter(720000)); // 12 minutes (5 changes per hour)
 
   const { isPortrait, isCompact } = useDeviceType();
 
@@ -135,27 +133,35 @@ export const SettingsPopover = memo(function SettingsPopover() {
   }, [open, activeTab]);
 
   const handleRoleChange = (newRole: 'elf' | 'human') => {
-    rateLimiterRef.current(() => {
-      setLevelPath(newRole);
+    // Check daily cooldown
+    if (!canChangeRole()) {
+      const time = getTimeUntilRoleChange();
+      if (time) {
+        toast.error(`Can only change role once per day. Try again in ${time.hours}h ${time.minutes}m.`);
+      }
+      return;
+    }
 
-      const messages = {
-        elf: [
-          "You have chosen the path of the Elf! May nature guide your journey.",
-          "The forest welcomes you, brave Elf. Your adventure begins anew!",
-          "An Elf emerges! The ancient woods await your wisdom.",
-          "You walk the Elven path. Grace and focus shall be your companions.",
-        ],
-        human: [
-          "You have chosen the path of the Human! May courage light your way.",
-          "A warrior's path chosen! Your legend starts now, brave Human.",
-          "The Human spirit awakens within you. Face your challenges head-on!",
-          "You walk the Human path. Strength and determination guide you forward.",
-        ],
-      };
+    // Proceed with role change
+    setLevelPath(newRole);
 
-      const randomMessage = messages[newRole][Math.floor(Math.random() * messages[newRole].length)];
-      setRoleChangeMessage(randomMessage);
-    })();
+    const messages = {
+      elf: [
+        "You have chosen the path of the Elf! May nature guide your journey.",
+        "The forest welcomes you, brave Elf. Your adventure begins anew!",
+        "An Elf emerges! The ancient woods await your wisdom.",
+        "You walk the Elven path. Grace and focus shall be your companions.",
+      ],
+      human: [
+        "You have chosen the path of the Human! May courage light your way.",
+        "A warrior's path chosen! Your legend starts now, brave Human.",
+        "The Human spirit awakens within you. Face your challenges head-on!",
+        "You walk the Human path. Strength and determination guide you forward.",
+      ],
+    };
+
+    const randomMessage = messages[newRole][Math.floor(Math.random() * messages[newRole].length)];
+    setRoleChangeMessage(randomMessage);
   };
 
   const {
@@ -191,6 +197,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setLevelSystemEnabled,
     levelPath,
     setLevelPath,
+    canChangeRole,
+    getTimeUntilRoleChange,
     totalUniqueDays,
     consecutiveLoginDays,
     pomodoroBoostActive,

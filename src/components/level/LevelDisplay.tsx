@@ -607,45 +607,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             })}
 
           </div>
-
-          {/* Prestige Stars Row (below buffs, like rating stars) */}
-          {prestigeStars && prestigeStars.length > 0 && (
-            <div className="flex justify-center gap-0.5 mt-2 items-center">
-              {getPrestigeIcons(prestigeStars).map((icon, idx) => {
-                const titles = {
-                  gem: 'Gem (125 Stars)',
-                  diamond: 'Diamond (25 Stars)',
-                  crown: 'Crown (5 Stars)',
-                  star: `Prestige Star (${icon.role === 'elf' ? 'Elf' : 'Human'})`
-                };
-
-                // Render SVG for stars
-                if (icon.type === 'svg') {
-                  return (
-                    <img
-                      key={`prestige-${idx}`}
-                      src={icon.value}
-                      alt={titles[icon.tier]}
-                      title={titles[icon.tier]}
-                      className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
-                      loading="lazy"
-                    />
-                  );
-                }
-
-                // Render emoji for crowns/diamonds/gems
-                return (
-                  <span
-                    key={`prestige-${idx}`}
-                    className={`${isMobile ? 'text-lg' : 'text-xl'}`}
-                    title={titles[icon.tier]}
-                  >
-                    {icon.value}
-                  </span>
-                );
-              })}
-            </div>
-          )}
         </div>
       </motion.div>
 

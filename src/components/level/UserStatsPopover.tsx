@@ -16,8 +16,9 @@ import {
   ROLE_EMOJI_ELF,
   ROLE_EMOJI_HUMAN,
 } from '../../data/levels';
-import { createRateLimiter, rateLimitedToast } from '../../utils/rateLimiters';
+import { rateLimitedToast } from '../../utils/rateLimiters';
 import { getPrestigeIcons } from '../../lib/prestigeUtils';
+import { toast } from 'sonner';
 
 interface UserStatsPopoverProps {
   trigger: React.ReactNode;
@@ -34,6 +35,8 @@ export const UserStatsPopover = memo(function UserStatsPopover({
     level,
     levelPath,
     setLevelPath,
+    canChangeRole,
+    getTimeUntilRoleChange,
     prestigeStars,
     totalPomodoros,
     totalStudyMinutes,
@@ -49,7 +52,6 @@ export const UserStatsPopover = memo(function UserStatsPopover({
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
   const sinceCardRef = useRef<HTMLDivElement>(null);
-  const rateLimiterRef = useRef(createRateLimiter(720000)); // 12 minutes (5 changes per hour)
   const { isMobile } = useDeviceType();
 
   const avgSessionLength = totalPomodoros > 0
@@ -103,42 +105,49 @@ export const UserStatsPopover = memo(function UserStatsPopover({
     }
   }, [roleChangeMessage]);
 
-  // Handle role change with funny messages (rate limited to 5 per hour)
+  // Handle role change with funny messages (once per day)
   const handleRoleChange = (newRole: 'elf' | 'human') => {
-    // Apply rate limiting (12 minutes between role changes)
-    rateLimiterRef.current(() => {
-      setLevelPath(newRole);
+    // Check daily cooldown
+    if (!canChangeRole()) {
+      const time = getTimeUntilRoleChange();
+      if (time) {
+        toast.error(`Can only change role once per day. Try again in ${time.hours}h ${time.minutes}m.`);
+      }
+      return;
+    }
 
-      const messages = {
-        elf: [
-          "You have chosen the path of the Elf! May nature guide your journey.",
-          "The forest welcomes you, brave Elf. Your adventure begins anew!",
-          "An Elf emerges! The ancient woods await your wisdom.",
-          "You walk the Elven path. Grace and focus shall be your companions.",
-          "Pointy ears, sharp focus.",
-          "Leaves are better than swords.",
-          "Immortality is a long study session.",
-          "Tree hugger? No, tree scholar.",
-          "Elven wisdom activated. Coffee optional.",
-        ],
-        human: [
-          "You have chosen the path of the Human! May courage light your way.",
-          "A warrior's path chosen! Your legend starts now, brave Human.",
-          "The Human spirit awakens within you. Face your challenges head-on!",
-          "You walk the Human path. Strength and determination guide you forward.",
-          "Jack of all trades, master of none.",
-          "Live fast, study hard.",
-          "Round ears, rounder ambition.",
-          "XP is just a number.",
-          "Human selected. Results may vary.",
-        ],
-      };
+    // Proceed with role change
+    setLevelPath(newRole);
 
-      const randomMessage = messages[newRole][Math.floor(Math.random() * messages[newRole].length)];
+    const messages = {
+      elf: [
+        "You have chosen the path of the Elf! May nature guide your journey.",
+        "The forest welcomes you, brave Elf. Your adventure begins anew!",
+        "An Elf emerges! The ancient woods await your wisdom.",
+        "You walk the Elven path. Grace and focus shall be your companions.",
+        "Pointy ears, sharp focus.",
+        "Leaves are better than swords.",
+        "Immortality is a long study session.",
+        "Tree hugger? No, tree scholar.",
+        "Elven wisdom activated. Coffee optional.",
+      ],
+      human: [
+        "You have chosen the path of the Human! May courage light your way.",
+        "A warrior's path chosen! Your legend starts now, brave Human.",
+        "The Human spirit awakens within you. Face your challenges head-on!",
+        "You walk the Human path. Strength and determination guide you forward.",
+        "Jack of all trades, master of none.",
+        "Live fast, study hard.",
+        "Round ears, rounder ambition.",
+        "XP is just a number.",
+        "Human selected. Results may vary.",
+      ],
+    };
 
-      // Use rate-limited toast to prevent spam
-      rateLimitedToast(randomMessage, setRoleChangeMessage);
-    })();
+    const randomMessage = messages[newRole][Math.floor(Math.random() * messages[newRole].length)];
+
+    // Show success message
+    rateLimitedToast(randomMessage, setRoleChangeMessage);
   };
 
   // Stats grid content (shared between mobile and desktop)
