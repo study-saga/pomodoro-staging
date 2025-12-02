@@ -90,7 +90,7 @@ export function BannedUsersList() {
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
                             <img
-                                src={getAvatarUrl(ban.user) || `https://ui-avatars.com/api/?name=${ban.user.username}&background=random`}
+                                src={getAvatarUrl(ban.user) || `https://cdn.discordapp.com/embed/avatars/${(ban.user.username.charCodeAt(0) + ban.user.username.length) % 5}.png`}
                                 alt={ban.user.username}
                                 className="w-10 h-10 rounded-full object-cover grayscale opacity-70"
                             />

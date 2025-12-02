@@ -37,7 +37,7 @@ export const ChatMessage = memo(({
             <div className="w-8 flex-shrink-0 pt-0.5">
                 {showAvatar ? (
                     <img
-                        src={getAvatarUrl(message.user) || `https://ui-avatars.com/api/?name=${message.user.username}&background=random`}
+                        src={getAvatarUrl(message.user) || `https://cdn.discordapp.com/embed/avatars/${(message.user.username.charCodeAt(0) + message.user.username.length) % 5}.png`}
                         alt={message.user.username}
                         className={`w-8 h-8 rounded-full object-cover ${isDeleted ? 'opacity-50 grayscale' : ''}`}
                     />
