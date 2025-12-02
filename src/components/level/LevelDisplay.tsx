@@ -22,11 +22,7 @@ import { useActiveEventBuffs } from '../../hooks/useActiveEventBuffs';
 import { getBuffStartDateText } from '../../data/eventBuffsData';
 import { useSmartPIPMode } from '../../hooks/useSmartPIPMode';
 
-interface LevelDisplayProps {
-  onOpenDailyGift?: () => void;
-}
-
-export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: LevelDisplayProps) {
+export const LevelDisplay = memo(function LevelDisplay() {
   const isMouseActive = useMouseActivity(8000); // 8 seconds
 
   const {

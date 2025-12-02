@@ -141,8 +141,9 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
     - Migration: `20251129160000_secure_chat_messages.sql`, `20251130000000_chat_reports.sql`, `20251130010000_auto_delete_banned_messages.sql`, `20251202175800_update_chat_length.sql`
   - **Hotfixes Applied**:
     - Fixed chat RLS: Discord users can now send messages (removed auth session requirement)
-    - Fixed Sentry CSP: Disabled Sentry in Discord Activity mode (Discord blocks external connections)
+    - Fixed Sentry CSP: Proxy Sentry via Discord tunnel (bypass CSP without disabling)
     - Migration: `fix_chat_rls_for_discord` (allows anon/authenticated without auth.uid check)
+    - Frontend: Added `/sentry` URL mapping to route through Discord proxy
   - **Status**: Production now has 9 migrations applied (was 4), all new features enabled
   - **Users impacted**: 2833 production users (161 joined today), 0 data loss, all migrations additive
   - **Security**: RLS enabled on all new tables, function search_path warnings noted (non-critical)

@@ -225,7 +225,7 @@ function AppContent() {
       <VideoBackground />
 
       {/* Level Display (Top Left) */}
-      <LevelDisplay onOpenDailyGift={() => setShowDailyGift(true)} />
+      <LevelDisplay />
 
       {/* Online Presence Counter (Top Right, below settings button) */}
       {!isPIPMode && (
