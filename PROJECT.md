@@ -140,9 +140,10 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
     - Updated constraint: chat message length 500→200 chars
     - Migration: `20251129160000_secure_chat_messages.sql`, `20251130000000_chat_reports.sql`, `20251130010000_auto_delete_banned_messages.sql`, `20251202175800_update_chat_length.sql`
   - **Hotfixes Applied**:
-    - Fixed chat RLS: Discord users can now send messages (removed auth session requirement)
+    - Fixed chat RLS INSERT: Discord users can now send messages (removed auth session requirement)
+    - Fixed chat RLS SELECT: Discord users can now read chat history (allow anon role)
     - Fixed Sentry CSP: Proxy Sentry via Discord tunnel (bypass CSP without disabling)
-    - Migration: `fix_chat_rls_for_discord` (allows anon/authenticated without auth.uid check)
+    - Migrations: `fix_chat_rls_for_discord` (INSERT), `fix_chat_select_for_discord` (SELECT)
     - Frontend: Added `/sentry` URL mapping to route through Discord proxy
   - **Status**: Production now has 9 migrations applied (was 4), all new features enabled
   - **Users impacted**: 2833 production users (161 joined today), 0 data loss, all migrations additive
