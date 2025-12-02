@@ -52,6 +52,8 @@ interface SettingsStore extends Settings {
   addDailyGiftXP: (xpAmount: number, skipSync?: boolean) => void;
   setUsername: (username: string, forceWithXP?: boolean) => void;
   setLevelPath: (path: 'elf' | 'human') => void;
+  canChangeRole: () => boolean;
+  getTimeUntilRoleChange: () => { hours: number; minutes: number } | null;
   setLevelSystemEnabled: (enabled: boolean) => void;
   resetProgress: () => void;
   prestige: () => void;

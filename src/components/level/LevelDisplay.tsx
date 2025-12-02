@@ -21,7 +21,6 @@ import { UserStatsModal } from './UserStatsModal';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useActiveEventBuffs } from '../../hooks/useActiveEventBuffs';
 import { getBuffStartDateText } from '../../data/eventBuffsData';
-import { getPrestigeIcons } from '../../lib/prestigeUtils';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
@@ -33,7 +32,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const {
     level,
     xp,
-    prestigeStars,
     username,
     levelPath,
     levelSystemEnabled,
