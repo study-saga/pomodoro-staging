@@ -6,25 +6,29 @@ import { Analytics } from '@vercel/analytics/react'
 import './index.css'
 import App from './App.tsx'
 
-Sentry.init({
-  dsn: "https://07207291057d3269e8c544fa37a6261f@o4510434264875008.ingest.de.sentry.io/4510434268086352",
-  integrations: [
-    Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration(),
-  ],
-  // Tracing
-  tracesSampleRate: 1.0, //  Capture 100% of the transactions
-  // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
-  tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
-  // Session Replay
-  replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
-  replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when an error occurs.
-});
-
 // Check if running inside Discord Activity
 const isDiscordActivity = () => {
   const params = new URLSearchParams(window.location.search)
   return params.has('frame_id') || params.has('instance_id')
+}
+
+// Only initialize Sentry for web (not Discord Activity)
+// Discord CSP blocks external connections to Sentry ingest
+if (!isDiscordActivity()) {
+  Sentry.init({
+    dsn: "https://07207291057d3269e8c544fa37a6261f@o4510434264875008.ingest.de.sentry.io/4510434268086352",
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
+    ],
+    // Tracing
+    tracesSampleRate: 1.0, //  Capture 100% of the transactions
+    // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
+    tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
+    // Session Replay
+    replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
+    replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when an error occurs.
+  });
 }
 
 // Configure Discord proxy URL mappings ONLY for Discord Activities
@@ -38,10 +42,9 @@ if (isDiscordActivity()) {
   if (!supabaseUrl || supabaseUrl.trim() === '') {
     const errorMsg = '[Main] FATAL: VITE_SUPABASE_URL is not defined or empty in Discord Activity mode'
     console.error(errorMsg)
-    Sentry.captureMessage(errorMsg, 'fatal')
     throw new Error(errorMsg)
   }
-  
+
   // Parse URL with try-catch to handle malformed URLs
   let supabaseHost: string
   try {
@@ -49,13 +52,6 @@ if (isDiscordActivity()) {
   } catch (error) {
     const errorMsg = `[Main] FATAL: Invalid VITE_SUPABASE_URL format in Discord Activity mode. Value: "${supabaseUrl}"`
     console.error(errorMsg, error)
-    Sentry.captureException(error, {
-      contexts: {
-        config: {
-          supabaseUrl
-        }
-      }
-    })
     throw new Error(errorMsg)
   }
 
