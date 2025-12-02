@@ -31,11 +31,17 @@ const isDiscordActivity = () => {
 // This allows requests to bypass CSP restrictions in Discord iframe
 // Maps Supabase AND R2 resources through Discord's proxy
 if (isDiscordActivity()) {
+  // Extract Supabase hostname from environment (dynamic for dev/prod)
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const supabaseHost = new URL(supabaseUrl).hostname
+
   console.log('[Main] Discord Activity detected - applying URL mappings')
+  console.log('[Main] Supabase host:', supabaseHost)
+
   patchUrlMappings([
     {
       prefix: '/supabase',
-      target: 'btjhclvebbtjxmdnprwz.supabase.co'
+      target: supabaseHost
     },
     {
       prefix: '/r2-audio',
