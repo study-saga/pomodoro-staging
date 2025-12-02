@@ -10,14 +10,15 @@
  */
 
 import type { PrestigeStar } from '../types';
-const starElfSvg = '/assets/buffs/star-elf.svg';
-const starHumanSvg = '/assets/buffs/star-human.svg';
+import starElfSvg from '../assets/star-elf.svg';
+import starHumanSvg from '../assets/star-human.svg';
 
 // Icon types
 export type PrestigeIcon = {
   type: 'svg' | 'emoji';
   value: string;
-  role?: 'elf' | 'human';
+  role?: 'elf' |
+   'human';
   tier: 'star' | 'crown' | 'diamond' | 'gem';
 };
 
