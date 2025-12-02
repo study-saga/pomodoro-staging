@@ -51,6 +51,18 @@ export const UserStatsPopover = memo(function UserStatsPopover({
   const sinceCardRef = useRef<HTMLDivElement>(null);
   const rateLimiterRef = useRef(createRateLimiter(720000)); // 12 minutes (5 changes per hour)
   const { isMobile } = useDeviceType();
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
+
+  // Track viewport width for scaling logic
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Determine if we need to scale down the UI (between 750px and 1200px)
+  // This prevents overlap without squishing the layout
+  const shouldScaleDown = viewportWidth < 1200 && !isMobile;
 
   const avgSessionLength = totalPomodoros > 0
     ? Math.round(totalStudyMinutes / totalPomodoros)
@@ -260,7 +272,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
           {/* IMPORTANT: Negative sideOffset and zero collisionPadding are intentional for tight positioning.
               Watch for regressions: popover clipping at screen edges or unexpected repositioning. */}
           <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[360px] p-0"
+            className={`bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[360px] p-0 ${shouldScaleDown ? 'scale-[0.85] origin-top-left' : ''}`}
             align="start"
             side="right"
             sideOffset={-20}
