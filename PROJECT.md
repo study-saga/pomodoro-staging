@@ -123,8 +123,26 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
 
 ## Version History
 
-**Last Updated**: 2025-11-29
-**Version**: 2.3.5 (Role-Based Prestige Stars)
+**Last Updated**: 2025-12-02
+**Version**: 2.4.0 (Production DB Merge - Buff System & Chat)
+
+**Major Changes in 2.4.0** (2025-12-02):
+- **Production Database Migration**: Merged dev schema with production (btjhclvebbtjxmdnprwz)
+  - **Phase 1 - Core Schema (CRITICAL)**:
+    - Buff system: Added `active_buffs` JSONB column + 8 functions (get, set, remove, clear) + GIN index
+    - Prestige stars: Added `prestige_stars` JSONB column + trigger + backfilled 1 user with P2
+    - Discord buffs: Added 4 Discord-specific buff functions (_discord suffix)
+    - Migration: `20251121000000_add_buff_system.sql`, `20251129000000_add_prestige_stars.sql`, `20251203000000_add_discord_buff_functions.sql`
+  - **Phase 2 - Chat System**:
+    - Tables: `chat_messages`, `chat_reports` with RLS policies
+    - Functions: `cleanup_old_chat_messages()`, `handle_ban_auto_delete()` trigger
+    - Edge Functions: `quick-ban` (HMAC-signed ban links), `report-message` (Discord webhook integration)
+    - Updated constraint: chat message length 500→200 chars
+    - Migration: `20251129160000_secure_chat_messages.sql`, `20251130000000_chat_reports.sql`, `20251130010000_auto_delete_banned_messages.sql`, `20251202175800_update_chat_length.sql`
+  - **Status**: Production now has 8 migrations applied (was 4), all new features enabled
+  - **Users impacted**: 2829 production users, 0 data loss, all migrations additive
+  - **Security**: RLS enabled on all new tables, function search_path warnings noted (non-critical)
+  - **Performance**: Some unused indexes (expected), unindexed foreign keys (to optimize), RLS init plan warnings (to fix)
 
 **Major Changes in 2.3.5**:
 - **Implemented**: Role-specific prestige star system with tiered progression
