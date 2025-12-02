@@ -6,7 +6,7 @@ import { saveCompletedBreak } from '../../lib/userSyncAuth';
 import { useAuth } from '../../contexts/AuthContext';
 import type { TimerType } from '../../types';
 
-import { usePIPMode } from '../../hooks/usePIPMode';
+import { useSmartPIPMode } from '../../hooks/useSmartPIPMode';
 
 const XP_PER_MINUTE_BREAK = 1;
 
@@ -16,7 +16,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [isFlashing, setIsFlashing] = useState(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const isPIPMode = usePIPMode(750);
+  const isPIPMode = useSmartPIPMode(750);
 
   const { appUser, isDiscordActivity } = useAuth();
 

@@ -22,7 +22,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useActiveEventBuffs } from '../../hooks/useActiveEventBuffs';
 import { getBuffStartDateText } from '../../data/eventBuffsData';
 import { getPrestigeIcons } from '../../lib/prestigeUtils';
-import { usePIPMode } from '../../hooks/usePIPMode';
+import { useSmartPIPMode } from '../../hooks/useSmartPIPMode';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
@@ -111,8 +111,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Use PIP mode hook (hides UI completely when very small)
-  const isPIPMode = usePIPMode(750);
+  // Use Smart PIP mode hook (hides UI for small Discord Activity on desktop only)
+  const isPIPMode = useSmartPIPMode(750);
 
   // Determine if we need to scale down the UI (between 750px and 1200px)
   // This prevents overlap without squishing the layout

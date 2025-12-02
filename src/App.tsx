@@ -19,7 +19,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { getEnvironment } from './lib/environment';
 import { canClaimDailyGift } from './lib/userSyncAuth';
-import { usePIPMode } from './hooks/usePIPMode';
+import { useSmartPIPMode } from './hooks/useSmartPIPMode';
 
 
 function AppContent() {
@@ -35,7 +35,7 @@ function AppContent() {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [showDailyGift, setShowDailyGift] = useState(false);
   const [dailyGiftClaimed, setDailyGiftClaimed] = useState(false);
-  const isPIPMode = usePIPMode(750);
+  const isPIPMode = useSmartPIPMode(750);
 
   // Check if daily gift available (actual claim happens in DailyGiftGrid to prevent double-claiming)
   useEffect(() => {

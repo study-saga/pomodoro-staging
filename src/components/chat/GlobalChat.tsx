@@ -109,18 +109,31 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
         setShowScrollButton(false);
 
         if (listRef.current) {
-          listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+          const lastIndex = globalMessages.length - 1;
+          // Reset heights for new messages (dynamic height calculation)
+          listRef.current.resetAfterIndex(lastIndex, false);
+          // Scroll to new message
+          listRef.current.scrollToItem(lastIndex, 'end');
         }
       }
     }
   }, [globalMessages.length, currentUser.id]);
 
-  // Initial scroll on mount
+  // Initial scroll on mount (with render delay for virtualization)
   useLayoutEffect(() => {
     if (globalMessages.length > 0 && listRef.current) {
-      // Initial scroll to bottom
-      listRef.current.scrollToItem(globalMessages.length - 1, 'end');
-      shouldAutoScrollRef.current = true;
+      // Reset heights before scrolling (ensures accurate measurement)
+      listRef.current.resetAfterIndex(0, false);
+
+      // Small delay to ensure virtualized list fully rendered
+      const timeoutId = setTimeout(() => {
+        if (listRef.current) {
+          listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+          shouldAutoScrollRef.current = true;
+        }
+      }, 50); // 50ms allows VariableSizeList to calculate heights
+
+      return () => clearTimeout(timeoutId);
     }
   }, []); // Empty deps = run once on mount
 
@@ -131,14 +144,18 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
 
     // Only scroll if chat was just opened (false -> true)
     if (!wasExpanded && isExpanded && globalMessages.length > 0) {
-      // Small timeout to ensure list is rendered and measured
-      setTimeout(() => {
+      // Delay to ensure panel animation started and virtualized list rendered
+      const timeoutId = setTimeout(() => {
         if (listRef.current) {
+          // Reset heights before scrolling (panel was hidden)
+          listRef.current.resetAfterIndex(0, false);
           listRef.current.scrollToItem(globalMessages.length - 1, 'end');
           shouldAutoScrollRef.current = true;
           setShowScrollButton(false);
         }
-      }, 10);
+      }, 50); // Increased from 10ms to 50ms for virtualization
+
+      return () => clearTimeout(timeoutId);
     }
   }, [isExpanded, globalMessages.length]);
 
