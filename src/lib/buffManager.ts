@@ -91,7 +91,7 @@ export async function clearExpiredBuffs(userId: string): Promise<void> {
 
   if (error) {
     console.error('[BuffManager] Error clearing expired buffs:', error);
-    return;
+    throw new Error(`Failed to clear expired buffs: ${error.message}`);
   }
 
   console.log('[BuffManager] ✓ Cleared expired buffs');
@@ -131,8 +131,7 @@ export function calculateBuffStack(
      * Allows future reactivation without re-granting the buff
      */
     if (buffId === 'slingshot_nov22') {
-      // UTC-based date check
-      const now = Date.now();
+      // UTC-based date check (uses outer 'now' variable)
       const startDate = Date.UTC(2025, 10, 22); // Nov 22 00:00 UTC (month is 0-indexed)
       const endDate = Date.UTC(2025, 10, 24);   // Nov 24 00:00 UTC (end of Nov 23)
       const isEventActive = now >= startDate && now < endDate;

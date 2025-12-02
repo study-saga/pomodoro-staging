@@ -83,18 +83,6 @@ export const SettingsPopover = memo(function SettingsPopover() {
     }
   }, [open]);
 
-  // Close settings when mouse becomes inactive (unless there are pending changes)
-  useEffect(() => {
-    // Don't auto-close if:
-    // - Username is being updated
-    // - There's a username error that needs attention
-    const hasPendingChanges = usernameLoading || usernameError !== null;
-
-    if (!isMouseActive && open && !hasPendingChanges) {
-      setOpen(false);
-    }
-  }, [isMouseActive, open, usernameLoading, usernameError]);
-
   // Handle keyboard shortcuts
   useEffect(() => {
     if (!open) return;
@@ -236,6 +224,16 @@ export const SettingsPopover = memo(function SettingsPopover() {
     tempBackground !== background ||
     tempLevelSystemEnabled !== levelSystemEnabled ||
     tempPlaylist !== playlist;
+
+  // Close settings when mouse becomes inactive (unless there are pending changes)
+  useEffect(() => {
+    // Don't auto-close if there are unsaved changes or username operations pending
+    const hasPendingChanges = hasUnsavedChanges || usernameLoading || usernameError !== null;
+
+    if (!isMouseActive && open && !hasPendingChanges) {
+      setOpen(false);
+    }
+  }, [isMouseActive, open, hasUnsavedChanges, usernameLoading, usernameError]);
 
   // Reset temporary state when modal opens
   useEffect(() => {

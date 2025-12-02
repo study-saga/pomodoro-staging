@@ -6,7 +6,8 @@
       "Bash(npm install:*)",
       "Bash(git add:*)",
       "Bash(npm run build:*)",
-      "mcp__github__pull_request_read"
+      "mcp__github__pull_request_read",
+      "Bash(gh pr view:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
