@@ -15,11 +15,13 @@ export interface AppUser {
   discord_id: string
   username: string
   avatar: string | null
+  role: 'user' | 'moderator' | 'admin'
 
   // Level system data (SERVER-CONTROLLED - read-only from client)
   level: number
   xp: number
   prestige_level: number
+  prestige_stars: { role: 'elf' | 'human'; earnedAt: string }[]
   level_path: 'elf' | 'human'
 
   // Stats tracking (SERVER-CONTROLLED - read-only from client)
@@ -42,6 +44,13 @@ export interface AppUser {
   pomodoro_boost_multiplier: number
   last_daily_gift_date: string | null
 
+  // Active buffs (SERVER-CONTROLLED - read-only from client)
+  active_buffs: Record<string, {
+    value: number;
+    expires_at: number | null;
+    metadata?: Record<string, any>;
+  }>
+
   // Audio settings (CLIENT-CONTROLLED - read/write)
   sound_enabled: boolean
   volume: number
@@ -60,6 +69,8 @@ export interface AppUser {
 
   // Visual preferences (CLIENT-CONTROLLED - read/write)
   background_id: string
+  background_mobile?: string
+  background_desktop?: string
   playlist: 'lofi' | 'synthwave'
   ambient_volumes: Record<string, number>
 
@@ -87,6 +98,8 @@ export interface UserSettings {
 
   // Visual preferences (3 fields)
   background_id: string
+  background_mobile?: string
+  background_desktop?: string
   playlist: 'lofi' | 'synthwave'
   ambient_volumes: Record<string, number>
 

@@ -2,5 +2,16 @@
   "rewrites": [
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.discordsays.com https://*.discord.com https://assets.vercel.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' blob: data: https://*.discordsays.com https://*.discordapp.com https://*.discord.com https://*.supabase.co https://ui-avatars.com https://cdn.study-saga.com; connect-src 'self' wss://*.discordsays.com https://*.discordsays.com https://*.discord.com https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://o4510434264875008.ingest.de.sentry.io https://cdn.study-saga.com; media-src 'self' blob: data: https://*.discordsays.com https://*.discordapp.com https://*.discord.com https://*.supabase.co https://cdn.study-saga.com;"
+        }
+      ]
+    }
   ]
 }

@@ -138,6 +138,12 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
               markDailyGiftClaimed();
               setXpAwarded(true);
 
+              // Update local XP state immediately (skip sync since RPC already did it)
+              // Use the new total XP from server if available, otherwise add the amount
+              if (result.xpAwarded) {
+                useSettingsStore.getState().addDailyGiftXP(result.xpAwarded, true);
+              }
+
               // Centralize boost state: sync to local store if activated
               if (result.boostActivated && result.boostExpiresAt) {
                 console.log(`[DailyGift] ✓ Pomodoro boost activated until ${new Date(result.boostExpiresAt)}`);

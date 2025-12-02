@@ -86,7 +86,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Grant execute to all users (authenticated by discord_id check)
 GRANT EXECUTE ON FUNCTION public.claim_daily_gift_discord(UUID, TEXT, INTEGER, BOOLEAN) TO anon, authenticated;
 
-COMMENT ON FUNCTION public.claim_daily_gift_discord IS
+COMMENT ON FUNCTION public.claim_daily_gift_discord(UUID, TEXT, INTEGER, BOOLEAN) IS
   'Atomically claim daily gift for Discord Activity users.
    Uses discord_id for authentication instead of auth.uid().
    Prevents claiming multiple times per day and ensures consistency across devices.';

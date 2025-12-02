@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs basename:*)",
+      "Bash(find:*)",
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(npm run build:*)",
+      "mcp__github__pull_request_read",
+      "Bash(gh pr view:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}

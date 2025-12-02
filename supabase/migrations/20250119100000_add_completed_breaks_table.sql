@@ -32,16 +32,18 @@ CREATE INDEX IF NOT EXISTS idx_completed_breaks_completed_at
 ALTER TABLE public.completed_breaks ENABLE ROW LEVEL SECURITY;
 
 -- Create policy: Users can read their own breaks
+DROP POLICY IF EXISTS "Users can read own breaks" ON public.completed_breaks;
 CREATE POLICY "Users can read own breaks"
   ON public.completed_breaks
   FOR SELECT
-  USING (discord_id = auth.uid()::text OR true);
+  USING (discord_id = auth.uid()::text);
 
 -- Create policy: Users can insert their own breaks
+DROP POLICY IF EXISTS "Users can insert own breaks" ON public.completed_breaks;
 CREATE POLICY "Users can insert own breaks"
   ON public.completed_breaks
   FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (discord_id = auth.uid()::text);
 
 COMMENT ON TABLE public.completed_breaks IS 'History of completed break sessions (short and long breaks)';
 COMMENT ON COLUMN public.completed_breaks.break_type IS 'Type of break: short or long';

@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState } from 'react';
-import { EVENT_BUFFS, getActiveBuffs } from '../data/eventBuffsData';
+import { EVENT_BUFFS, getActiveBuffs, getUpcomingBuffs } from '../data/eventBuffsData';
 import type { EventBuff } from '../types';
 
 /**
@@ -8,17 +8,19 @@ import type { EventBuff } from '../types';
  *
  * @param levelPath - User's current role ('elf' | 'human')
  * @param refreshInterval - How often to check for date changes (default: 60000ms = 1 minute)
- * @returns activeBuffs array and total multiplier
+ * @returns activeBuffs array, upcomingBuffs array, and total multiplier
  */
 export function useActiveEventBuffs(levelPath: 'elf' | 'human', refreshInterval: number = 60000) {
   const [activeBuffs, setActiveBuffs] = useState<EventBuff[]>([]);
+  const [upcomingBuffs, setUpcomingBuffs] = useState<EventBuff[]>([]);
 
   useEffect(() => {
-    const updateActiveBuffs = () => {
+    const updateBuffs = () => {
       const allActiveBuffs = getActiveBuffs(new Date());
+      const allUpcomingBuffs = getUpcomingBuffs(48, new Date());
 
       // Filter role-specific buffs
-      const filteredBuffs = allActiveBuffs.filter(buff => {
+      const filterByRole = (buffs: EventBuff[]) => buffs.filter(buff => {
         // Check if buff description contains "(Elf only)" or "(Human only)"
         if (buff.description.includes('(Elf only)')) {
           return levelPath === 'elf';
@@ -30,13 +32,14 @@ export function useActiveEventBuffs(levelPath: 'elf' | 'human', refreshInterval:
         return true;
       });
 
-      setActiveBuffs(filteredBuffs);
+      setActiveBuffs(filterByRole(allActiveBuffs));
+      setUpcomingBuffs(filterByRole(allUpcomingBuffs));
     };
 
-    updateActiveBuffs();
+    updateBuffs();
 
     // Re-check every minute (or custom interval) to detect date changes
-    const interval = setInterval(updateActiveBuffs, refreshInterval);
+    const interval = setInterval(updateBuffs, refreshInterval);
     return () => clearInterval(interval);
   }, [levelPath, refreshInterval]);
 
@@ -44,7 +47,7 @@ export function useActiveEventBuffs(levelPath: 'elf' | 'human', refreshInterval:
     return activeBuffs.reduce((total, buff) => total * buff.xpMultiplier, 1);
   }, [activeBuffs]);
 
-  return { activeBuffs, totalMultiplier };
+  return { activeBuffs, upcomingBuffs, totalMultiplier };
 }
 
 /**

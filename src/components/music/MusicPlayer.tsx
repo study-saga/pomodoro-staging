@@ -3,10 +3,12 @@ import { useState, useEffect, useRef } from 'react';
 import ReactHowler from 'react-howler';
 import { Howler } from 'howler';
 import { Play, Pause, SkipBack, SkipForward, Volume2, ImageIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { Track } from '../../types';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { BACKGROUNDS } from '../../data/constants';
 import { useDeviceType } from '../../hooks/useDeviceType';
+import { useMouseActivity } from '../../hooks/useMouseActivity';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import lofiTracks from '../../data/lofi.json';
 import synthwaveTracks from '../../data/synthwave.json';
@@ -17,6 +19,8 @@ interface MusicPlayerProps {
 }
 
 export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
+  const isMouseActive = useMouseActivity(8000); // 8 seconds
+
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [playlistState, setPlaylistState] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -32,7 +36,6 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
   const filteredBackgrounds = BACKGROUNDS.filter(bg => bg.orientation === targetOrientation);
 
   const playerRef = useRef<any>(null);
-  const seekIntervalRef = useRef<number | undefined>(undefined);
 
   const musicVolume = useSettingsStore((state) => state.musicVolume);
   const setMusicVolume = useSettingsStore((state) => state.setMusicVolume);
@@ -52,24 +55,34 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
     }
   }, [playlist]);
 
+  // Close background selector when mouse becomes inactive
+  useEffect(() => {
+    if (!isMouseActive && showBackgrounds) {
+      setShowBackgrounds(false);
+    }
+  }, [isMouseActive, showBackgrounds]);
+
   // Update seek position
   useEffect(() => {
-    if (playing) {
-      seekIntervalRef.current = window.setInterval(() => {
-        if (playerRef.current) {
+    let lastUpdate = 0;
+    let rafId: number;
+
+    const updateSeek = (timestamp: number) => {
+      if (timestamp - lastUpdate >= 250) { // 250ms = 4 updates/sec
+        if (playerRef.current && playing) {
           setSeek(playerRef.current.seek() as number);
         }
-      }, 100);
-    } else {
-      if (seekIntervalRef.current) {
-        clearInterval(seekIntervalRef.current);
+        lastUpdate = timestamp;
       }
+      rafId = requestAnimationFrame(updateSeek);
+    };
+
+    if (playing) {
+      rafId = requestAnimationFrame(updateSeek);
     }
 
     return () => {
-      if (seekIntervalRef.current) {
-        clearInterval(seekIntervalRef.current);
-      }
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [playing]);
 
@@ -155,8 +168,18 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-black/60 backdrop-blur-xl border-t border-white/10">
-      <div className={`max-w-7xl mx-auto ${isMobile ? 'px-2 py-2' : 'px-4 py-3'}`}>
+    <div className="fixed bottom-0 left-0 right-0">
+      {/* Background layer - fades out */}
+      <motion.div
+        initial={{ opacity: 1 }}
+        animate={{ opacity: isMouseActive ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+        style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
+        className="absolute inset-0 bg-black/60 backdrop-blur-xl border-t border-white/10 pointer-events-none"
+      />
+
+      {/* Controls layer - always visible */}
+      <div className={`relative max-w-7xl mx-auto ${isMobile ? 'px-2 py-2' : 'px-4 py-3'}`}>
         {/* Desktop: Spotify-style 3-column layout */}
         {!isMobile && (
           <div className="grid grid-cols-3 items-center gap-4">
@@ -165,7 +188,7 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
               {/* Genre Badge */}
               <button
                 onClick={() => setPlaylist(playlist === 'lofi' ? 'synthwave' : 'lofi')}
-                className="px-3 py-1 bg-purple-600 text-white text-sm font-medium rounded-full hover:bg-purple-700 transition-colors flex-shrink-0"
+                className="px-3 py-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white text-sm font-medium rounded-full transition-all duration-200 hover:border-white/30 flex-shrink-0"
               >
                 {playlist === 'lofi' ? 'Lofi' : 'Synthwave'}
               </button>
@@ -175,7 +198,7 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
                   <p className="text-white text-sm font-medium truncate">
                     {currentTrack.title}
                   </p>
-                  <p className="text-gray-400 text-xs truncate">{currentTrack.artist}</p>
+                  <p className="text-white text-xs truncate">{currentTrack.artist}</p>
                 </div>
               )}
             </div>
@@ -283,11 +306,10 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
                             setBackground(bg.id);
                             setShowBackgrounds(false);
                           }}
-                          className={`relative rounded-lg overflow-hidden aspect-video border-2 transition-all ${
-                            background === bg.id
-                              ? 'border-purple-500 shadow-lg shadow-purple-500/50'
-                              : 'border-white/20 hover:border-white/40'
-                          }`}
+                          className={`relative rounded-lg overflow-hidden aspect-video border-2 transition-all ${background === bg.id
+                            ? 'border-purple-500 shadow-lg shadow-purple-500/50'
+                            : 'border-white/20 hover:border-white/40'
+                            }`}
                         >
                           <img
                             src={bg.poster}
@@ -317,7 +339,7 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
                 <p className="text-white text-sm font-semibold truncate">
                   {currentTrack.title}
                 </p>
-                <p className="text-gray-400 text-xs truncate mt-0.5">
+                <p className="text-white text-xs truncate mt-0.5">
                   {currentTrack.artist}
                 </p>
               </div>
@@ -367,7 +389,7 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
               {/* Genre Badge */}
               <button
                 onClick={() => setPlaylist(playlist === 'lofi' ? 'synthwave' : 'lofi')}
-                className="px-3 py-1 bg-purple-600 text-white text-xs font-medium rounded-full hover:bg-purple-700 transition-colors"
+                className="px-3 py-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white text-xs font-medium rounded-full transition-all duration-200 hover:border-white/30"
               >
                 {playlist === 'lofi' ? 'Lofi' : 'Synthwave'}
               </button>
@@ -448,11 +470,10 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
                               setBackground(bg.id);
                               setShowBackgrounds(false);
                             }}
-                            className={`relative rounded-lg overflow-hidden aspect-video border-2 transition-all ${
-                              background === bg.id
-                                ? 'border-purple-500 shadow-lg shadow-purple-500/50'
-                                : 'border-white/20 hover:border-white/40'
-                            }`}
+                            className={`relative rounded-lg overflow-hidden aspect-video border-2 transition-all ${background === bg.id
+                              ? 'border-purple-500 shadow-lg shadow-purple-500/50'
+                              : 'border-white/20 hover:border-white/40'
+                              }`}
                           >
                             <img
                               src={bg.poster}
@@ -473,19 +494,19 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
             </div>
           </div>
         )}
-      </div>
 
-      {/* Audio Player */}
-      {currentTrack && (
-        <ReactHowler
-          ref={playerRef}
-          src={getTrackUrl(currentTrack)}
-          playing={playing}
-          volume={musicVolume / 100}
-          onEnd={handleEnd}
-          onLoad={handleLoad}
-        />
-      )}
+        {/* Audio Player */}
+        {currentTrack && (
+          <ReactHowler
+            ref={playerRef}
+            src={getTrackUrl(currentTrack)}
+            playing={playing}
+            volume={musicVolume / 100}
+            onEnd={handleEnd}
+            onLoad={handleLoad}
+          />
+        )}
+      </div>
     </div>
   );
 }

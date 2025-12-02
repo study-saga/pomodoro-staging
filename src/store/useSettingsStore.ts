@@ -5,7 +5,7 @@ import { DEFAULT_SETTINGS, USERNAME_EDIT_COOLDOWN, USERNAME_EDIT_COST, getDefaul
 import { MAX_LEVEL, getXPNeeded } from '../data/levels';
 import { getMilestoneForDay, type MilestoneReward } from '../data/milestones';
 import { calculateRoleXP } from '../data/roleSystem';
-import { getStackedMultiplier, getActiveBuffs } from '../data/eventBuffsData';
+import { getActiveBuffs } from '../data/eventBuffsData';
 
 // Helper to detect device type
 const getIsMobile = () => {
@@ -43,11 +43,13 @@ interface SettingsStore extends Settings {
 
   // Visual actions
   setBackground: (background: string) => void;
+  backgroundMobile: string;
+  backgroundDesktop: string;
   setPlaylist: (playlist: 'lofi' | 'synthwave') => void;
 
   // Level system actions
   addXP: (minutes: number) => void;
-  addDailyGiftXP: (xpAmount: number) => void;
+  addDailyGiftXP: (xpAmount: number, skipSync?: boolean) => void;
   setUsername: (username: string, forceWithXP?: boolean) => void;
   setLevelPath: (path: 'elf' | 'human') => void;
   setLevelSystemEnabled: (enabled: boolean) => void;
@@ -77,6 +79,8 @@ export const useSettingsStore = create<SettingsStore>()(
       // Initial state from defaults with device-aware background
       ...DEFAULT_SETTINGS,
       background: getValidBackgroundForDevice(DEFAULT_SETTINGS.background, getIsMobile()),
+      backgroundMobile: getDefaultBackground(true),
+      backgroundDesktop: getDefaultBackground(false),
 
       // Sync state (not persisted - always starts false)
       settingsSyncComplete: false,
@@ -121,7 +125,13 @@ export const useSettingsStore = create<SettingsStore>()(
       setBackground: (background) => {
         const isMobile = getIsMobile();
         const validBackground = getValidBackgroundForDevice(background, isMobile);
-        set({ background: validBackground });
+
+        set((state) => ({
+          background: validBackground,
+          // Update the specific preference based on current device type
+          backgroundMobile: isMobile ? validBackground : state.backgroundMobile,
+          backgroundDesktop: !isMobile ? validBackground : state.backgroundDesktop
+        }));
       },
       setPlaylist: (playlist) => set({ playlist }),
 
@@ -163,23 +173,47 @@ export const useSettingsStore = create<SettingsStore>()(
           console.log('[XP] Role buffs applied:', roleResult.bonuses.join(', '));
         }
 
-        // Apply event buff multipliers (date-based, stackable)
-        const eventBuffMultiplier = getStackedMultiplier(new Date());
+        // Get all active event buffs (date-based)
         const activeEventBuffs = getActiveBuffs(new Date());
 
-        if (eventBuffMultiplier > 1 && activeEventBuffs.length > 0) {
+        // Filter role-specific buffs
+        const roleFilteredBuffs = activeEventBuffs.filter(buff => {
+          if (buff.description.includes('(Elf only)')) {
+            return state.levelPath === 'elf';
+          }
+          if (buff.description.includes('(Human only)')) {
+            return state.levelPath === 'human';
+          }
+          return true; // Buff applies to all roles
+        });
+
+        // Calculate event buff multiplier from role-filtered buffs (stacked)
+        const eventBuffMultiplier = roleFilteredBuffs.reduce((total, buff) => {
+          return total * buff.xpMultiplier;
+        }, 1);
+
+        // Calculate flat XP bonus from active buffs
+        const flatXPBonus = roleFilteredBuffs.reduce((total, buff) => {
+          return total + (buff.flatXPBonus || 0);
+        }, 0);
+
+        if (eventBuffMultiplier > 1 && roleFilteredBuffs.length > 0) {
           console.log(
             '[XP] Event buffs active:',
-            activeEventBuffs.map((b) => `${b.title} (x${b.xpMultiplier})`).join(', ')
+            roleFilteredBuffs.map((b) => `${b.title} (x${b.xpMultiplier})`).join(', ')
           );
           console.log('[XP] Stacked event buff multiplier:', eventBuffMultiplier.toFixed(3));
         }
 
+        if (flatXPBonus > 0) {
+          console.log(`[XP] Flat XP bonus from event buffs: +${flatXPBonus}`);
+        }
+
         // Calculate final XP with all multipliers stacked
-        // Order: base XP → daily boost → event buffs
+        // Order: base XP → daily boost → event buffs (multiplier) → flat bonus
         const xpWithBoost = baseXP * boostMultiplier;
         const xpWithEventBuffs = xpWithBoost * eventBuffMultiplier;
-        const xpGained = Math.floor(xpWithEventBuffs);
+        const xpGained = Math.floor(xpWithEventBuffs) + flatXPBonus;
         let newXP = state.xp + xpGained;
         let newLevel = state.level;
         let newPrestigeLevel = state.prestigeLevel;
@@ -298,7 +332,7 @@ export const useSettingsStore = create<SettingsStore>()(
         })();
       },
 
-      addDailyGiftXP: (xpAmount) => {
+      addDailyGiftXP: (xpAmount, skipSync = false) => {
         const state = get();
         let newXP = state.xp + xpAmount;
         let newLevel = state.level;
@@ -323,6 +357,11 @@ export const useSettingsStore = create<SettingsStore>()(
           level: newLevel,
           prestigeLevel: newPrestigeLevel,
         });
+
+        if (skipSync) {
+          console.log(`[addDailyGiftXP] Skipping DB sync (handled externally)`);
+          return;
+        }
 
         // Sync to database in background (fire and forget)
         (async () => {
@@ -508,10 +547,24 @@ export const useSettingsStore = create<SettingsStore>()(
         // After loading from localStorage, validate background compatibility
         if (state) {
           const isMobile = getIsMobile();
-          const validBackground = getValidBackgroundForDevice(state.background, isMobile);
-          if (validBackground !== state.background) {
-            state.background = validBackground;
+
+          // Switch to the correct background preference for this device
+          // If preference exists, use it. Otherwise use current background if valid, or default.
+          let targetBackground = isMobile ? state.backgroundMobile : state.backgroundDesktop;
+
+          // Fallback if specific preference is missing (legacy state)
+          if (!targetBackground) {
+            targetBackground = state.background;
           }
+
+          const validBackground = getValidBackgroundForDevice(targetBackground, isMobile);
+
+          // Apply the validated background
+          state.background = validBackground;
+
+          // Ensure preferences are populated if they were empty (migration from old state)
+          if (!state.backgroundMobile) state.backgroundMobile = getDefaultBackground(true);
+          if (!state.backgroundDesktop) state.backgroundDesktop = getDefaultBackground(false);
         }
       },
     }

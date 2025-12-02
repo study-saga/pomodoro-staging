@@ -113,6 +113,8 @@ export async function updateUserPreferences(
 
     // Visual preferences (3 fields) - SAFE to sync from client
     background_id?: string
+    background_mobile?: string
+    background_desktop?: string
     playlist?: 'lofi' | 'synthwave'
     ambient_volumes?: Record<string, number>
 
@@ -148,6 +150,8 @@ export async function updateUserPreferences(
 
       // Visual preferences
       p_background_id: preferences.background_id ?? null,
+      p_background_mobile: preferences.background_mobile ?? null,
+      p_background_desktop: preferences.background_desktop ?? null,
       p_playlist: preferences.playlist ?? null,
       p_ambient_volumes: preferences.ambient_volumes ?? null,
 
@@ -185,6 +189,8 @@ export async function updateUserPreferences(
 
       // Visual preferences
       p_background_id: preferences.background_id ?? null,
+      p_background_mobile: preferences.background_mobile ?? null,
+      p_background_desktop: preferences.background_desktop ?? null,
       p_playlist: preferences.playlist ?? null,
       p_ambient_volumes: preferences.ambient_volumes ?? null,
 
@@ -228,6 +234,24 @@ export async function getUserByAuthId(authUserId: string): Promise<AppUser | nul
   return data as AppUser | null
 }
 
+/**
+ * Get user by auth user ID
+ */
+export async function checkUsernameAvailability(username: string): Promise<boolean> {
+  if (!username || username.trim().length === 0) return false;
+
+  const { data, error } = await supabase.rpc('check_username_availability', {
+    p_username: username
+  });
+
+  if (error) {
+    console.error('[User Sync] Error checking username availability:', error);
+    // Fail open (allow try) but log error
+    return true;
+  }
+
+  return data as boolean;
+}
 /**
  * Update user login streak
  */

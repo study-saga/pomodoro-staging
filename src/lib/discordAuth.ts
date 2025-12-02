@@ -1,5 +1,17 @@
 import { DiscordSDK, type DiscordSDKMock } from '@discord/embedded-app-sdk'
 
+/**
+ * Generate cryptographic random state for CSRF protection
+ */
+function generateOAuthState(): string {
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
+// Store state for validation (in-memory, cleared on page refresh)
+let oauthState: string | null = null
+
 export interface DiscordUser {
   id: string
   username: string
@@ -43,6 +55,9 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
 
   console.log('[Discord Auth] SDK ready, requesting authorization...')
 
+  // Generate CSRF state token
+  oauthState = generateOAuthState()
+
   // Step 3: Authorize with Discord
   // prompt: "none" enables auto-login for users who have already authorized
   // We need to catch the error and re-prompt with "consent" for first-time users
@@ -50,7 +65,7 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
     .authorize({
       client_id: import.meta.env.VITE_DISCORD_CLIENT_ID,
       response_type: 'code',
-      state: '',
+      state: oauthState,
       prompt: 'none', // Auto-login for returning users
       scope: [
         'identify', // User ID, username, avatar
@@ -65,7 +80,7 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
       return discordSdk.commands.authorize({
         client_id: import.meta.env.VITE_DISCORD_CLIENT_ID,
         response_type: 'code',
-        state: '',
+        state: oauthState!,
         scope: [
           'identify', // User ID, username, avatar
           'guilds', // Server list
@@ -101,8 +116,25 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
     throw new Error('Failed to exchange authorization code')
   }
 
-  const { access_token } = await tokenResponse.json()
+  const { access_token, supabase_token } = await tokenResponse.json()
   console.log('[Discord Auth] Token received successfully')
+
+  if (supabase_token) {
+    console.log('[Discord Auth] Supabase JWT received, setting session...')
+    // Import supabase client dynamically to avoid circular dependencies if any
+    const { supabase } = await import('./supabase')
+
+    const { error } = await supabase.auth.setSession({
+      access_token: supabase_token,
+      refresh_token: supabase_token, // We don't have a real refresh token, but this allows the session to be set
+    })
+
+    if (error) {
+      console.error('[Discord Auth] Failed to set Supabase session:', error)
+    } else {
+      console.log('[Discord Auth] Supabase session established successfully')
+    }
+  }
 
   console.log('[Discord Auth] Token received, authenticating SDK...')
 

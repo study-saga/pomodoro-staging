@@ -1,5 +1,6 @@
 
 import { memo, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { X, Target, Calendar, Flame, Clock, Zap, BarChart } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
@@ -10,6 +11,7 @@ import {
   ROLE_EMOJI_HUMAN,
 } from '../../data/levels';
 import { createRateLimiter, rateLimitedToast } from '../../utils/rateLimiters';
+import { getPrestigeIcons } from '../../lib/prestigeUtils';
 
 interface UserStatsModalProps {
   onClose: () => void;
@@ -20,7 +22,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
     level,
     levelPath,
     setLevelPath,
-    prestigeLevel,
+    prestigeStars,
     totalPomodoros,
     totalStudyMinutes,
     totalUniqueDays,
@@ -31,7 +33,6 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
     firstLoginDate,
   } = useSettingsStore();
 
-  const [showSinceTooltip, setShowSinceTooltip] = useState(false);
   const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
   const rateLimiterRef = useRef(createRateLimiter(720000)); // 12 minutes (5 changes per hour)
   // Average session length: total minutes divided by pomodoro count
@@ -124,7 +125,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
       </div>
 
       {/* Stats Grid with ScrollArea */}
-      <ScrollArea className="max-h-[60vh]">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-4 pb-2">
           {/* Path Selection - Hero Stats Style */}
           <label className="w-full bg-gradient-to-r from-purple-900/40 to-purple-900/20 rounded-xl p-3 border border-purple-500/30 mb-3 cursor-pointer block hover:border-purple-500/50 hover:from-purple-900/50 hover:to-purple-900/30 transition-all relative group">
@@ -155,8 +156,19 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
             <StatCard
               icon={<Target className="w-4 h-4" />}
               label="Level"
-              value={`${level}${prestigeLevel > 0 ? ` ⭐${prestigeLevel}` : ''}`}
+              value={level.toString()}
               color="text-blue-400"
+              extra={prestigeStars && prestigeStars.length > 0 ? (
+                <div className="flex gap-0.5 items-center justify-center mt-1">
+                  {getPrestigeIcons(prestigeStars).map((icon, idx) =>
+                    icon.type === 'svg' ? (
+                      <img key={idx} src={icon.value} alt="star" className="w-4 h-4" />
+                    ) : (
+                      <span key={idx} className="text-xs">{icon.value}</span>
+                    )
+                  )}
+                </div>
+              ) : undefined}
             />
             <StatCard
               icon={<span className="text-base">🍅</span>}
@@ -195,41 +207,10 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
 
             {/* Since Date */}
             {firstLoginDate && (
-              <div
-                role="button"
-                tabIndex={0}
-                aria-expanded={showSinceTooltip}
-                aria-label={`Account created ${formattedFirstLoginDate}, ${daysSinceFirstLogin} ${daysSinceFirstLogin === 1 ? 'day' : 'days'} ago`}
-                className="relative bg-white/5 rounded-lg p-2 border border-white/10 cursor-help focus:outline-none focus:ring-2 focus:ring-pink-400/50"
-                onMouseEnter={() => setShowSinceTooltip(true)}
-                onMouseLeave={() => setShowSinceTooltip(false)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setShowSinceTooltip(!showSinceTooltip);
-                  }
-                }}
-              >
-                <div className="flex items-center gap-1.5 text-pink-400 mb-0.5">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-xs text-gray-400">Since</span>
-                </div>
-                <p className="text-base font-bold text-white">{formattedFirstLoginDate}</p>
-
-                {/* Tooltip */}
-                {showSinceTooltip && (
-                  <div
-                    role="status"
-                    aria-live="polite"
-                    className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 z-50 shadow-xl whitespace-nowrap"
-                  >
-                    <p className="text-xs text-gray-200 text-center">
-                      I was there, Gandalf.<br />
-                      I was there {daysSinceFirstLogin} {daysSinceFirstLogin === 1 ? 'day' : 'days'} ago!
-                    </p>
-                  </div>
-                )}
-              </div>
+              <SinceDateTooltip
+                formattedDate={formattedFirstLoginDate}
+                daysSince={daysSinceFirstLogin}
+              />
             )}
 
             {/* Active Boost */}
@@ -261,7 +242,7 @@ export const UserStatsModal = memo(function UserStatsModal({ onClose }: UserStat
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="fixed bottom-4 left-4 right-4 sm:bottom-8 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[100] sm:max-w-md sm:w-full"
+            className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-[100] max-w-md w-[calc(100%-2rem)] sm:w-96"
           >
             <div className="relative bg-gradient-to-br from-purple-900/40 to-blue-900/40 backdrop-blur-xl border border-white/20 rounded-2xl p-4 sm:p-5 shadow-2xl overflow-hidden">
               {/* Glow effect */}
@@ -297,9 +278,10 @@ interface StatCardProps {
   label: string;
   value: string;
   color: string;
+  extra?: React.ReactNode;
 }
 
-function StatCard({ icon, label, value, color }: StatCardProps) {
+function StatCard({ icon, label, value, color, extra }: StatCardProps) {
   return (
     <div className="bg-white/5 rounded-lg p-2 border border-white/10 flex flex-col">
       <div className={`flex items-center gap-1.5 ${color} mb-1 h-5`}>
@@ -307,6 +289,68 @@ function StatCard({ icon, label, value, color }: StatCardProps) {
         <span className="text-xs text-gray-400 uppercase tracking-wide">{label}</span>
       </div>
       <p className="text-base font-bold text-white leading-tight">{value}</p>
+      {extra}
     </div>
+  );
+}
+
+
+
+function SinceDateTooltip({ formattedDate, daysSince }: { formattedDate: string, daysSince: number }) {
+  const [show, setShow] = useState(false);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (show && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + 8,
+        left: rect.left + rect.width / 2
+      });
+    }
+  }, [show]);
+
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        role="button"
+        tabIndex={0}
+        aria-expanded={show}
+        aria-haspopup="dialog"
+        className="relative bg-white/5 rounded-lg p-2 border border-white/10 cursor-help focus:outline-none focus:ring-2 focus:ring-pink-400/50"
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onClick={() => setShow(!show)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setShow(!show);
+          } else if (e.key === 'Escape') {
+            setShow(false);
+          }
+        }}
+      >
+        <div className="flex items-center gap-1.5 text-pink-400 mb-0.5">
+          <Calendar className="w-4 h-4" />
+          <span className="text-xs text-gray-400">Since</span>
+        </div>
+        <p className="text-base font-bold text-white">{formattedDate}</p>
+      </div>
+
+      {show && createPortal(
+        <div
+          className="fixed transform -translate-x-1/2 z-[100] px-3 py-2 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-xl whitespace-nowrap pointer-events-none"
+          style={{ top: position.top, left: position.left }}
+        >
+          <p className="text-xs text-gray-200 text-center">
+            I was there, Gandalf.<br />
+            I was there {daysSince} {daysSince === 1 ? 'day' : 'days'} ago!
+          </p>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }

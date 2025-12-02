@@ -31,11 +31,41 @@ const isDiscordActivity = () => {
 // This allows requests to bypass CSP restrictions in Discord iframe
 // Maps Supabase AND R2 resources through Discord's proxy
 if (isDiscordActivity()) {
+  // Extract Supabase hostname from environment (dynamic for dev/prod)
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  
+  // Validate that VITE_SUPABASE_URL is defined and non-empty
+  if (!supabaseUrl || supabaseUrl.trim() === '') {
+    const errorMsg = '[Main] FATAL: VITE_SUPABASE_URL is not defined or empty in Discord Activity mode'
+    console.error(errorMsg)
+    Sentry.captureMessage(errorMsg, 'fatal')
+    throw new Error(errorMsg)
+  }
+  
+  // Parse URL with try-catch to handle malformed URLs
+  let supabaseHost: string
+  try {
+    supabaseHost = new URL(supabaseUrl).hostname
+  } catch (error) {
+    const errorMsg = `[Main] FATAL: Invalid VITE_SUPABASE_URL format in Discord Activity mode. Value: "${supabaseUrl}"`
+    console.error(errorMsg, error)
+    Sentry.captureException(error, {
+      contexts: {
+        config: {
+          supabaseUrl
+        }
+      }
+    })
+    throw new Error(errorMsg)
+  }
+
   console.log('[Main] Discord Activity detected - applying URL mappings')
+  console.log('[Main] Supabase host:', supabaseHost)
+
   patchUrlMappings([
     {
       prefix: '/supabase',
-      target: 'btjhclvebbtjxmdnprwz.supabase.co'
+      target: supabaseHost
     },
     {
       prefix: '/r2-audio',

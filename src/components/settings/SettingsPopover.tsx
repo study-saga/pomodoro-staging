@@ -1,8 +1,9 @@
-import { memo, useState, useEffect, useRef } from 'react';
+import { memo, useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings as SettingsIcon, X, Palette, Volume2, Music, BarChart, Sparkles, Bell } from 'lucide-react';
+import { Settings as SettingsIcon, X, Palette, Volume2, Sparkles, Bell, FileText, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeviceType } from '../../hooks/useDeviceType';
+import { useMouseActivity } from '../../hooks/useMouseActivity';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { BACKGROUNDS } from '../../data/constants';
 import {
@@ -10,9 +11,11 @@ import {
   ROLE_EMOJI_HUMAN,
 } from '../../data/levels';
 import { useAuth } from '../../contexts/AuthContext';
-import { updateUsernameSecure } from '../../lib/userSyncAuth';
+import { updateUsernameSecure, checkUsernameAvailability } from '../../lib/userSyncAuth';
+
 import { showGameToast } from '../ui/GameToast';
-import { MusicCreditsModal } from './MusicCreditsModal';
+import { MusicCreditsModal } from '../lazy';
+import { LoadingSpinner } from '../LoadingSpinner';
 import { SettingsContent } from './SettingsContent';
 import { ScrollArea } from '../ui/scroll-area';
 import type { Track } from '../../types';
@@ -27,6 +30,7 @@ import {
 import { createRateLimiter } from '../../utils/rateLimiters';
 
 export const SettingsPopover = memo(function SettingsPopover() {
+  const isMouseActive = useMouseActivity(8000);
   const { appUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'notifications' | 'music' | 'progress' | 'whats-new'>('timer');
@@ -43,8 +47,33 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const rateLimiterRef = useRef(createRateLimiter(720000)); // 12 minutes (5 changes per hour)
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
+  const [viewportHeight, setViewportHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 1080);
 
-  const { isMobile, isPortrait } = useDeviceType();
+  const { isPortrait, isMobile } = useDeviceType();
+
+  // Track viewport dimensions for scaling logic
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+      setViewportHeight(window.innerHeight);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Determine scaling factor based on viewport dimensions
+  // We want to force desktop layout but scale it down to fit
+  let scaleClass = '';
+  if (viewportWidth < 800 || viewportHeight < 600) {
+    scaleClass = 'scale-[0.75] origin-top-right';
+  } else if (viewportWidth < 1200 || viewportHeight < 800) {
+    scaleClass = 'scale-[0.85] origin-top-right';
+  }
+
+  // Force desktop layout unless it's an actual mobile device (User Agent check)
+  // The user wants the 2-column layout even on small desktop windows
+  const showDesktopLayout = !isMobile;
 
   // Calculate total track count
   const totalTracks = lofiTracks.length + synthwaveTracks.length;
@@ -79,49 +108,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     }
   }, [open]);
 
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    if (!open) return;
-
-    const handleKeyboard = (e: KeyboardEvent) => {
-      // Ignore keyboard shortcuts when typing in an input field
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-
-      // Escape to close
-      if (e.key === 'Escape') {
-        setOpen(false);
-        return;
-      }
-
-      // Cmd/Ctrl+S to save
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        handleSave();
-        return;
-      }
-
-      // Number keys 1-7 to jump to tabs
-      const numKey = parseInt(e.key);
-      if (numKey >= 1 && numKey <= tabs.length) {
-        setActiveTab(tabs[numKey - 1].id as typeof activeTab);
-        return;
-      }
-
-      // Arrow keys to navigate tabs
-      const currentIndex = tabs.findIndex(t => t.id === activeTab);
-      if (e.key === 'ArrowDown' && currentIndex < tabs.length - 1) {
-        setActiveTab(tabs[currentIndex + 1].id as typeof activeTab);
-      } else if (e.key === 'ArrowUp' && currentIndex > 0) {
-        setActiveTab(tabs[currentIndex - 1].id as typeof activeTab);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyboard);
-    return () => window.removeEventListener('keydown', handleKeyboard);
-  }, [open, activeTab]);
+  // Keyboard shortcuts (moved after handleSave to avoid stale closure)
 
   const handleRoleChange = (newRole: 'elf' | 'human') => {
     rateLimiterRef.current(() => {
@@ -185,6 +172,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
     pomodoroBoostActive,
     pomodoroBoostExpiresAt,
     firstLoginDate,
+    playlist,
+    setPlaylist,
   } = useSettingsStore();
 
   // Filter backgrounds based on viewport orientation (portrait vs landscape)
@@ -202,6 +191,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const [tempAmbientVolumes, setTempAmbientVolumes] = useState(ambientVolumes);
   const [tempBackground, setTempBackground] = useState(background);
   const [tempLevelSystemEnabled, setTempLevelSystemEnabled] = useState(levelSystemEnabled);
+  const [tempPlaylist, setTempPlaylist] = useState(playlist);
   const [usernameInput, setUsernameInput] = useState(username);
 
   // Check for unsaved changes
@@ -215,7 +205,18 @@ export const SettingsPopover = memo(function SettingsPopover() {
     tempMusicVolume !== musicVolume ||
     JSON.stringify(tempAmbientVolumes) !== JSON.stringify(ambientVolumes) ||
     tempBackground !== background ||
-    tempLevelSystemEnabled !== levelSystemEnabled;
+    tempLevelSystemEnabled !== levelSystemEnabled ||
+    tempPlaylist !== playlist;
+
+  // Close settings when mouse becomes inactive (unless there are pending changes)
+  useEffect(() => {
+    // Don't auto-close if there are unsaved changes or username operations pending
+    const hasPendingChanges = hasUnsavedChanges || usernameLoading || usernameError !== null;
+
+    if (!isMouseActive && open && !hasPendingChanges) {
+      setOpen(false);
+    }
+  }, [isMouseActive, open, hasUnsavedChanges, usernameLoading, usernameError]);
 
   // Reset temporary state when modal opens
   useEffect(() => {
@@ -230,10 +231,11 @@ export const SettingsPopover = memo(function SettingsPopover() {
       setTempAmbientVolumes(ambientVolumes);
       setTempBackground(background);
       setTempLevelSystemEnabled(levelSystemEnabled);
+      setTempPlaylist(playlist);
       setUsernameInput(username);
       setActiveTab('timer'); // Default to General tab
     }
-  }, [open, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, username]);
+  }, [open, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, playlist, username]);
 
   const handleSaveUsername = async () => {
     if (!appUser) {
@@ -260,6 +262,14 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setUsernameLoading(true);
 
     try {
+      // Check availability first (client-side check for better UX)
+      const isAvailable = await checkUsernameAvailability(usernameInput);
+      if (!isAvailable) {
+        setUsernameError('Username is already taken');
+        setUsernameLoading(false);
+        return;
+      }
+
       // Try free update first (let server decide if cooldown passed)
       const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, false);
 
@@ -324,6 +334,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
         setUsernameError('Username cannot be empty');
       } else if (errorMessage.includes('20 characters')) {
         setUsernameError('Username cannot exceed 20 characters');
+      } else if (errorMessage.includes('already taken')) {
+        setUsernameError('Username is already taken');
       } else {
         setUsernameError(`Failed to update username: ${errorMessage}`);
       }
@@ -332,7 +344,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     // Apply all temporary settings to store
     setPomodoroDuration(tempTimers.pomodoro);
     setShortBreakDuration(tempTimers.shortBreak);
@@ -345,6 +357,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setMusicVolume(tempMusicVolume);
     setBackground(tempBackground);
     setLevelSystemEnabled(tempLevelSystemEnabled);
+    setPlaylist(tempPlaylist);
 
     // Apply ambient volumes
     Object.keys(tempAmbientVolumes).forEach((soundId) => {
@@ -352,7 +365,77 @@ export const SettingsPopover = memo(function SettingsPopover() {
     });
 
     setOpen(false);
-  };
+  }, [
+    tempTimers,
+    tempPomodorosBeforeLongBreak,
+    tempAutoStartBreaks,
+    tempAutoStartPomodoros,
+    tempSoundEnabled,
+    tempVolume,
+    tempMusicVolume,
+    tempAmbientVolumes,
+    tempBackground,
+    tempLevelSystemEnabled,
+    tempPlaylist,
+    setPomodoroDuration,
+    setShortBreakDuration,
+    setLongBreakDuration,
+    setPomodorosBeforeLongBreak,
+    setAutoStartBreaks,
+    setAutoStartPomodoros,
+    setSoundEnabled,
+    setVolume,
+    setMusicVolume,
+    setBackground,
+    setLevelSystemEnabled,
+    setPlaylist,
+    setAmbientVolume,
+    setOpen
+  ]);
+
+  // Handle keyboard shortcuts (placed here to use handleSave without stale closure)
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyboard = (e: KeyboardEvent) => {
+      // Ignore keyboard shortcuts when typing in an input field
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      // Escape to close
+      if (e.key === 'Escape') {
+        setOpen(false);
+        return;
+      }
+
+      // Cmd/Ctrl+S to save
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+        return;
+      }
+
+      // Number keys 1-7 to jump to tabs
+      const numKey = parseInt(e.key);
+      if (numKey >= 1 && numKey <= tabs.length) {
+        setActiveTab(tabs[numKey - 1].id as typeof activeTab);
+        return;
+      }
+
+      // Arrow keys to navigate tabs
+      const currentIndex = tabs.findIndex(t => t.id === activeTab);
+      if (e.key === 'ArrowDown' && currentIndex < tabs.length - 1) {
+        setActiveTab(tabs[currentIndex + 1].id as typeof activeTab);
+      } else if (e.key === 'ArrowUp' && currentIndex > 0) {
+        setActiveTab(tabs[currentIndex - 1].id as typeof activeTab);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, [open, activeTab, handleSave]);
 
   const handleReset = () => {
     // Reset temporary state to current store values
@@ -366,6 +449,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setTempAmbientVolumes(ambientVolumes);
     setTempBackground(background);
     setTempLevelSystemEnabled(levelSystemEnabled);
+    setTempPlaylist(playlist);
     setUsernameInput(username);
   };
 
@@ -374,33 +458,37 @@ export const SettingsPopover = memo(function SettingsPopover() {
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'sounds', label: 'Sounds', icon: Volume2 },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'music', label: 'Music', icon: Music },
-    { id: 'progress', label: 'Progress', icon: BarChart },
+    { id: 'progress', label: 'Progress', icon: Trophy },
+    { id: 'music', label: 'Credits', icon: FileText },
     { id: 'whats-new', label: "What's New", icon: Sparkles },
   ] as const;
 
   // Trigger button component
   const trigger = (
-    <button
+    <motion.button
       ref={triggerButtonRef}
       onClick={() => setOpen(true)}
       aria-label="Open settings"
-      className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors border border-white/10"
+      animate={{
+        padding: isMouseActive ? '0.75rem' : '0.25rem'
+      }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
+      className="bg-black/40 backdrop-blur-md rounded-full text-gray-400 hover:bg-black/60 transition-colors border border-gray-400/60"
     >
       <SettingsIcon size={24} />
-    </button>
+    </motion.button>
   );
 
   return (
     <>
       {/* Desktop: Popover */}
-      {!isMobile && (
+      {showDesktopLayout && (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             {trigger}
           </PopoverTrigger>
           <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[594px] p-0 max-h-[85vh] z-[100]"
+            className={`bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[594px] p-0 max-h-[85vh] z-[100] ${scaleClass}`}
             align="end"
             side="bottom"
             sideOffset={8}
@@ -486,6 +574,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         setTempMusicVolume={setTempMusicVolume}
                         tempAmbientVolumes={tempAmbientVolumes}
                         setTempAmbientVolumes={setTempAmbientVolumes}
+                        tempPlaylist={tempPlaylist}
+                        setTempPlaylist={setTempPlaylist}
                         totalTracks={totalTracks}
                         setShowMusicCredits={setShowMusicCredits}
                         level={level}
@@ -545,7 +635,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
       )}
 
       {/* Mobile: Centered Modal */}
-      {isMobile && (
+      {!showDesktopLayout && (
         <>
           <div onClick={() => setOpen(!open)}>
             {trigger}
@@ -553,7 +643,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
 
           <AnimatePresence>
             {open && (
-              <div className="fixed inset-0 flex items-center justify-center z-[100] p-2">
+              <div className="fixed inset-0 flex items-center justify-center z-[200] p-2">
                 {/* Backdrop */}
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -569,7 +659,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 20 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="relative z-[110] bg-gray-900/95 backdrop-blur-xl border-white/10 border rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col overflow-hidden"
+                  className="relative z-[210] bg-gray-900/95 backdrop-blur-xl border-white/10 border rounded-2xl w-full max-w-sm max-h-[90vh] flex flex-col overflow-hidden"
                 >
                   {/* Header */}
                   <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
@@ -642,6 +732,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         setTempMusicVolume={setTempMusicVolume}
                         tempAmbientVolumes={tempAmbientVolumes}
                         setTempAmbientVolumes={setTempAmbientVolumes}
+                        tempPlaylist={tempPlaylist}
+                        setTempPlaylist={setTempPlaylist}
                         totalTracks={totalTracks}
                         setShowMusicCredits={setShowMusicCredits}
                         level={level}
@@ -716,10 +808,12 @@ export const SettingsPopover = memo(function SettingsPopover() {
       {/* Music Credits Modal */}
       <AnimatePresence>
         {showMusicCredits && (
-          <MusicCreditsModal
-            tracks={[...lofiTracks, ...synthwaveTracks] as Track[]}
-            onClose={() => setShowMusicCredits(false)}
-          />
+          <Suspense fallback={<LoadingSpinner />}>
+            <MusicCreditsModal
+              tracks={[...lofiTracks, ...synthwaveTracks] as Track[]}
+              onClose={() => setShowMusicCredits(false)}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
     </>

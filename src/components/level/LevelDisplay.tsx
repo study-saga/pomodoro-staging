@@ -4,30 +4,37 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useAuth } from '../../contexts/AuthContext';
+import { useMouseActivity } from '../../hooks/useMouseActivity';
 import {
   getLevelName,
   ROLE_EMOJI_ELF,
   ROLE_EMOJI_HUMAN,
   getXPNeeded,
 } from '../../data/levels';
+import { getAvatarUrl } from '../../lib/chatService';
 import { Gift } from 'lucide-react';
-import buffElf from '../../assets/buff-elf.svg';
-import buffHuman from '../../assets/buff-human.svg';
-import buffBoost from '../../assets/buff-boost.svg';
+const buffElf = '/assets/buffs/buff-elf.svg';
+const buffHuman = '/assets/buffs/buff-human.svg';
+const buffBoost = '/assets/buffs/buff-boost.svg';
 import { UserStatsPopover } from './UserStatsPopover';
 import { UserStatsModal } from './UserStatsModal';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useActiveEventBuffs } from '../../hooks/useActiveEventBuffs';
+import { getBuffStartDateText } from '../../data/eventBuffsData';
+import { getPrestigeIcons } from '../../lib/prestigeUtils';
+import { useSmartPIPMode } from '../../hooks/useSmartPIPMode';
 
 interface LevelDisplayProps {
   onOpenDailyGift?: () => void;
 }
 
 export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: LevelDisplayProps) {
+  const isMouseActive = useMouseActivity(8000); // 8 seconds
+
   const {
     level,
     xp,
-    prestigeLevel,
+    prestigeStars,
     username,
     levelPath,
     levelSystemEnabled,
@@ -43,14 +50,16 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const [activeBuffTooltip, setActiveBuffTooltip] = useState<string | null>(null);
   const [hoveredBuff, setHoveredBuff] = useState<string | null>(null);
   const [tooltipPositions, setTooltipPositions] = useState<Record<string, { top: number; left: number }>>({});
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
   const prevLevelRef = useRef(level);
   const roleBuffRef = useRef<HTMLDivElement>(null);
   const boostRef = useRef<HTMLDivElement>(null);
   const eventBuffRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const rafRef = useRef<number | null>(null);
 
-  const { isMobile } = useDeviceType();
+  const { isMobile, isTablet, isCompact } = useDeviceType();
   const { appUser } = useAuth();
-  const { activeBuffs } = useActiveEventBuffs(levelPath);
+  const { activeBuffs, upcomingBuffs } = useActiveEventBuffs(levelPath);
 
   const xpNeeded = getXPNeeded(level);
   const levelName = getLevelName(level, levelPath);
@@ -88,6 +97,26 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const levelBadge = levelName.split(' ')[0]; // Get emoji (first part before space)
   const levelTitle = levelName.split(' ').slice(1).join(' '); // Get text (everything after first space)
 
+  // Close stats popover when mouse becomes inactive
+  useEffect(() => {
+    if (!isMouseActive && showStatsPopover) {
+      setShowStatsPopover(false);
+    }
+  }, [isMouseActive, showStatsPopover]);
+
+  // Track viewport width for scaling logic
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Use Smart PIP mode hook (hides UI for small Discord Activity on desktop only)
+  const isPIPMode = useSmartPIPMode(750);
+
+  // Determine if we need to scale down the UI (between 750px and 1200px)
+  // This prevents overlap without squishing the layout
+  const shouldScaleDown = viewportWidth < 1200 && !isPIPMode;
 
 
   // Calculate boost time remaining with defensive fallbacks
@@ -170,41 +199,52 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     }
   };
 
-  // Update tooltip position based on buff ref with viewport boundary checks
+  // Update tooltip position based on buff ref with viewport boundary checks (Throttled)
   const updateTooltipPosition = (buffId: string, ref: React.RefObject<HTMLDivElement | null>) => {
-    if (typeof window === 'undefined' || !ref.current) return;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
-    const rect = ref.current.getBoundingClientRect();
-    const tooltipHeight = 90; // Estimated tooltip height (increased for larger text)
-    const tooltipWidth = 260; // Min width for event buffs (increased for larger text)
-    const padding = 12; // Safe padding from viewport edges
+    rafRef.current = requestAnimationFrame(() => {
+      if (typeof window === 'undefined' || !ref.current) return;
 
-    let top = rect.bottom + 8;
-    let left = rect.left + rect.width / 2;
+      const rect = ref.current.getBoundingClientRect();
+      const tooltipHeight = 90; // Estimated tooltip height (increased for larger text)
+      const tooltipWidth = 260; // Min width for event buffs (increased for larger text)
+      const padding = 12; // Safe padding from viewport edges
 
-    // Check bottom overflow - if tooltip goes below viewport, position above icon
-    if (top + tooltipHeight > window.innerHeight - padding) {
-      top = rect.top - tooltipHeight - 8;
-    }
+      let top = rect.bottom + 8;
+      let left = rect.left + rect.width / 2;
 
-    // Check top overflow - ensure minimum distance from top
-    if (top < padding) {
-      top = padding;
-    }
+      // Check bottom overflow - if tooltip goes below viewport, position above icon
+      if (top + tooltipHeight > window.innerHeight - padding) {
+        top = rect.top - tooltipHeight - 8;
+      }
 
-    // Check horizontal overflow
-    const halfWidth = tooltipWidth / 2;
-    if (left - halfWidth < padding) {
-      left = halfWidth + padding;
-    } else if (left + halfWidth > window.innerWidth - padding) {
-      left = window.innerWidth - halfWidth - padding;
-    }
+      // Check top overflow - ensure minimum distance from top
+      if (top < padding) {
+        top = padding;
+      }
 
-    setTooltipPositions(prev => ({
-      ...prev,
-      [buffId]: { top, left }
-    }));
+      // Check horizontal overflow
+      const halfWidth = tooltipWidth / 2;
+      if (left - halfWidth < padding) {
+        left = halfWidth + padding;
+      } else if (left + halfWidth > window.innerWidth - padding) {
+        left = window.innerWidth - halfWidth - padding;
+      }
+
+      setTooltipPositions(prev => ({
+        ...prev,
+        [buffId]: { top, left }
+      }));
+    });
   };
+
+  // Cleanup RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   // Handle buff icon click on mobile
   const handleBuffClick = (e: React.MouseEvent, buffId: string, ref: React.RefObject<HTMLDivElement | null>) => {
@@ -264,8 +304,18 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   return (
     <>
-      {/* Level UI Container - Fixed position */}
-      <div className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'}`}>
+      {/* Level UI Container - Fixed position with fade animation */}
+      <motion.div
+        initial={{ opacity: 1 }}
+        animate={{ opacity: isPIPMode ? 0 : (isMouseActive ? 1 : 0) }}
+        transition={{ duration: isPIPMode ? 0 : 0.5 }}
+        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden
+          ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' :
+            isTablet ? 'p-3.5 min-w-[220px] max-w-[280px]' :
+            'p-4 min-w-[280px] max-w-[320px]'}
+          ${!isMouseActive || isPIPMode ? 'pointer-events-none opacity-0' : ''}
+          ${shouldScaleDown ? 'scale-[0.65] origin-top-left' : ''}`}
+      >
         {/* Confetti - contained inside Level UI */}
         {showConfetti && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none z-50">
@@ -280,6 +330,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                   top: '-8px',
                   backgroundColor: particle.color,
                   borderRadius: '2px',
+                  willChange: 'transform, opacity',
+                  transform: 'translateZ(0)',
                 }}
                 initial={{
                   y: 0,
@@ -331,23 +383,23 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div className={isMobile ? 'text-2xl' : 'text-3xl'}>{levelBadge}</div>
+                <div className={isMobile ? 'text-xl' : isTablet ? 'text-2xl' : 'text-3xl'}>{levelBadge}</div>
                 <div className="min-w-0 overflow-hidden flex-1">
-                  <h2 className={`font-bold text-white truncate ${isMobile ? 'text-base' : 'text-lg'}`}>
+                  <h2 className={`font-bold text-white truncate ${isMobile ? 'text-base' : isTablet ? 'text-lg' : 'text-xl'}`}>
                     {username}
                   </h2>
-                  <p className="text-xs text-gray-300">{levelTitle}</p>
+                  <p className={`text-gray-300 ${isMobile ? 'text-xs' : isTablet ? 'text-sm' : 'text-sm'}`}>{levelTitle}</p>
                 </div>
               </div>
-              <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
-                {appUser?.avatar && <AvatarImage src={appUser.avatar} />}
+              <Avatar className={isMobile ? 'h-8 w-8' : isTablet ? 'h-9 w-9' : 'h-10 w-10'}>
+                {appUser && <AvatarImage src={getAvatarUrl(appUser) || undefined} />}
                 <AvatarFallback>{username?.slice(0, 2).toUpperCase() || '??'}</AvatarFallback>
               </Avatar>
             </div>
 
             {/* XP Progress Bar */}
             <div>
-              <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-1' : 'text-xs mb-1'}`}>
+              <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-sm mb-1' : 'text-sm mb-1'}`}>
                 <span>{roleEmoji} Level {level}</span>
                 <span>
                   {xp} / {xpNeeded} XP
@@ -364,6 +416,8 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                     style={{
                       background: 'radial-gradient(ellipse at center, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 25%, rgba(255,255,255,0.4) 50%, transparent 80%)',
                       filter: 'blur(3px) brightness(1.3)',
+                      willChange: 'transform',
+                      transform: 'translateZ(0)',
                     }}
                     animate={{
                       x: ['-100%', '250%'],
@@ -380,12 +434,61 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             </div>
           </div>
 
-          {/* Role Buff Icons - Ordered: Permanent first, then by expiration */}
-          <div className="flex gap-2">
+          {/* Dev Tools (moved above buffs to avoid covering prestige stars) */}
+          {import.meta.env.DEV && (
+            <div className="space-y-1 mt-2">
+              <div className="flex gap-1">
+                <button
+                  onClick={() => addXP(50)} // Adds 50 XP
+                  className="flex-1 px-2 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors"
+                >
+                  +50 XP
+                </button>
+                <button
+                  onClick={() => {
+                    // Add a prestige star for current role
+                    const currentStars = useSettingsStore.getState().prestigeStars || [];
+                    useSettingsStore.setState({
+                      prestigeStars: [
+                        ...currentStars,
+                        { role: levelPath, earnedAt: new Date().toISOString() }
+                      ]
+                    });
+                  }}
+                  className="flex-1 px-2 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition-colors"
+                >
+                  +⭐ Star
+                </button>
+              </div>
+              <div className="flex gap-1">
+                <select
+                  value={selectedDay}
+                  onChange={(e) => setSelectedDay(Number(e.target.value))}
+                  className="px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:outline-none focus:border-pink-500"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((day) => (
+                    <option key={day} value={day}>
+                      Day {day}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={simulateNextDay}
+                  className="flex-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
+                >
+                  <Gift className="w-3 h-3" />
+                  Daily Gift
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Role Buff Icons - Grid layout with 6 per row */}
+          <div className="grid grid-cols-6 gap-1">
             {/* 1. Role Buff (Permanent - Always first) */}
             <div
               ref={roleBuffRef}
-              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}
+              className={`${isMobile ? 'w-7 h-7' : isTablet ? 'w-[30px] h-[30px]' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}
               onClick={(e) => handleBuffClick(e, 'role-buff', roleBuffRef)}
               onMouseEnter={() => {
                 if (!isMobile) {
@@ -400,6 +503,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                 alt={`${levelPath} buff`}
                 className="w-full h-full rounded-lg"
                 style={{ filter: 'drop-shadow(0 0 6px rgba(168, 85, 247, 0.5))' }}
+                loading="lazy"
               />
             </div>
 
@@ -409,7 +513,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             {pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (
               <div
                 ref={boostRef}
-                className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500`}
+                className={`${isMobile ? 'w-7 h-7' : isTablet ? 'w-[30px] h-[30px]' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500`}
                 onClick={(e) => handleBuffClick(e, 'boost', boostRef)}
                 onMouseEnter={() => {
                   if (!isMobile) {
@@ -424,6 +528,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                   alt="XP Boost"
                   className="w-full h-full rounded-lg"
                   style={{ filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.5))' }}
+                  loading="lazy"
                 />
               </div>
             )}
@@ -467,6 +572,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                       alt={buff.title}
                       className="w-full h-full rounded-lg"
                       style={{ filter: isElfBuff ? 'drop-shadow(0 0 6px rgba(34, 197, 94, 0.5))' : 'drop-shadow(0 0 6px rgba(6, 182, 212, 0.5))' }}
+                      loading="lazy"
                     />
                   ) : (
                     buff.emoji
@@ -474,53 +580,97 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                 </div>
               );
             })}
+
+            {/* 4. Upcoming Buffs (Preview, grayed out) */}
+            {upcomingBuffs.map((buff) => {
+              const buffId = `upcoming-${buff.id}`;
+              const isElfBuff = buff.description.includes('(Elf only)');
+
+              return (
+                <div
+                  key={buff.id}
+                  ref={(el) => { eventBuffRefs.current[buffId] = el; }}
+                  className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden opacity-40 grayscale ${isElfBuff
+                    ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30'
+                    : 'bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-cyan-500/20'
+                    } ${!buff.iconSrc ? 'text-xl' : ''}`}
+                  onClick={(e) => {
+                    if (isMobile) {
+                      e.stopPropagation();
+                      const newActiveTooltip = activeBuffTooltip === buffId ? null : buffId;
+                      setActiveBuffTooltip(newActiveTooltip);
+                      if (newActiveTooltip) {
+                        updateTooltipPosition(buffId, { current: eventBuffRefs.current[buffId] });
+                      }
+                    }
+                  }}
+                  onMouseEnter={() => {
+                    if (!isMobile) {
+                      setHoveredBuff(buffId);
+                      updateTooltipPosition(buffId, { current: eventBuffRefs.current[buffId] });
+                    }
+                  }}
+                  onMouseLeave={() => !isMobile && setHoveredBuff(null)}
+                >
+                  {buff.iconSrc ? (
+                    <img
+                      src={buff.iconSrc}
+                      alt={buff.title}
+                      className="w-full h-full rounded-lg"
+                      loading="lazy"
+                    />
+                  ) : (
+                    buff.emoji
+                  )}
+                </div>
+              );
+            })}
+
           </div>
 
-          {/* Prestige Stars */}
-          {prestigeLevel > 0 && (
-            <div className="text-center pt-1">
-              <span className={`text-yellow-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                {"⭐".repeat(Math.min(prestigeLevel, 5))}
-              </span>
-            </div>
-          )}
+          {/* Prestige Stars Row (below buffs, like rating stars) */}
+          {prestigeStars && prestigeStars.length > 0 && (
+            <div className="flex justify-center gap-0.5 mt-2 items-center">
+              {getPrestigeIcons(prestigeStars).map((icon, idx) => {
+                const titles = {
+                  gem: 'Gem (125 Stars)',
+                  diamond: 'Diamond (25 Stars)',
+                  crown: 'Crown (5 Stars)',
+                  star: `Prestige Star (${icon.role === 'elf' ? 'Elf' : 'Human'})`
+                };
 
+                // Render SVG for stars
+                if (icon.type === 'svg') {
+                  return (
+                    <img
+                      key={`prestige-${idx}`}
+                      src={icon.value}
+                      alt={titles[icon.tier]}
+                      title={titles[icon.tier]}
+                      className={`${isMobile ? 'w-5 h-5' : isTablet ? 'w-[22px] h-[22px]' : 'w-6 h-6'}`}
+                      loading="lazy"
+                    />
+                  );
+                }
 
-          {import.meta.env.DEV && (
-            <div className="space-y-1">
-              <button
-                onClick={() => addXP(50)} // Adds 50 XP
-                className="w-full px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
-              >
-                Add 50 XP (Dev)
-              </button>
-              <div className="flex gap-1">
-                <select
-                  value={selectedDay}
-                  onChange={(e) => setSelectedDay(Number(e.target.value))}
-                  className="px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:outline-none focus:border-pink-500"
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((day) => (
-                    <option key={day} value={day}>
-                      Day {day}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={simulateNextDay}
-                  className="flex-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
-                >
-                  <Gift className="w-3 h-3" />
-                  Daily Gift
-                </button>
-              </div>
+                // Render emoji for crowns/diamonds/gems
+                return (
+                  <span
+                    key={`prestige-${idx}`}
+                    className={`${isMobile ? 'text-lg' : isTablet ? 'text-[19px]' : 'text-xl'}`}
+                    title={titles[icon.tier]}
+                  >
+                    {icon.value}
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* User Stats - Different components for desktop/mobile */}
-      {!isMobile ? (
+      {!isCompact ? (
         /* Desktop: Popover positioned next to Level UI */
         <UserStatsPopover
           open={showStatsPopover}
@@ -558,7 +708,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 20 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="relative bg-gray-900/95 backdrop-blur-xl border-white/10 border rounded-2xl w-full max-w-sm"
+                  className="relative bg-gray-900/95 backdrop-blur-xl border-white/10 border rounded-2xl w-full max-w-sm max-h-[85vh] flex flex-col overflow-hidden"
                 >
                   <UserStatsModal onClose={() => setShowStatsPopover(false)} />
                 </motion.div>
@@ -639,6 +789,42 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               <p className={`text-sm font-semibold mb-1 ${isElfBuff ? 'text-green-300' : 'text-cyan-300'
                 }`}>
                 {buff.title}
+              </p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                {buff.description}
+              </p>
+            </div>
+          </div>,
+          document.body
+        );
+      })}
+
+      {/* Upcoming Buff Tooltips (Preview) */}
+      {upcomingBuffs.map((buff) => {
+        const buffId = `upcoming-${buff.id}`;
+        const isActive = isMobile ? activeBuffTooltip === buffId : hoveredBuff === buffId;
+        const isElfBuff = buff.description.includes('(Elf only)');
+
+        if (!tooltipPositions[buffId] || !isActive) return null;
+
+        return createPortal(
+          <div
+            key={buffId}
+            className="fixed transform -translate-x-1/2 pointer-events-none z-40 transition-opacity duration-200"
+            style={{
+              top: `${tooltipPositions[buffId].top}px`,
+              left: `${tooltipPositions[buffId].left}px`,
+              opacity: isMobile ? (activeBuffTooltip === buffId ? 1 : 0) : undefined,
+            }}
+          >
+            <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
+              }`}>
+              <p className={`text-sm font-semibold mb-1 ${isElfBuff ? 'text-green-300' : 'text-cyan-300'
+                }`}>
+                {buff.title}
+              </p>
+              <p className="text-xs text-gray-500 italic mb-1">
+                Unavailable: Starts {getBuffStartDateText(buff)}
               </p>
               <p className="text-xs text-gray-400 leading-relaxed">
                 {buff.description}

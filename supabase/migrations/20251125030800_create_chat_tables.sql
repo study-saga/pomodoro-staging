@@ -1,0 +1,3 @@
+-- Private messages feature has been discarded.
+-- This file is kept as a placeholder to maintain migration history order if needed,
+-- or it can be deleted. For now, it contains no operations.

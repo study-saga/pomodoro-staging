@@ -6,6 +6,8 @@ import { saveCompletedBreak } from '../../lib/userSyncAuth';
 import { useAuth } from '../../contexts/AuthContext';
 import type { TimerType } from '../../types';
 
+import { useSmartPIPMode } from '../../hooks/useSmartPIPMode';
+
 const XP_PER_MINUTE_BREAK = 1;
 
 export const PomodoroTimer = memo(function PomodoroTimer() {
@@ -14,6 +16,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [isFlashing, setIsFlashing] = useState(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const isPIPMode = useSmartPIPMode(750);
 
   const { appUser, isDiscordActivity } = useAuth();
 
@@ -376,54 +379,53 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
   return (
     <div className="flex flex-col items-center justify-center space-y-6">
-      {/* Timer Type Selector */}
-      <div className="flex gap-3" role="tablist" aria-label="Timer type selector">
-        <button
-          onClick={() => switchTimer('pomodoro')}
-          role="tab"
-          aria-selected={timerType === 'pomodoro'}
-          aria-label="Pomodoro timer"
-          className={`px-6 py-2 rounded-lg font-medium transition-all ${
-            timerType === 'pomodoro'
+      {/* Timer Type Selector - Hidden in PIP mode */}
+      {!isPIPMode && (
+        <div className="flex gap-2 sm:gap-3 p-1 bg-black/20 rounded-xl backdrop-blur-sm" role="tablist" aria-label="Timer type selector">
+          <button
+            onClick={() => switchTimer('pomodoro')}
+            role="tab"
+            aria-selected={timerType === 'pomodoro'}
+            aria-label="Pomodoro timer"
+            className={`px-3 py-1.5 sm:px-6 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-all ${timerType === 'pomodoro'
               ? 'bg-white text-gray-900 shadow-lg'
-              : 'bg-white/20 text-white hover:bg-white/30'
-          }`}
-        >
-          Pomodoro
-        </button>
-        <button
-          onClick={() => switchTimer('shortBreak')}
-          role="tab"
-          aria-selected={timerType === 'shortBreak'}
-          aria-label="Short break timer"
-          className={`px-6 py-2 rounded-lg font-medium transition-all ${
-            timerType === 'shortBreak'
+              : 'text-white/80 hover:bg-white/10 hover:text-white'
+              }`}
+          >
+            Pomodoro
+          </button>
+          <button
+            onClick={() => switchTimer('shortBreak')}
+            role="tab"
+            aria-selected={timerType === 'shortBreak'}
+            aria-label="Short break timer"
+            className={`px-3 py-1.5 sm:px-6 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-all ${timerType === 'shortBreak'
               ? 'bg-white text-gray-900 shadow-lg'
-              : 'bg-white/20 text-white hover:bg-white/30'
-          }`}
-        >
-          Short Break
-        </button>
-        <button
-          onClick={() => switchTimer('longBreak')}
-          role="tab"
-          aria-selected={timerType === 'longBreak'}
-          aria-label="Long break timer"
-          className={`px-6 py-2 rounded-lg font-medium transition-all ${
-            timerType === 'longBreak'
+              : 'text-white/80 hover:bg-white/10 hover:text-white'
+              }`}
+          >
+            Short Break
+          </button>
+          <button
+            onClick={() => switchTimer('longBreak')}
+            role="tab"
+            aria-selected={timerType === 'longBreak'}
+            aria-label="Long break timer"
+            className={`px-3 py-1.5 sm:px-6 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-all ${timerType === 'longBreak'
               ? 'bg-white text-gray-900 shadow-lg'
-              : 'bg-white/20 text-white hover:bg-white/30'
-          }`}
-        >
-          Long Break
-        </button>
-      </div>
+              : 'text-white/80 hover:bg-white/10 hover:text-white'
+              }`}
+          >
+            Long Break
+          </button>
+        </div>
+      )}
 
       {/* Timer Display */}
       <div
-        className={`text-6xl md:text-9xl font-bold text-white tracking-wider transition-all duration-300 ${
-          isFlashing ? 'scale-110 text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]' : ''
-        }`}
+        className={`font-bold text-white tracking-wider transition-all duration-300 ${isFlashing ? 'scale-110 text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]' : ''
+          }`}
+        style={{ fontSize: 'clamp(3rem, 18vmin, 9rem)' }}
         role="timer"
         aria-live="off"
         aria-label={`${formatTime(minutes, seconds)} remaining`}
@@ -431,23 +433,25 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
         {formatTime(minutes, seconds)}
       </div>
 
-      {/* Control Buttons */}
-      <div className="flex gap-4">
-        <button
-          onClick={handleStartPauseResume}
-          aria-label={isRunning ? 'Pause timer' : hasBeenStarted ? 'Resume timer' : 'Start timer'}
-          className="px-8 py-3 bg-white text-gray-900 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg"
-        >
-          {isRunning ? 'Pause' : hasBeenStarted ? 'Resume' : 'Start'}
-        </button>
-        <button
-          onClick={handleReset}
-          aria-label="Reset timer"
-          className="px-8 py-3 bg-white/20 text-white rounded-lg font-bold text-lg hover:bg-white/30 transition-colors backdrop-blur-sm"
-        >
-          Reset
-        </button>
-      </div>
+      {/* Control Buttons - Hidden in PIP mode */}
+      {!isPIPMode && (
+        <div className="flex gap-3 sm:gap-4">
+          <button
+            onClick={handleStartPauseResume}
+            aria-label={isRunning ? 'Pause timer' : hasBeenStarted ? 'Resume timer' : 'Start timer'}
+            className="px-6 py-2 sm:px-8 sm:py-3 bg-white text-gray-900 rounded-lg font-bold text-lg sm:text-xl hover:bg-gray-100 transition-colors shadow-lg active:scale-95 transform"
+          >
+            {isRunning ? 'Pause' : hasBeenStarted ? 'Resume' : 'Start'}
+          </button>
+          <button
+            onClick={handleReset}
+            aria-label="Reset timer"
+            className="px-6 py-2 sm:px-8 sm:py-3 bg-white/20 text-white rounded-lg font-bold text-lg sm:text-xl hover:bg-white/30 transition-colors backdrop-blur-sm active:scale-95 transform"
+          >
+            Reset
+          </button>
+        </div>
+      )}
     </div>
   );
 });
