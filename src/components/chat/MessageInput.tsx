@@ -90,7 +90,7 @@ export function MessageInput({
 
   const charCount = content.length;
   const showCharCount = charCount > 400;
-  const isOverLimit = charCount > 500;
+  const isOverLimit = charCount > 200;
 
   return (
     <div className={className}>
