@@ -50,6 +50,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const [activeBuffTooltip, setActiveBuffTooltip] = useState<string | null>(null);
   const [hoveredBuff, setHoveredBuff] = useState<string | null>(null);
   const [tooltipPositions, setTooltipPositions] = useState<Record<string, { top: number; left: number }>>({});
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
   const prevLevelRef = useRef(level);
   const roleBuffRef = useRef<HTMLDivElement>(null);
   const boostRef = useRef<HTMLDivElement>(null);
@@ -103,8 +104,19 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     }
   }, [isMouseActive, showStatsPopover]);
 
-  // Use PIP mode hook
+  // Track viewport width for scaling logic
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Use PIP mode hook (hides UI completely when very small)
   const isPIPMode = usePIPMode(600);
+
+  // Determine if we need to scale down the UI (between 600px and 800px)
+  // This prevents overlap without squishing the layout
+  const shouldScaleDown = viewportWidth < 800 && !isPIPMode;
 
 
   // Calculate boost time remaining with defensive fallbacks
@@ -297,7 +309,10 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         initial={{ opacity: 1 }}
         animate={{ opacity: isMouseActive ? 1 : 0 }}
         transition={{ duration: 0.5 }}
-        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 w-[min(200px,15vw)] max-w-[200px]' : 'p-4 w-[min(260px,15vw)] max-w-[260px]'} ${!isMouseActive || isPIPMode ? 'pointer-events-none opacity-0' : ''}`}
+        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden 
+          ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'} 
+          ${!isMouseActive || isPIPMode ? 'pointer-events-none opacity-0' : ''}
+          ${shouldScaleDown ? 'scale-75 origin-top-left' : ''}`}
       >
         {/* Confetti - contained inside Level UI */}
         {showConfetti && (
