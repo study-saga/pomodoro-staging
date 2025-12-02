@@ -179,20 +179,20 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
         {showScrollButton && globalMessages.length > 0 && (
           <button
             onClick={() => scrollToBottom(true)}
-            className="absolute bottom-4 right-4 bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/10 text-white rounded-full p-2 shadow-lg transition-all duration-300 hover:scale-110 z-10 group"
+            className="absolute bottom-6 right-6 md:bottom-4 md:right-4 bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/10 text-white rounded-full p-3 md:p-2 shadow-lg transition-all duration-300 hover:scale-110 z-10 group"
             aria-label="Scroll to bottom"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="transition-transform duration-300 group-hover:translate-y-0.5"
+              className="transition-transform duration-300 group-hover:translate-y-0.5 w-5 h-5 md:w-4 md:h-4"
             >
               <path d="M12 5v14M19 12l-7 7-7-7" />
             </svg>
