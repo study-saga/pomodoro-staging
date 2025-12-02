@@ -307,12 +307,12 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       {/* Level UI Container - Fixed position with fade animation */}
       <motion.div
         initial={{ opacity: 1 }}
-        animate={{ opacity: isMouseActive ? 1 : 0 }}
-        transition={{ duration: 0.5 }}
+        animate={{ opacity: isPIPMode ? 0 : (isMouseActive ? 1 : 0) }}
+        transition={{ duration: isPIPMode ? 0 : 0.5 }}
         className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden 
           ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'} 
           ${!isMouseActive || isPIPMode ? 'pointer-events-none opacity-0' : ''}
-          ${shouldScaleDown ? 'scale-75 origin-top-left' : ''}`}
+          ${shouldScaleDown ? 'scale-[0.65] origin-top-left' : ''}`}
       >
         {/* Confetti - contained inside Level UI */}
         {showConfetti && (
