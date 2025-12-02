@@ -145,7 +145,7 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex-1 min-h-0 px-1.5 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20"
+          className="flex-1 min-h-0 px-1.5 overflow-y-auto no-scrollbar"
         >
           {globalMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-500 text-xs">
