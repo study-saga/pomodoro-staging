@@ -116,8 +116,25 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
     throw new Error('Failed to exchange authorization code')
   }
 
-  const { access_token } = await tokenResponse.json()
+  const { access_token, supabase_token } = await tokenResponse.json()
   console.log('[Discord Auth] Token received successfully')
+
+  if (supabase_token) {
+    console.log('[Discord Auth] Supabase JWT received, setting session...')
+    // Import supabase client dynamically to avoid circular dependencies if any
+    const { supabase } = await import('./supabase')
+
+    const { error } = await supabase.auth.setSession({
+      access_token: supabase_token,
+      refresh_token: supabase_token, // We don't have a real refresh token, but this allows the session to be set
+    })
+
+    if (error) {
+      console.error('[Discord Auth] Failed to set Supabase session:', error)
+    } else {
+      console.log('[Discord Auth] Supabase session established successfully')
+    }
+  }
 
   console.log('[Discord Auth] Token received, authenticating SDK...')
 
