@@ -142,9 +142,11 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
   - **Hotfixes Applied**:
     - Fixed chat RLS INSERT: Discord users can now send messages (removed auth session requirement)
     - Fixed chat RLS SELECT: Discord users can now read chat history (allow anon role)
+    - Fixed chat RLS UPDATE: Admins/moderators can delete messages (inline role check)
     - Fixed Sentry CSP: Proxy Sentry via Discord tunnel (bypass CSP without disabling)
-    - Migrations: `fix_chat_rls_for_discord` (INSERT), `fix_chat_select_for_discord` (SELECT)
+    - Migrations: `fix_chat_rls_for_discord`, `fix_chat_select_for_discord`, `fix_chat_update_inline_check`
     - Frontend: Added `/sentry` URL mapping to route through Discord proxy
+    - Added helper functions: `get_my_role()`, `get_my_user_id()` (for future use)
   - **Status**: Production now has 9 migrations applied (was 4), all new features enabled
   - **Users impacted**: 2833 production users (161 joined today), 0 data loss, all migrations additive
   - **Security**: RLS enabled on all new tables, function search_path warnings noted (non-critical)
