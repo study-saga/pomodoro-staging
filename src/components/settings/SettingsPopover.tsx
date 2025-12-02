@@ -83,12 +83,17 @@ export const SettingsPopover = memo(function SettingsPopover() {
     }
   }, [open]);
 
-  // Close settings when mouse becomes inactive
+  // Close settings when mouse becomes inactive (unless there are pending changes)
   useEffect(() => {
-    if (!isMouseActive && open) {
+    // Don't auto-close if:
+    // - Username is being updated
+    // - There's a username error that needs attention
+    const hasPendingChanges = usernameLoading || usernameError !== null;
+
+    if (!isMouseActive && open && !hasPendingChanges) {
       setOpen(false);
     }
-  }, [isMouseActive, open]);
+  }, [isMouseActive, open, usernameLoading, usernameError]);
 
   // Handle keyboard shortcuts
   useEffect(() => {

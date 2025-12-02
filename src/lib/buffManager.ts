@@ -217,12 +217,13 @@ export async function activateDay10Boost(userId: string): Promise<void> {
 
 /**
  * Check if user should have slingshot buff activated automatically
+ * Uses UTC to ensure consistent activation across all timezones
  */
 export function shouldAutoActivateSlingshot(roleType: RoleType): boolean {
   if (roleType !== 'elf') return false;
 
-  const today = new Date();
-  const activationDate = new Date('2025-11-22');
+  const now = Date.now();
+  const activationDate = Date.UTC(2025, 10, 22); // Nov 22 00:00 UTC (month is 0-indexed)
 
-  return today >= activationDate;
+  return now >= activationDate;
 }

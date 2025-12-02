@@ -50,12 +50,19 @@ export function AdminActionHandler() {
 
         if (actionDetails.type === 'ban') {
             try {
-                let durationMinutes: number | null = null;
+                const durationMap: Record<string, number | null> = {
+                    '24h': 24 * 60,
+                    '168h': 7 * 24 * 60,
+                    'permanent': null,
+                };
 
-                if (actionDetails.duration === '24h') durationMinutes = 24 * 60;
-                else if (actionDetails.duration === '168h') durationMinutes = 7 * 24 * 60;
-                else if (actionDetails.duration === 'permanent') durationMinutes = null;
+                if (!(actionDetails.duration in durationMap)) {
+                    toast.error(`Invalid ban duration: ${actionDetails.duration}`);
+                    handleClose();
+                    return;
+                }
 
+                const durationMinutes = durationMap[actionDetails.duration];
                 await banUser(actionDetails.userId, durationMinutes, `Quick ban via Discord (${actionDetails.duration})`);
                 toast.success(`Banned @${actionDetails.username} successfully.`);
             } catch (error) {

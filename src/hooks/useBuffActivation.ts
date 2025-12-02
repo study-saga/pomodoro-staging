@@ -66,5 +66,5 @@ export function useBuffActivation() {
     };
 
     activateSlingshotIfNeeded();
-  }, [appUser?.id, levelPath, settingsSyncComplete, activeBuffs]);
+  }, [appUser?.id, levelPath, settingsSyncComplete]);
 }

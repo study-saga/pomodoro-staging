@@ -56,15 +56,23 @@ serve(async (req) => {
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
 
-        // Calculate expiration
+        // Validate and calculate expiration
+        const durationMap: Record<string, number | null> = {
+            '24h': 24 * 60,
+            '168h': 7 * 24 * 60,
+            'permanent': null,
+        };
+
+        if (!(duration in durationMap)) {
+            return new Response(`Invalid ban duration: ${duration}`, { status: 400, headers: corsHeaders })
+        }
+
         let expiresAt = null
-        if (duration !== 'permanent') {
-            const minutes = duration === '24h' ? 24 * 60 : (duration === '168h' ? 7 * 24 * 60 : 0)
-            if (minutes > 0) {
-                const date = new Date()
-                date.setMinutes(date.getMinutes() + minutes)
-                expiresAt = date.toISOString()
-            }
+        const minutes = durationMap[duration];
+        if (minutes !== null) {
+            const date = new Date()
+            date.setMinutes(date.getMinutes() + minutes)
+            expiresAt = date.toISOString()
         }
 
         // Insert ban
