@@ -439,14 +439,14 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
           <button
             onClick={handleStartPauseResume}
             aria-label={isRunning ? 'Pause timer' : hasBeenStarted ? 'Resume timer' : 'Start timer'}
-            className="px-6 py-2 sm:px-8 sm:py-3 bg-white text-gray-900 rounded-lg font-bold text-base sm:text-lg hover:bg-gray-100 transition-colors shadow-lg active:scale-95 transform"
+            className="px-6 py-2 sm:px-8 sm:py-3 bg-white text-gray-900 rounded-lg font-bold text-lg sm:text-xl hover:bg-gray-100 transition-colors shadow-lg active:scale-95 transform"
           >
             {isRunning ? 'Pause' : hasBeenStarted ? 'Resume' : 'Start'}
           </button>
           <button
             onClick={handleReset}
             aria-label="Reset timer"
-            className="px-6 py-2 sm:px-8 sm:py-3 bg-white/20 text-white rounded-lg font-bold text-base sm:text-lg hover:bg-white/30 transition-colors backdrop-blur-sm active:scale-95 transform"
+            className="px-6 py-2 sm:px-8 sm:py-3 bg-white/20 text-white rounded-lg font-bold text-lg sm:text-xl hover:bg-white/30 transition-colors backdrop-blur-sm active:scale-95 transform"
           >
             Reset
           </button>

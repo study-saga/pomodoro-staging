@@ -63,13 +63,49 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
   const setSize = useCallback((index: number, size: number) => {
     if (sizeMap.current[index] !== size) {
       sizeMap.current[index] = size;
-      listRef.current?.resetAfterIndex(index);
+      if (listRef.current) {
+        // Reset heights (false = don't trigger scroll yet)
+        listRef.current.resetAfterIndex(index, false);
+      }
+
+      // If this is the last message AND auto-scroll is enabled, scroll again
+      // This ensures scroll uses the correctly measured height
+      if (index === globalMessages.length - 1 && shouldAutoScrollRef.current) {
+        setTimeout(() => {
+          if (listRef.current) {
+            listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+          }
+        }, 50);
+      }
     }
-  }, []);
+  }, [globalMessages.length]);
 
   const getSize = useCallback((index: number) => {
-    return sizeMap.current[index] || 60; // Default estimated height
+    return sizeMap.current[index] || 100; // Closer to actual message height
   }, []);
+
+  // Track if should scroll on initial mount
+  const shouldScrollOnMount = useRef(true);
+
+  // Callback fired when virtual list renders items
+  const onItemsRendered = useCallback(
+    ({ visibleStopIndex }: { visibleStopIndex: number }) => {
+      // Only scroll if:
+      // 1. First render flag is set
+      // 2. Last message is in viewport (fully rendered)
+      if (shouldScrollOnMount.current && visibleStopIndex >= globalMessages.length - 1) {
+        // Wait 100ms for Row components to measure heights
+        setTimeout(() => {
+          if (listRef.current) {
+            listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+            shouldScrollOnMount.current = false; // Clear flag
+            shouldAutoScrollRef.current = true;
+          }
+        }, 100);
+      }
+    },
+    [globalMessages.length]
+  );
 
   // Scroll to bottom - ALWAYS works
   const scrollToBottom = useCallback(() => {
@@ -80,62 +116,45 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
     }
   }, [globalMessages.length]);
 
-  // Auto-scroll on new messages (using useLayoutEffect for immediate execution)
+  // Helper function for near-bottom check
+  const checkNearBottom = useCallback(() => {
+    if (!listRef.current) return false;
+
+    const listInstance = listRef.current as any;
+    const outerElement = listInstance?.outerRef?.current as HTMLDivElement;
+
+    if (!outerElement) return false;
+
+    const { scrollHeight, clientHeight, scrollTop } = outerElement;
+    const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+
+    return distanceToBottom < 150;
+  }, []);
+
+  // Auto-scroll on new messages (simplified)
   useLayoutEffect(() => {
-    if (globalMessages.length > 0) {
-      const lastMessage = globalMessages[globalMessages.length - 1];
-      const isMyMessage = lastMessage.user.id === currentUser.id;
+    if (globalMessages.length === 0 || !listRef.current) return;
 
-      let shouldScroll = shouldAutoScrollRef.current || isMyMessage;
+    const lastIndex = globalMessages.length - 1;
+    const lastMessage = globalMessages[lastIndex];
 
-      // Fallback: Check if we are physically near the bottom (e.g. within 150px)
-      // This handles cases where state might be desynced but user is effectively at the bottom
-      if (!shouldScroll && listRef.current) {
-        const listInstance = listRef.current as any;
-        const outerElement = listInstance?.outerRef?.current as HTMLDivElement;
-        if (outerElement) {
-          const { scrollHeight, clientHeight, scrollTop } = outerElement;
-          const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
-          if (distanceToBottom < 150) {
-            shouldScroll = true;
-          }
-        }
-      }
+    // Three conditions to trigger auto-scroll:
+    // 1. Auto-scroll enabled (user at bottom)
+    // 2. Current user sent message
+    // 3. User near bottom (fallback)
+    const shouldScroll =
+      shouldAutoScrollRef.current ||
+      (lastMessage?.user?.id === currentUser?.id) ||
+      checkNearBottom();
 
-      // Scroll if auto-scroll is enabled OR if it's my own message OR if near bottom
-      if (shouldScroll) {
-        // If we are scrolling, ensure state is synced
-        shouldAutoScrollRef.current = true;
-        setShowScrollButton(false);
+    if (shouldScroll) {
+      shouldAutoScrollRef.current = true;
+      setShowScrollButton(false);
 
-        if (listRef.current) {
-          const lastIndex = globalMessages.length - 1;
-          // Reset heights for new messages (dynamic height calculation)
-          listRef.current.resetAfterIndex(lastIndex, false);
-          // Scroll to new message
-          listRef.current.scrollToItem(lastIndex, 'end');
-        }
-      }
+      // Scroll immediately (will adjust in setSize when height measured)
+      listRef.current.scrollToItem(lastIndex, 'end');
     }
-  }, [globalMessages.length, currentUser.id]);
-
-  // Initial scroll on mount (with render delay for virtualization)
-  useLayoutEffect(() => {
-    if (globalMessages.length > 0 && listRef.current) {
-      // Reset heights before scrolling (ensures accurate measurement)
-      listRef.current.resetAfterIndex(0, false);
-
-      // Small delay to ensure virtualized list fully rendered
-      const timeoutId = setTimeout(() => {
-        if (listRef.current) {
-          listRef.current.scrollToItem(globalMessages.length - 1, 'end');
-          shouldAutoScrollRef.current = true;
-        }
-      }, 50); // 50ms allows VariableSizeList to calculate heights
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, []); // Empty deps = run once on mount
+  }, [globalMessages.length, currentUser?.id, checkNearBottom]);
 
   // Scroll to bottom when chat is reopened (detects false -> true transition)
   useLayoutEffect(() => {
@@ -153,7 +172,7 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
           shouldAutoScrollRef.current = true;
           setShowScrollButton(false);
         }
-      }, 50); // Increased from 10ms to 50ms for virtualization
+      }, 150); // Increased to 150ms for panel animation + height measurement
 
       return () => clearTimeout(timeoutId);
     }
@@ -294,6 +313,7 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
                   style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                   className="[&::-webkit-scrollbar]:hidden"
                   onScroll={handleScroll}
+                  onItemsRendered={onItemsRendered}
                 >
                   {Row}
                 </VariableSizeList>

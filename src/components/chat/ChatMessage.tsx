@@ -50,17 +50,17 @@ export const ChatMessage = memo(({
             <div className="flex-1 min-w-0">
                 {showAvatar && (
                     <div className="flex items-baseline gap-2">
-                        <span className={`text-sm font-bold truncate ${isMe ? 'text-purple-400' : 'text-gray-200'
+                        <span className={`text-base font-bold truncate ${isMe ? 'text-purple-400' : 'text-gray-200'
                             } ${isDeleted ? 'opacity-50' : ''}`}>
                             {message.user.username}
                         </span>
                         {!isDeleted && message.user.role === 'moderator' && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-sm font-medium bg-blue-500/20 text-blue-300">
                                 <Shield size={10} className="mr-1" /> Mod
                             </span>
                         )}
                         {!isDeleted && message.user.role === 'admin' && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-300">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-sm font-medium bg-red-500/20 text-red-300">
                                 <Shield size={10} className="mr-1" /> Admin
                             </span>
                         )}
@@ -71,12 +71,12 @@ export const ChatMessage = memo(({
                 )}
 
                 {isDeleted ? (
-                    <p className="text-sm text-gray-500 italic flex items-center gap-1.5">
+                    <p className="text-base text-gray-500 italic flex items-center gap-1.5">
                         <Trash2 size={12} />
                         Message deleted by moderator
                     </p>
                 ) : (
-                    <p className={`text-sm leading-relaxed break-words ${isMentioned ? 'text-yellow-100' : 'text-gray-300'
+                    <p className={`text-base leading-relaxed break-words ${isMentioned ? 'text-yellow-100' : 'text-gray-300'
                         }`}>
                         {message.content}
                     </p>

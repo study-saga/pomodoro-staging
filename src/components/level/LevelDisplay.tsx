@@ -383,10 +383,10 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <div className={isCompact ? 'text-xl' : 'text-3xl'}>{levelBadge}</div>
                 <div className="min-w-0 overflow-hidden flex-1">
-                  <h2 className={`font-bold text-white truncate ${isCompact ? 'text-sm' : 'text-lg'}`}>
+                  <h2 className={`font-bold text-white truncate ${isCompact ? 'text-base' : 'text-xl'}`}>
                     {username}
                   </h2>
-                  <p className={`text-gray-300 ${isCompact ? 'text-[10px]' : 'text-xs'}`}>{levelTitle}</p>
+                  <p className={`text-gray-300 ${isCompact ? 'text-xs' : 'text-sm'}`}>{levelTitle}</p>
                 </div>
               </div>
               <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
@@ -397,7 +397,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
             {/* XP Progress Bar */}
             <div>
-              <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-1' : 'text-xs mb-1'}`}>
+              <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-sm mb-1' : 'text-sm mb-1'}`}>
                 <span>{roleEmoji} Level {level}</span>
                 <span>
                   {xp} / {xpNeeded} XP
@@ -438,7 +438,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               <div className="flex gap-1">
                 <button
                   onClick={() => addXP(50)} // Adds 50 XP
-                  className="flex-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                  className="flex-1 px-2 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors"
                 >
                   +50 XP
                 </button>
@@ -453,7 +453,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
                       ]
                     });
                   }}
-                  className="flex-1 px-2 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors"
+                  className="flex-1 px-2 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition-colors"
                 >
                   +⭐ Star
                 </button>
