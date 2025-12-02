@@ -1,5 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Toaster } from 'sonner';
+
 import { VideoBackground } from './components/background/VideoBackground';
 import { PomodoroTimer } from './components/timer/PomodoroTimer';
 import { MusicPlayer, DailyGiftGrid, ChatContainer } from './components/lazy';
@@ -262,6 +263,8 @@ function AppContent() {
       {/* Top Right Buttons - Discord & Settings */}
       {!isPIPMode && (
         <div className="fixed top-4 right-4 z-[60] flex items-center gap-2">
+          {/* Sentry Test Button */}
+
           <DiscordButton />
           <SettingsPopover />
         </div>

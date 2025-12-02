@@ -143,7 +143,14 @@ serve(async (req) => {
           .eq('discord_id', discordId)
           .maybeSingle()
 
+        if (fetchError) {
+          console.error('[Discord Token] Error fetching existing user:', fetchError)
+        }
+
         let authUserId = existingUser?.auth_user_id
+        if (existingUser && !authUserId) {
+          console.log('[Discord Token] User found in public.users but auth_user_id is missing. Attempting to create Auth user...')
+        }
 
         if (!authUserId) {
           console.log('[Discord Token] Auth user not found, creating new Auth user for Discord ID:', discordId)
@@ -166,8 +173,10 @@ serve(async (req) => {
 
           if (createError) {
             console.error('[Discord Token] Failed to create auth user:', createError)
-            // If error is "Email already registered", we should try to find that user
-            // But for now, let's just return error
+            return new Response(
+              JSON.stringify({ error: 'Failed to create auth user', details: createError }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
           } else if (newAuthUser.user) {
             authUserId = newAuthUser.user.id
             console.log('[Discord Token] Created new Auth user:', authUserId)
