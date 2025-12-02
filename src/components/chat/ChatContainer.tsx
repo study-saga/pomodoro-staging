@@ -232,7 +232,7 @@ export function ChatContainer() {
             onlineCount={onlineUsers.length}
           />
           <div className="flex-1 overflow-hidden flex flex-col pb-[60px]">
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden flex flex-col">
               {activeTab === 'local' && (
                 <GlobalChatMessages
                   currentUser={appUser}
@@ -376,7 +376,7 @@ export function ChatContainer() {
               onlineCount={onlineUsers.length}
             />
 
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden flex flex-col">
               {activeTab === 'local' && (
                 <GlobalChatMessages
                   currentUser={appUser}
