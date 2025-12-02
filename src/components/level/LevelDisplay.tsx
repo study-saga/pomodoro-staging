@@ -49,7 +49,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
   const [activeBuffTooltip, setActiveBuffTooltip] = useState<string | null>(null);
   const [hoveredBuff, setHoveredBuff] = useState<string | null>(null);
   const [tooltipPositions, setTooltipPositions] = useState<Record<string, { top: number; left: number }>>({});
-  const [zoomLevel, setZoomLevel] = useState(1);
   const prevLevelRef = useRef(level);
   const roleBuffRef = useRef<HTMLDivElement>(null);
   const boostRef = useRef<HTMLDivElement>(null);
@@ -102,44 +101,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       setShowStatsPopover(false);
     }
   }, [isMouseActive, showStatsPopover]);
-
-  // Detect Discord zoom level and apply counter-scale to maintain consistent size
-  useEffect(() => {
-    const updateZoom = () => {
-      // Use visualViewport API to detect zoom (more reliable for Discord)
-      // visualViewport.scale represents the pinch-zoom level
-      // For browser/Discord zoom we need to check window.devicePixelRatio and compare with base
-      const visualViewport = window.visualViewport;
-
-      if (visualViewport) {
-        // Get current viewport width vs. window.innerWidth to detect zoom
-        // When zoomed to 120%, visualViewport.width will be smaller than window.innerWidth
-        const zoom = window.innerWidth / visualViewport.width;
-        setZoomLevel(zoom);
-
-        if (import.meta.env.DEV) {
-          console.log('[LevelDisplay] Zoom detected:', {
-            zoom: zoom.toFixed(2),
-            windowWidth: window.innerWidth,
-            viewportWidth: visualViewport.width
-          });
-        }
-      }
-    };
-
-    updateZoom();
-    window.addEventListener('resize', updateZoom);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateZoom);
-    }
-
-    return () => {
-      window.removeEventListener('resize', updateZoom);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateZoom);
-      }
-    };
-  }, []);
 
 
   // Calculate boost time remaining with defensive fallbacks
@@ -332,11 +293,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
         initial={{ opacity: 1 }}
         animate={{ opacity: isMouseActive ? 1 : 0 }}
         transition={{ duration: 0.5 }}
-        style={{
-          transform: `scale(${1 / zoomLevel})`,
-          transformOrigin: 'top left',
-        }}
-        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'} ${!isMouseActive ? 'pointer-events-none' : ''}`}
+        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 w-[min(240px,20vw)] max-w-[240px]' : 'p-4 w-[min(320px,25vw)] max-w-[320px]'} ${!isMouseActive ? 'pointer-events-none' : ''}`}
       >
         {/* Confetti - contained inside Level UI */}
         {showConfetti && (
