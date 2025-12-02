@@ -44,7 +44,8 @@ export function useBuffActivation() {
           'slingshot_nov22',
           0.25, // +25%
           null, // No expiration (permanent event)
-          { autoActivatedAt: Date.now() }
+          { autoActivatedAt: Date.now() },
+          appUser.discord_id // Pass Discord ID for dual-auth
         );
 
         // Update local state

@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useRef, Suspense } from 'react';
+import { memo, useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settings as SettingsIcon, X, Palette, Volume2, Sparkles, Bell, FileText, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
@@ -83,49 +83,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     }
   }, [open]);
 
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    if (!open) return;
-
-    const handleKeyboard = (e: KeyboardEvent) => {
-      // Ignore keyboard shortcuts when typing in an input field
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-
-      // Escape to close
-      if (e.key === 'Escape') {
-        setOpen(false);
-        return;
-      }
-
-      // Cmd/Ctrl+S to save
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        handleSave();
-        return;
-      }
-
-      // Number keys 1-7 to jump to tabs
-      const numKey = parseInt(e.key);
-      if (numKey >= 1 && numKey <= tabs.length) {
-        setActiveTab(tabs[numKey - 1].id as typeof activeTab);
-        return;
-      }
-
-      // Arrow keys to navigate tabs
-      const currentIndex = tabs.findIndex(t => t.id === activeTab);
-      if (e.key === 'ArrowDown' && currentIndex < tabs.length - 1) {
-        setActiveTab(tabs[currentIndex + 1].id as typeof activeTab);
-      } else if (e.key === 'ArrowUp' && currentIndex > 0) {
-        setActiveTab(tabs[currentIndex - 1].id as typeof activeTab);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyboard);
-    return () => window.removeEventListener('keydown', handleKeyboard);
-  }, [open, activeTab]);
+  // Keyboard shortcuts (moved after handleSave to avoid stale closure)
 
   const handleRoleChange = (newRole: 'elf' | 'human') => {
     rateLimiterRef.current(() => {
@@ -361,7 +319,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     // Apply all temporary settings to store
     setPomodoroDuration(tempTimers.pomodoro);
     setShortBreakDuration(tempTimers.shortBreak);
@@ -382,7 +340,77 @@ export const SettingsPopover = memo(function SettingsPopover() {
     });
 
     setOpen(false);
-  };
+  }, [
+    tempTimers,
+    tempPomodorosBeforeLongBreak,
+    tempAutoStartBreaks,
+    tempAutoStartPomodoros,
+    tempSoundEnabled,
+    tempVolume,
+    tempMusicVolume,
+    tempAmbientVolumes,
+    tempBackground,
+    tempLevelSystemEnabled,
+    tempPlaylist,
+    setPomodoroDuration,
+    setShortBreakDuration,
+    setLongBreakDuration,
+    setPomodorosBeforeLongBreak,
+    setAutoStartBreaks,
+    setAutoStartPomodoros,
+    setSoundEnabled,
+    setVolume,
+    setMusicVolume,
+    setBackground,
+    setLevelSystemEnabled,
+    setPlaylist,
+    setAmbientVolume,
+    setOpen
+  ]);
+
+  // Handle keyboard shortcuts (placed here to use handleSave without stale closure)
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyboard = (e: KeyboardEvent) => {
+      // Ignore keyboard shortcuts when typing in an input field
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      // Escape to close
+      if (e.key === 'Escape') {
+        setOpen(false);
+        return;
+      }
+
+      // Cmd/Ctrl+S to save
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+        return;
+      }
+
+      // Number keys 1-7 to jump to tabs
+      const numKey = parseInt(e.key);
+      if (numKey >= 1 && numKey <= tabs.length) {
+        setActiveTab(tabs[numKey - 1].id as typeof activeTab);
+        return;
+      }
+
+      // Arrow keys to navigate tabs
+      const currentIndex = tabs.findIndex(t => t.id === activeTab);
+      if (e.key === 'ArrowDown' && currentIndex < tabs.length - 1) {
+        setActiveTab(tabs[currentIndex + 1].id as typeof activeTab);
+      } else if (e.key === 'ArrowUp' && currentIndex > 0) {
+        setActiveTab(tabs[currentIndex - 1].id as typeof activeTab);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, [open, activeTab, handleSave]);
 
   const handleReset = () => {
     // Reset temporary state to current store values

@@ -23,7 +23,26 @@ export interface BuffStackResult {
 /**
  * Get user's active buffs from database (JSONB column)
  */
-export async function getUserActiveBuffs(userId: string): Promise<Record<string, ActiveBuff>> {
+export async function getUserActiveBuffs(
+  userId: string,
+  discordId?: string
+): Promise<Record<string, ActiveBuff>> {
+  // Use Discord-specific RPC if Discord ID provided
+  if (discordId) {
+    const { data, error } = await supabase.rpc('get_active_buffs_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId
+    });
+
+    if (error) {
+      console.error('[BuffManager] Error fetching active buffs (Discord):', error);
+      return {};
+    }
+
+    return (data as Record<string, ActiveBuff>) || {};
+  }
+
+  // Fallback: Direct query (for web users with auth.uid())
   const { data, error } = await supabase
     .from('users')
     .select('active_buffs')
@@ -46,8 +65,30 @@ export async function setUserBuff(
   buffId: string,
   value: number,
   expiresAt: number | null = null,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, any> = {},
+  discordId?: string
 ): Promise<void> {
+  // Use Discord-specific RPC if Discord ID provided
+  if (discordId) {
+    const { error } = await supabase.rpc('set_user_buff_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId,
+      p_buff_id: buffId,
+      p_value: value,
+      p_expires_at: expiresAt,
+      p_metadata: metadata
+    });
+
+    if (error) {
+      console.error('[BuffManager] Error setting buff (Discord):', error);
+      throw new Error(`Failed to set buff: ${error.message}`);
+    }
+
+    console.log(`[BuffManager] ✓ Set buff ${buffId} for user (Discord, value: ${value}, expires: ${expiresAt ? new Date(expiresAt) : 'never'})`);
+    return;
+  }
+
+  // Fallback: Web user RPC
   const { error } = await supabase.rpc('set_user_buff', {
     p_user_id: userId,
     p_buff_id: buffId,
@@ -67,7 +108,29 @@ export async function setUserBuff(
 /**
  * Remove a buff from a user
  */
-export async function removeUserBuff(userId: string, buffId: string): Promise<void> {
+export async function removeUserBuff(
+  userId: string,
+  buffId: string,
+  discordId?: string
+): Promise<void> {
+  // Use Discord-specific RPC if Discord ID provided
+  if (discordId) {
+    const { error } = await supabase.rpc('remove_user_buff_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId,
+      p_buff_id: buffId
+    });
+
+    if (error) {
+      console.error('[BuffManager] Error removing buff (Discord):', error);
+      throw new Error(`Failed to remove buff: ${error.message}`);
+    }
+
+    console.log(`[BuffManager] ✓ Removed buff ${buffId} for user (Discord)`);
+    return;
+  }
+
+  // Fallback: Web user RPC
   const { error } = await supabase.rpc('remove_user_buff', {
     p_user_id: userId,
     p_buff_id: buffId
@@ -84,7 +147,24 @@ export async function removeUserBuff(userId: string, buffId: string): Promise<vo
 /**
  * Clear expired buffs for a user
  */
-export async function clearExpiredBuffs(userId: string): Promise<void> {
+export async function clearExpiredBuffs(userId: string, discordId?: string): Promise<void> {
+  // Use Discord-specific RPC if Discord ID provided
+  if (discordId) {
+    const { error } = await supabase.rpc('clear_expired_buffs_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId
+    });
+
+    if (error) {
+      console.error('[BuffManager] Error clearing expired buffs (Discord):', error);
+      throw new Error(`Failed to clear expired buffs: ${error.message}`);
+    }
+
+    console.log('[BuffManager] ✓ Cleared expired buffs (Discord)');
+    return;
+  }
+
+  // Fallback: Web user RPC
   const { error } = await supabase.rpc('clear_expired_buffs', {
     p_user_id: userId
   });
@@ -175,7 +255,7 @@ export function calculateBuffStack(
 /**
  * Activate slingshot buff (Nov 22-23, elf only, +25% XP)
  */
-export async function activateSlingshotBuff(userId: string): Promise<void> {
+export async function activateSlingshotBuff(userId: string, discordId?: string): Promise<void> {
   // UTC-based date check
   const now = Date.now();
   const startDate = Date.UTC(2025, 10, 22); // Nov 22 00:00 UTC (month is 0-indexed)
@@ -191,7 +271,8 @@ export async function activateSlingshotBuff(userId: string): Promise<void> {
     'slingshot_nov22',
     0.25, // +25%
     null, // No expiration
-    { activatedAt: Date.now() }
+    { activatedAt: Date.now() },
+    discordId
   );
 
   console.log('[BuffManager] ✓ Activated slingshot buff (+25% XP)');
@@ -200,7 +281,7 @@ export async function activateSlingshotBuff(userId: string): Promise<void> {
 /**
  * Activate day 10 gift boost (24 hours)
  */
-export async function activateDay10Boost(userId: string): Promise<void> {
+export async function activateDay10Boost(userId: string, discordId?: string): Promise<void> {
   const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
 
   await setUserBuff(
@@ -208,7 +289,8 @@ export async function activateDay10Boost(userId: string): Promise<void> {
     'day10_boost',
     0.25, // +25%
     expiresAt,
-    { claimedAt: Date.now() }
+    { claimedAt: Date.now() },
+    discordId
   );
 
   console.log('[BuffManager] ✓ Activated day 10 boost (expires in 24h)');
