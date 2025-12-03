@@ -106,9 +106,9 @@ export const LevelDisplay = memo(function LevelDisplay() {
   // Use Smart PIP mode hook (hides UI for small Discord Activity on desktop only)
   const isPIPMode = useSmartPIPMode(750);
 
-  // Determine if we need to scale down the UI (between 750px and 1200px)
-  // This prevents overlap without squishing the layout
-  const shouldScaleDown = viewportWidth < 1200 && !isPIPMode;
+  // Determine if we need to scale down the UI (small desktop range only)
+  // Tablets and mobile use their responsive sizing classes without scaling
+  const shouldScaleDown = viewportWidth >= 1024 && viewportWidth < 1200 && !isPIPMode;
 
 
   // Calculate boost time remaining with defensive fallbacks
