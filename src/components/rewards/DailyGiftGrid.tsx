@@ -124,10 +124,9 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
             // RPC function handles both web and Discord auth modes
             const result = await claimDailyGift(
               userId,
-              discordId,
               currentGift.xpAmount,
               isBoostGift,
-              currentGift.boostDuration || 24,
+              currentGift.boostDuration,
               currentGift.boostMultiplier || 1.25
             );
 

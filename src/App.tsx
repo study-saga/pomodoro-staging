@@ -45,7 +45,7 @@ function AppContent() {
     if (!settingsSyncComplete || !appUser?.id || dailyGiftClaimed) return;
 
     // Check if gift available (doesn't claim, just checks eligibility)
-    canClaimDailyGift(appUser.id, appUser.discord_id)
+    canClaimDailyGift(appUser.id)
       .then((canClaim) => {
         setDailyGiftClaimed(true); // Prevent re-checking
 

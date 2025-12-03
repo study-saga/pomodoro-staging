@@ -101,7 +101,6 @@ export async function updateUserSettings(
  */
 export async function updateUserPreferences(
   userId: string,
-  discordId: string,
   preferences: {
     // Timer preferences (6 fields) - SAFE to sync from client
     timer_pomodoro_minutes?: number
@@ -130,88 +129,51 @@ export async function updateUserPreferences(
 ): Promise<AppUser> {
   console.log(`[User Sync] Updating user settings for user ${userId}`)
 
-  // Determine authentication mode by checking for Supabase session
+  // Always use Supabase Auth with auth.uid()
+  // The session is now guaranteed to exist in both Web and Discord Activity modes
   const { data: { session } } = await supabase.auth.getSession()
 
-  if (session) {
-    // Web Mode: Use Supabase Auth with auth.uid()
-    console.log('[User Sync] Using web mode (Supabase Auth)')
-
-    const { data, error } = await supabase.rpc('update_user_settings', {
-      p_user_id: userId,
-
-      // Timer preferences
-      p_timer_pomodoro_minutes: preferences.timer_pomodoro_minutes ?? null,
-      p_timer_short_break_minutes: preferences.timer_short_break_minutes ?? null,
-      p_timer_long_break_minutes: preferences.timer_long_break_minutes ?? null,
-      p_pomodoros_before_long_break: preferences.pomodoros_before_long_break ?? null,
-      p_auto_start_breaks: preferences.auto_start_breaks ?? null,
-      p_auto_start_pomodoros: preferences.auto_start_pomodoros ?? null,
-
-      // Visual preferences
-      p_background_id: preferences.background_id ?? null,
-      p_background_mobile: preferences.background_mobile ?? null,
-      p_background_desktop: preferences.background_desktop ?? null,
-      p_playlist: preferences.playlist ?? null,
-      p_ambient_volumes: preferences.ambient_volumes ?? null,
-
-      // Audio preferences
-      p_sound_enabled: preferences.sound_enabled ?? null,
-      p_volume: preferences.volume ?? null,
-      p_music_volume: preferences.music_volume ?? null,
-
-      // System preferences
-      p_level_system_enabled: preferences.level_system_enabled ?? null,
-      p_level_path: preferences.level_path ?? null
-    })
-
-    if (error) {
-      console.error('[User Sync] Error updating settings:', error)
-      throw new Error(`Failed to update settings: ${error.message}`)
-    }
-
-    console.log('[User Sync] Settings updated successfully (web mode)')
-    return data as AppUser
-  } else {
-    // Discord Activity Mode: Use Discord ID from Discord SDK
-    console.log('[User Sync] Using Discord Activity mode (Discord SDK)')
-
-    const { data, error } = await supabase.rpc('update_user_settings_discord', {
-      p_discord_id: discordId,
-
-      // Timer preferences
-      p_timer_pomodoro_minutes: preferences.timer_pomodoro_minutes ?? null,
-      p_timer_short_break_minutes: preferences.timer_short_break_minutes ?? null,
-      p_timer_long_break_minutes: preferences.timer_long_break_minutes ?? null,
-      p_pomodoros_before_long_break: preferences.pomodoros_before_long_break ?? null,
-      p_auto_start_breaks: preferences.auto_start_breaks ?? null,
-      p_auto_start_pomodoros: preferences.auto_start_pomodoros ?? null,
-
-      // Visual preferences
-      p_background_id: preferences.background_id ?? null,
-      p_background_mobile: preferences.background_mobile ?? null,
-      p_background_desktop: preferences.background_desktop ?? null,
-      p_playlist: preferences.playlist ?? null,
-      p_ambient_volumes: preferences.ambient_volumes ?? null,
-
-      // Audio preferences
-      p_sound_enabled: preferences.sound_enabled ?? null,
-      p_volume: preferences.volume ?? null,
-      p_music_volume: preferences.music_volume ?? null,
-
-      // System preferences
-      p_level_system_enabled: preferences.level_system_enabled ?? null,
-      p_level_path: preferences.level_path ?? null
-    })
-
-    if (error) {
-      console.error('[User Sync] Error updating settings:', error)
-      throw new Error(`Failed to update settings: ${error.message}`)
-    }
-
-    console.log('[User Sync] Settings updated successfully (Discord Activity mode)')
-    return data as AppUser
+  if (!session) {
+    throw new Error('Authentication required to update settings')
   }
+
+  console.log('[User Sync] Using authenticated session')
+
+  const { data, error } = await supabase.rpc('update_user_settings', {
+    p_user_id: userId,
+
+    // Timer preferences
+    p_timer_pomodoro_minutes: preferences.timer_pomodoro_minutes ?? null,
+    p_timer_short_break_minutes: preferences.timer_short_break_minutes ?? null,
+    p_timer_long_break_minutes: preferences.timer_long_break_minutes ?? null,
+    p_pomodoros_before_long_break: preferences.pomodoros_before_long_break ?? null,
+    p_auto_start_breaks: preferences.auto_start_breaks ?? null,
+    p_auto_start_pomodoros: preferences.auto_start_pomodoros ?? null,
+
+    // Visual preferences
+    p_background_id: preferences.background_id ?? null,
+    p_background_mobile: preferences.background_mobile ?? null,
+    p_background_desktop: preferences.background_desktop ?? null,
+    p_playlist: preferences.playlist ?? null,
+    p_ambient_volumes: preferences.ambient_volumes ?? null,
+
+    // Audio preferences
+    p_sound_enabled: preferences.sound_enabled ?? null,
+    p_volume: preferences.volume ?? null,
+    p_music_volume: preferences.music_volume ?? null,
+
+    // System preferences
+    p_level_system_enabled: preferences.level_system_enabled ?? null,
+    p_level_path: preferences.level_path ?? null
+  })
+
+  if (error) {
+    console.error('[User Sync] Error updating settings:', error)
+    throw new Error(`Failed to update settings: ${error.message}`)
+  }
+
+  console.log('[User Sync] Settings updated successfully')
+  return data as AppUser
 }
 
 /**
@@ -322,7 +284,6 @@ export async function updateLoginStreak(userId: string): Promise<void> {
  */
 export async function saveCompletedPomodoro(
   userId: string,
-  discordId: string,
   data: {
     duration_minutes: number
     xp_earned: number
@@ -334,11 +295,11 @@ export async function saveCompletedPomodoro(
   console.log(`[User Sync] Saving pomodoro for user ${userId}`)
 
   // Use atomic RPC function to save pomodoro and update stats in one transaction
+  // RPC validates auth.uid() matches user's auth_user_id
   const { data: pomodoroId, error } = await supabase.rpc(
     'atomic_save_completed_pomodoro',
     {
       p_user_id: userId,
-      p_discord_id: discordId,
       p_duration_minutes: data.duration_minutes,
       p_xp_earned: data.xp_earned,
       p_critical_success: data.critical_success || false,
@@ -511,50 +472,33 @@ export async function isRewardUnlocked(
  */
 export async function updateUsernameSecure(
   userId: string,
-  discordId: string,
   newUsername: string,
   forceWithXP: boolean = false
 ): Promise<AppUser> {
   console.log(`[User Sync] Updating username for user ${userId} to: ${newUsername} (forceWithXP: ${forceWithXP})`)
 
-  // Determine authentication mode by checking for Supabase session
+  // Always use Supabase Auth with auth.uid()
   const { data: { session } } = await supabase.auth.getSession()
 
-  if (session) {
-    // Web Mode: Use Supabase Auth with auth.uid()
-    console.log('[User Sync] Using web mode (Supabase Auth)')
-
-    const { data, error } = await supabase.rpc('update_username', {
-      p_user_id: userId,
-      p_new_username: newUsername,
-      p_force_with_xp: forceWithXP
-    })
-
-    if (error) {
-      console.error('[User Sync] Error updating username:', error)
-      throw new Error(`Failed to update username: ${error.message}`)
-    }
-
-    console.log('[User Sync] Username updated successfully (web mode)')
-    return data as AppUser
-  } else {
-    // Discord Activity Mode: Use Discord ID from Discord SDK
-    console.log('[User Sync] Using Discord Activity mode (Discord SDK)')
-
-    const { data, error } = await supabase.rpc('update_username_discord', {
-      p_discord_id: discordId,
-      p_new_username: newUsername,
-      p_force_with_xp: forceWithXP
-    })
-
-    if (error) {
-      console.error('[User Sync] Error updating username:', error)
-      throw new Error(`Failed to update username: ${error.message}`)
-    }
-
-    console.log('[User Sync] Username updated successfully (Discord Activity mode)')
-    return data as AppUser
+  if (!session) {
+    throw new Error('Authentication required to update username')
   }
+
+  console.log('[User Sync] Using authenticated session')
+
+  const { data, error } = await supabase.rpc('update_username', {
+    p_user_id: userId,
+    p_new_username: newUsername,
+    p_force_with_xp: forceWithXP
+  })
+
+  if (error) {
+    console.error('[User Sync] Error updating username:', error)
+    throw new Error(`Failed to update username: ${error.message}`)
+  }
+
+  console.log('[User Sync] Username updated successfully')
+  return data as AppUser
 }
 
 /**
@@ -609,7 +553,6 @@ export async function updateUsername(
  */
 export async function claimDailyGift(
   userId: string,
-  discordId: string,
   xpAmount: number,
   activateBoost: boolean = false,
   boostDurationHours: number = 24,
@@ -626,89 +569,70 @@ export async function claimDailyGift(
 }> {
   console.log(`[User Sync] Claiming daily gift for user ${userId} (XP: ${xpAmount}, Boost: ${activateBoost}, Multiplier: ${boostMultiplier})`)
 
-  // Determine authentication mode by checking for Supabase session
+  // Always use Supabase Auth with auth.uid()
   const { data: { session } } = await supabase.auth.getSession()
 
-  let data, error
-
-  if (session) {
-    // Web Mode: Use Supabase Auth with auth.uid()
-    console.log('[User Sync] Using web mode (Supabase Auth)')
-
-    const result = await supabase.rpc('claim_daily_gift', {
-      p_user_id: userId,
-      p_xp_amount: xpAmount,
-      p_activate_boost: activateBoost,
-      p_boost_duration_hours: boostDurationHours,
-      p_boost_multiplier: boostMultiplier
-    })
-
-    data = result.data
-    error = result.error
-  } else {
-    // Discord Activity Mode: Use discord_id
-    console.log('[User Sync] Using Discord Activity mode (discord_id)')
-
-    const result = await supabase.rpc('claim_daily_gift_discord', {
-      p_user_id: userId,
-      p_discord_id: discordId,
-      p_xp_amount: xpAmount,
-      p_activate_boost: activateBoost,
-      p_boost_duration_hours: boostDurationHours,
-      p_boost_multiplier: boostMultiplier
-    })
-
-    data = result.data
-    error = result.error
+  if (!session) {
+    throw new Error('Authentication required to claim daily gift')
   }
+
+  console.log('[User Sync] Using authenticated session')
+
+  const { data, error } = await supabase.rpc('claim_daily_gift', {
+    p_user_id: userId,
+    p_xp_amount: xpAmount,
+    p_activate_boost: activateBoost,
+    p_boost_duration_hours: boostDurationHours,
+    p_boost_multiplier: boostMultiplier
+  })
 
   if (error) {
     console.error('[User Sync] Error claiming daily gift:', error)
     throw new Error(`Failed to claim daily gift: ${error.message}`)
   }
 
-  const result = data as any
+  const resultData = data as any
 
-  if (!result.success) {
+  if (!resultData.success) {
     console.log('[User Sync] Daily gift already claimed today')
   } else {
-    console.log(`[User Sync] Daily gift claimed successfully - ${result.xp_awarded} XP awarded`)
-    if (result.boost_activated) {
-      console.log(`[User Sync] Boost activated: ${result.boost_multiplier}x until ${new Date(result.boost_expires_at)}`)
+    console.log(`[User Sync] Daily gift claimed successfully - ${resultData.xp_awarded} XP awarded`)
+    if (resultData.boost_activated) {
+      console.log(`[User Sync] Boost activated: ${resultData.boost_multiplier}x until ${new Date(resultData.boost_expires_at)}`)
     }
   }
 
   // Convert boost_expires_at to milliseconds timestamp
   let boostExpiresAtMs: number | undefined = undefined;
-  if (result.boost_expires_at) {
-    if (typeof result.boost_expires_at === 'string') {
+  if (resultData.boost_expires_at) {
+    if (typeof resultData.boost_expires_at === 'string') {
       // ISO timestamp string - convert to milliseconds
-      boostExpiresAtMs = new Date(result.boost_expires_at).getTime();
-    } else if (typeof result.boost_expires_at === 'number') {
+      boostExpiresAtMs = new Date(resultData.boost_expires_at).getTime();
+    } else if (typeof resultData.boost_expires_at === 'number') {
       // Check if seconds or milliseconds
       // If > 100000000000 (Nov 1973 in milliseconds), it's already in milliseconds
       // Otherwise it's in seconds and needs conversion
-      boostExpiresAtMs = result.boost_expires_at > 100000000000
-        ? result.boost_expires_at
-        : result.boost_expires_at * 1000;
+      boostExpiresAtMs = resultData.boost_expires_at > 100000000000
+        ? resultData.boost_expires_at
+        : resultData.boost_expires_at * 1000;
     }
   }
 
   console.log('[User Sync] Boost expires at:', {
-    raw: result.boost_expires_at,
+    raw: resultData.boost_expires_at,
     converted: boostExpiresAtMs,
-    activated: result.boost_activated
+    activated: resultData.boost_activated
   });
 
   return {
-    success: result.success,
-    message: result.message,
-    xpAwarded: result.xp_awarded,
-    newXp: result.new_xp,
-    boostActivated: result.boost_activated || false,
+    success: resultData.success,
+    message: resultData.message,
+    xpAwarded: resultData.xp_awarded,
+    newXp: resultData.new_xp,
+    boostActivated: resultData.boost_activated || false,
     boostExpiresAt: boostExpiresAtMs,
-    boostMultiplier: result.boost_multiplier,
-    alreadyClaimed: result.already_claimed || false
+    boostMultiplier: resultData.boost_multiplier,
+    alreadyClaimed: resultData.already_claimed || false
   }
 }
 
@@ -719,31 +643,22 @@ export async function claimDailyGift(
  * @param discordId - User's Discord ID (for Discord Activity mode)
  * @returns true if gift can be claimed, false if already claimed today
  */
-export async function canClaimDailyGift(userId: string, _discordId: string): Promise<boolean> {
+export async function canClaimDailyGift(userId: string): Promise<boolean> {
   console.log(`[User Sync] Checking if user ${userId} can claim daily gift`)
 
-  // Determine authentication mode by checking for Supabase session
+  // Always use Supabase Auth with auth.uid()
   const { data: { session } } = await supabase.auth.getSession()
 
-  let data, error
-
-  if (session) {
-    // Web Mode: Use Supabase Auth with auth.uid()
-    const result = await supabase.rpc('can_claim_daily_gift', {
-      p_user_id: userId
-    })
-
-    data = result.data
-    error = result.error
-  } else {
-    // Discord Activity Mode: Use same RPC as web mode (no separate function)
-    const result = await supabase.rpc('can_claim_daily_gift', {
-      p_user_id: userId,
-    })
-
-    data = result.data
-    error = result.error
+  if (!session) {
+    // If no session, they can't claim (or we can't verify)
+    return false
   }
+
+  const result = await supabase.rpc('can_claim_daily_gift', {
+    p_user_id: userId
+  })
+
+  const { data, error } = result
 
   if (error) {
     console.error('[User Sync] Error checking gift eligibility:', error)
@@ -758,56 +673,38 @@ export async function canClaimDailyGift(userId: string, _discordId: string): Pro
  * Supports dual authentication modes (web + Discord Activity)
  */
 export async function resetUserProgress(
-  userId: string,
-  discordId: string
+  userId: string
 ): Promise<AppUser> {
   console.log(`[User Sync] Resetting progress for user ${userId}`)
 
-  // Determine authentication mode
+  // Always use Supabase Auth with auth.uid()
   const { data: { session } } = await supabase.auth.getSession()
 
-  if (session) {
-    // Web Mode: Use Supabase Auth
-    console.log('[User Sync] Using web mode for reset')
-
-    const { data, error } = await supabase.rpc('reset_user_progress', {
-      p_user_id: userId
-    })
-
-    if (error) {
-      console.error('[User Sync] Error resetting progress:', error)
-      throw new Error(`Failed to reset progress: ${error.message}`)
-    }
-
-    if (!data) {
-      console.error('[User Sync] No data returned from reset_user_progress')
-      throw new Error('Failed to reset progress: No data returned')
-    }
-
-    console.log('[User Sync] Progress reset successfully (web mode)')
-    return data as AppUser
-  } else {
-    // Discord Activity Mode
-    console.log('[User Sync] Using Discord Activity mode for reset')
-
-    const { data, error } = await supabase.rpc('reset_user_progress_discord', {
-      p_discord_id: discordId
-    })
-
-    if (error) {
-      console.error('[User Sync] Error resetting progress:', error)
-      throw new Error(`Failed to reset progress: ${error.message}`)
-    }
-
-    if (!data) {
-      console.error('[User Sync] No data returned from reset_user_progress_discord')
-      throw new Error('Failed to reset progress: No data returned')
-    }
-
-    console.log('[User Sync] Progress reset successfully (Discord Activity mode)')
-    return data as AppUser
+  if (!session) {
+    throw new Error('Authentication required to reset progress')
   }
+
+  console.log('[User Sync] Using authenticated session')
+
+  const { data, error } = await supabase.rpc('reset_user_progress', {
+    p_user_id: userId
+  })
+
+  if (error) {
+    console.error('[User Sync] Error resetting progress:', error)
+    throw new Error(`Failed to reset progress: ${error.message}`)
+  }
+
+  if (!data) {
+    console.error('[User Sync] No data returned from reset_user_progress')
+    throw new Error('Failed to reset progress: No data returned')
+  }
+
+  console.log('[User Sync] Progress reset successfully')
+  return data as AppUser
 }
+
+
 
 /**
  * Save completed break atomically with dual authentication support
@@ -819,7 +716,6 @@ export async function resetUserProgress(
  */
 export async function saveCompletedBreak(
   userId: string,
-  discordId: string,
   data: {
     break_type: 'short' | 'long'
     duration_minutes: number
@@ -828,114 +724,33 @@ export async function saveCompletedBreak(
 ): Promise<string> {
   console.log(`[User Sync] Saving break for user ${userId}`)
 
-  // Determine authentication mode by checking for Supabase session
+  // Always use Supabase Auth with auth.uid()
   const { data: { session } } = await supabase.auth.getSession()
 
-  if (session) {
-    // Web Mode: Use Supabase Auth with auth.uid()
-    console.log('[User Sync] Using web mode (Supabase Auth)')
-
-    const { data: breakId, error } = await supabase.rpc(
-      'atomic_save_completed_break',
-      {
-        p_user_id: userId,
-        p_discord_id: discordId,
-        p_break_type: data.break_type,
-        p_duration_minutes: data.duration_minutes,
-        p_xp_earned: data.xp_earned
-      }
-    )
-
-    if (error) {
-      console.error('[User Sync] Error saving break:', error)
-      throw new Error(`Failed to save break: ${error.message}`)
-    }
-
-    console.log('[User Sync] Break saved successfully (web mode):', breakId)
-    return breakId as string
-  } else {
-    // Discord Activity Mode: Use Discord ID from Discord SDK
-    console.log('[User Sync] Using Discord Activity mode (Discord SDK)')
-
-    const { data: breakId, error } = await supabase.rpc(
-      'atomic_save_completed_break_discord',
-      {
-        p_user_id: userId,
-        p_discord_id: discordId,
-        p_break_type: data.break_type,
-        p_duration_minutes: data.duration_minutes,
-        p_xp_earned: data.xp_earned
-      }
-    )
-
-    if (error) {
-      console.error('[User Sync] Error saving break:', error)
-      throw new Error(`Failed to save break: ${error.message}`)
-    }
-
-    console.log('[User Sync] Break saved successfully (Discord Activity mode):', breakId)
-    return breakId as string
+  if (!session) {
+    throw new Error('Authentication required to save break')
   }
+
+  console.log('[User Sync] Using authenticated session')
+
+  const { data: breakId, error } = await supabase.rpc(
+    'atomic_save_completed_break',
+    {
+      p_user_id: userId,
+      p_break_type: data.break_type,
+      p_duration_minutes: data.duration_minutes,
+      p_xp_earned: data.xp_earned
+    }
+  )
+
+  if (error) {
+    console.error('[User Sync] Error saving break:', error)
+    throw new Error(`Failed to save break: ${error.message}`)
+  }
+
+  console.log('[User Sync] Break saved successfully:', breakId)
+  return breakId as string
 }
 
-/**
- * Claim daily gift XP with server-side validation
- * Prevents XP exploit from repeated page reloads
- *
- * SECURITY: Server validates:
- * - User hasn't already claimed today (checks last_login_date in DB)
- * - Atomically updates XP + login date + streak
- *
- * Supports dual authentication modes (web + Discord Activity)
- */
-export async function claimDailyGiftXP(
-  userId: string,
-  discordId: string
-): Promise<{ success: boolean; xpAwarded: number; consecutiveDays: number }> {
-  console.log(`[User Sync] Claiming daily gift XP for user ${userId}`)
-
-  // Determine authentication mode
-  const { data: { session } } = await supabase.auth.getSession()
-
-  if (session) {
-    // Web Mode: Use Supabase Auth
-    console.log('[User Sync] Using web mode for daily gift claim')
-
-    const { data, error } = await supabase.rpc('claim_daily_gift_xp', {
-      p_user_id: userId
-    })
-
-    if (error) {
-      console.error('[User Sync] Error claiming daily gift:', error)
-      throw new Error(`Failed to claim daily gift: ${error.message}`)
-    }
-
-    const result = Array.isArray(data) ? data[0] : data
-    console.log('[User Sync] Daily gift claim result (web mode):', result)
-    return {
-      success: result.success,
-      xpAwarded: result.xp_awarded,
-      consecutiveDays: result.consecutive_days
-    }
-  } else {
-    // Discord Activity Mode
-    console.log('[User Sync] Using Discord Activity mode for daily gift claim')
-
-    const { data, error } = await supabase.rpc('claim_daily_gift_xp_discord', {
-      p_discord_id: discordId
-    })
-
-    if (error) {
-      console.error('[User Sync] Error claiming daily gift:', error)
-      throw new Error(`Failed to claim daily gift: ${error.message}`)
-    }
-
-    const result = Array.isArray(data) ? data[0] : data
-    console.log('[User Sync] Daily gift claim result (Discord Activity mode):', result)
-    return {
-      success: result.success,
-      xpAwarded: result.xp_awarded,
-      consecutiveDays: result.consecutive_days
-    }
-  }
-}
+// claimDailyGiftXP removed - dead code from old login streak system
+// New calendar grid system uses claimDailyGift() instead
