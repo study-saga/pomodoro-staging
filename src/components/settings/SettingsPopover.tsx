@@ -271,7 +271,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
       }
 
       // Try free update first (let server decide if cooldown passed)
-      const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, false);
+      const updatedUser = await updateUsernameSecure(appUser.id, usernameInput, false);
 
       // Success - update local Zustand store with new username and timestamp
       setUsername(usernameInput);
@@ -299,7 +299,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
               try {
                 setUsernameLoading(true);
                 // Retry with XP payment
-                const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, true);
+                const updatedUser = await updateUsernameSecure(appUser.id, usernameInput, true);
 
                 // Success - update local Zustand store with new username, XP, and timestamp
                 setUsername(usernameInput, true);
@@ -691,9 +691,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                           aria-label={tab.label}
                           id={`${tab.id}-tab`}
                           onClick={() => setActiveTab(tab.id)}
-                          className={`flex flex-col items-center gap-1 min-w-0 transition-colors relative ${
-                            isActive ? 'text-white' : 'text-gray-400'
-                          }`}
+                          className={`flex flex-col items-center gap-1 min-w-0 transition-colors relative ${isActive ? 'text-white' : 'text-gray-400'
+                            }`}
                         >
                           <Icon size={20} className="shrink-0" />
                           {isActive && (

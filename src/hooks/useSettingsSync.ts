@@ -213,7 +213,7 @@ export function useSettingsSync() {
       const currentSettings = getCurrentSettings()
 
       // SECURITY: Only sync settings (14 fields), NOT stats/XP/levels
-      await updateUserPreferences(appUser.id, appUser.discord_id, {
+      await updateUserPreferences(appUser.id, {
         // Timer preferences (6 fields)
         timer_pomodoro_minutes: currentSettings.timers.pomodoro,
         timer_short_break_minutes: currentSettings.timers.shortBreak,
@@ -350,13 +350,13 @@ export function useSettingsSync() {
       // Active buffs (from database JSONB) - convert snake_case to camelCase
       activeBuffs: appUser.active_buffs
         ? Object.entries(appUser.active_buffs).reduce((acc, [key, buff]) => {
-            acc[key] = {
-              value: buff.value,
-              expiresAt: buff.expires_at,
-              metadata: buff.metadata
-            };
-            return acc;
-          }, {} as Record<string, { value: number; expiresAt: number | null; metadata?: Record<string, any> }>)
+          acc[key] = {
+            value: buff.value,
+            expiresAt: buff.expires_at,
+            metadata: buff.metadata
+          };
+          return acc;
+        }, {} as Record<string, { value: number; expiresAt: number | null; metadata?: Record<string, any> }>)
         : {}
     })
 

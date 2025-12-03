@@ -302,7 +302,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
           xp: xpEarned
         });
 
-        saveCompletedBreak(appUser.id, appUser.discord_id, {
+        saveCompletedBreak(appUser.id, {
           break_type: timerType === 'shortBreak' ? 'short' : 'long',
           duration_minutes: durationMinutes,
           xp_earned: xpEarned
