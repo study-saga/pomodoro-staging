@@ -673,31 +673,36 @@ export const SettingsPopover = memo(function SettingsPopover() {
                     </button>
                   </div>
 
-                  {/* Tabs */}
+                  {/* Tabs - Icon-only on mobile with active tab showing text */}
                   <div
                     role="tablist"
                     aria-label="Settings categories"
-                    className="flex gap-1 overflow-x-auto scroll-smooth snap-x snap-mandatory px-4 pt-4 border-b border-white/10 shrink-0"
+                    className="flex justify-around items-center px-2 py-3 border-b border-white/10 shrink-0"
                   >
                     {tabs.map((tab) => {
                       const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
                       return (
                         <button
                           key={tab.id}
                           role="tab"
-                          aria-selected={activeTab === tab.id}
+                          aria-selected={isActive}
                           aria-controls={`${tab.id}-panel`}
+                          aria-label={tab.label}
                           id={`${tab.id}-tab`}
                           onClick={() => setActiveTab(tab.id)}
-                          className={`px-3 py-2 text-sm whitespace-nowrap snap-start font-medium transition-colors relative flex items-center gap-2 ${activeTab === tab.id
-                            ? 'text-white'
-                            : 'text-gray-400 hover:text-gray-300'
-                            }`}
+                          className={`flex flex-col items-center gap-1 min-w-0 transition-colors relative ${
+                            isActive ? 'text-white' : 'text-gray-400'
+                          }`}
                         >
-                          <Icon size={16} />
-                          {tab.label}
-                          {activeTab === tab.id && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />
+                          <Icon size={20} className="shrink-0" />
+                          {isActive && (
+                            <>
+                              <span className="text-xs font-medium truncate max-w-[64px]">
+                                {tab.label}
+                              </span>
+                              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-purple-500" />
+                            </>
                           )}
                         </button>
                       );
