@@ -8,10 +8,31 @@
 
 import { lazy } from 'react';
 
-
+// Retry helper for dynamic imports
+const retryImport = <T,>(
+  importFn: () => Promise<T>,
+  retriesLeft = 3,
+  interval = 1000
+): Promise<T> => {
+  return importFn().catch((error) => {
+    if (retriesLeft === 0) {
+      throw error;
+    }
+    console.log(`[Import Retry] Retrying... (${retriesLeft} attempts left)`);
+    return new Promise<T>((resolve) => {
+      setTimeout(() => {
+        resolve(retryImport(importFn, retriesLeft - 1, interval));
+      }, interval);
+    });
+  });
+};
 
 // Daily Gift Grid (375 lines) - Rewards calendar
-export const DailyGiftGrid = lazy(() => import('./rewards/DailyGiftGrid').then(m => ({ default: m.DailyGiftGrid })));
+export const DailyGiftGrid = lazy(() =>
+  retryImport(() =>
+    import('./rewards/DailyGiftGrid').then(m => ({ default: m.DailyGiftGrid }))
+  )
+);
 
 // Chat Container (410 lines) - Global/team chat interface
 export const ChatContainer = lazy(() => import('./chat/ChatContainer').then(m => ({ default: m.ChatContainer })));

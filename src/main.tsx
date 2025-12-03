@@ -79,11 +79,34 @@ if (isDiscordActivity()) {
     {
       prefix: '/sentry',
       target: 'o4510434264875008.ingest.de.sentry.io'
+    },
+    {
+      prefix: '/assets',
+      target: window.location.origin + '/assets'
     }
   ])
 } else {
   console.log('[Main] Web environment detected - skipping URL mappings')
 }
+
+// Global handler for unhandled chunk load errors
+window.addEventListener('error', (event) => {
+  const isChunkError =
+    event.message?.includes('Failed to fetch dynamically imported module') ||
+    event.message?.includes('Loading chunk');
+
+  if (isChunkError) {
+    console.error('[Global Chunk Error]', event.error);
+
+    // Report to Sentry
+    Sentry.captureException(event.error, {
+      tags: { type: 'chunk-load-error-global' }
+    });
+
+    // Prevent default error handling
+    event.preventDefault();
+  }
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
