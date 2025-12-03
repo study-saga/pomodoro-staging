@@ -317,8 +317,8 @@ export const useSettingsStore = create<SettingsStore>()(
             }
 
             // Save pomodoro to database (this atomically updates XP and stats)
-            // RPC function handles both web and Discord auth modes
-            await saveCompletedPomodoro(userId, discordId, {
+            // RPC function validates auth.uid() session
+            await saveCompletedPomodoro(userId, {
               duration_minutes: minutes,
               xp_earned: xpGained,
               critical_success: criticalSuccess,

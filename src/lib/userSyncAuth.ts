@@ -284,7 +284,6 @@ export async function updateLoginStreak(userId: string): Promise<void> {
  */
 export async function saveCompletedPomodoro(
   userId: string,
-  discordId: string,
   data: {
     duration_minutes: number
     xp_earned: number
@@ -296,11 +295,11 @@ export async function saveCompletedPomodoro(
   console.log(`[User Sync] Saving pomodoro for user ${userId}`)
 
   // Use atomic RPC function to save pomodoro and update stats in one transaction
+  // RPC validates auth.uid() matches user's auth_user_id
   const { data: pomodoroId, error } = await supabase.rpc(
     'atomic_save_completed_pomodoro',
     {
       p_user_id: userId,
-      p_discord_id: discordId,
       p_duration_minutes: data.duration_minutes,
       p_xp_earned: data.xp_earned,
       p_critical_success: data.critical_success || false,
@@ -753,64 +752,5 @@ export async function saveCompletedBreak(
   return breakId as string
 }
 
-/**
- * Claim daily gift XP with server-side validation
- * Prevents XP exploit from repeated page reloads
- *
- * SECURITY: Server validates:
- * - User hasn't already claimed today (checks last_login_date in DB)
- * - Atomically updates XP + login date + streak
- *
- * Supports dual authentication modes (web + Discord Activity)
- */
-export async function claimDailyGiftXP(
-  userId: string,
-  discordId: string
-): Promise<{ success: boolean; xpAwarded: number; consecutiveDays: number }> {
-  console.log(`[User Sync] Claiming daily gift XP for user ${userId}`)
-
-  // Determine authentication mode
-  const { data: { session } } = await supabase.auth.getSession()
-
-  if (session) {
-    // Web Mode: Use Supabase Auth
-    console.log('[User Sync] Using web mode for daily gift claim')
-
-    const { data, error } = await supabase.rpc('claim_daily_gift_xp', {
-      p_user_id: userId
-    })
-
-    if (error) {
-      console.error('[User Sync] Error claiming daily gift:', error)
-      throw new Error(`Failed to claim daily gift: ${error.message}`)
-    }
-
-    const result = Array.isArray(data) ? data[0] : data
-    console.log('[User Sync] Daily gift claim result (web mode):', result)
-    return {
-      success: result.success,
-      xpAwarded: result.xp_awarded,
-      consecutiveDays: result.consecutive_days
-    }
-  } else {
-    // Discord Activity Mode
-    console.log('[User Sync] Using Discord Activity mode for daily gift claim')
-
-    const { data, error } = await supabase.rpc('claim_daily_gift_xp_discord', {
-      p_discord_id: discordId
-    })
-
-    if (error) {
-      console.error('[User Sync] Error claiming daily gift:', error)
-      throw new Error(`Failed to claim daily gift: ${error.message}`)
-    }
-
-    const result = Array.isArray(data) ? data[0] : data
-    console.log('[User Sync] Daily gift claim result (Discord Activity mode):', result)
-    return {
-      success: result.success,
-      xpAwarded: result.xp_awarded,
-      consecutiveDays: result.consecutive_days
-    }
-  }
-}
+// claimDailyGiftXP removed - dead code from old login streak system
+// New calendar grid system uses claimDailyGift() instead
