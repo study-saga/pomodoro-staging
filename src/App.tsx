@@ -259,12 +259,6 @@ function AppContent() {
         }
         onError={(error) => {
           console.error('[DailyGiftGrid] Chunk load failed:', error);
-          // Report to Sentry
-          if (window.Sentry) {
-            window.Sentry.captureException(error, {
-              tags: { component: 'DailyGiftGrid', type: 'chunk-load-error' }
-            });
-          }
         }}
       >
         <Suspense fallback={<LoadingSpinner />}>
