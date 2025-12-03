@@ -9,7 +9,8 @@
       "mcp__github__pull_request_read",
       "Bash(gh pr view:*)",
       "mcp__supabase__execute_sql",
-      "mcp__supabase__get_advisors"
+      "mcp__supabase__get_advisors",
+      "Bash(cat:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
