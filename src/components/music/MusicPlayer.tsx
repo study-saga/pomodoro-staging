@@ -16,9 +16,10 @@ import synthwaveTracks from '../../data/synthwave.json';
 interface MusicPlayerProps {
   playing: boolean;
   setPlaying: (playing: boolean) => void;
+  isPIPMode?: boolean;
 }
 
-export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
+export function MusicPlayer({ playing, setPlaying, isPIPMode = false }: MusicPlayerProps) {
   const isMouseActive = useMouseActivity(8000); // 8 seconds
 
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -168,7 +169,22 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0">
+    <>
+      {/* Audio Player - ALWAYS rendered (even in PiP mode) */}
+      {currentTrack && (
+        <ReactHowler
+          ref={playerRef}
+          src={getTrackUrl(currentTrack)}
+          playing={playing}
+          volume={musicVolume / 100}
+          onEnd={handleEnd}
+          onLoad={handleLoad}
+        />
+      )}
+
+      {/* UI Controls - HIDDEN in PiP mode */}
+      {!isPIPMode && (
+        <div className="fixed bottom-0 left-0 right-0">
       {/* Background layer - fades out */}
       <motion.div
         initial={{ opacity: 1 }}
@@ -495,18 +511,9 @@ export function MusicPlayer({ playing, setPlaying }: MusicPlayerProps) {
           </div>
         )}
 
-        {/* Audio Player */}
-        {currentTrack && (
-          <ReactHowler
-            ref={playerRef}
-            src={getTrackUrl(currentTrack)}
-            playing={playing}
-            volume={musicVolume / 100}
-            onEnd={handleEnd}
-            onLoad={handleLoad}
-          />
-        )}
       </div>
     </div>
+      )}
+    </>
   );
 }

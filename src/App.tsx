@@ -239,15 +239,17 @@ function AppContent() {
         <PomodoroTimer />
       </div>
 
-      {/* Music Player (Bottom) */}
-      {!isPIPMode && (
-        <Suspense fallback={<LoadingSpinner />}>
-          <MusicPlayer playing={musicPlaying} setPlaying={setMusicPlaying} />
-        </Suspense>
-      )}
+      {/* Music Player (Bottom) - Always mounted, UI hidden in PiP */}
+      <Suspense fallback={<LoadingSpinner />}>
+        <MusicPlayer
+          playing={musicPlaying}
+          setPlaying={setMusicPlaying}
+          isPIPMode={isPIPMode}
+        />
+      </Suspense>
 
-      {/* Ambient Sounds Player (Hidden) */}
-      {!isPIPMode && <AmbientSoundsPlayer musicPlaying={musicPlaying} />}
+      {/* Ambient Sounds Player (Hidden) - Always playing, even in PiP */}
+      <AmbientSoundsPlayer musicPlaying={musicPlaying} />
 
       {/* Daily Gift Grid */}
       <Suspense fallback={<LoadingSpinner />}>
