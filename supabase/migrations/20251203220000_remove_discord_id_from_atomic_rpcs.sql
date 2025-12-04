@@ -1,8 +1,35 @@
 -- Remove discord_id parameter from atomic RPC functions
 -- Align DB signature with frontend code (commit 7a061ab)
 
+-- Drop ALL function signatures by querying pg_catalog
+-- Production has multiple overloaded versions causing "function name not unique" error
+DO $$
+DECLARE
+  func_record RECORD;
+BEGIN
+  -- Drop all atomic_save_completed_pomodoro overloads
+  FOR func_record IN
+    SELECT oid::regprocedure
+    FROM pg_proc
+    WHERE proname = 'atomic_save_completed_pomodoro'
+    AND pronamespace = 'public'::regnamespace
+  LOOP
+    EXECUTE 'DROP FUNCTION IF EXISTS ' || func_record.oid::regprocedure || ' CASCADE';
+  END LOOP;
+
+  -- Drop all atomic_save_completed_break overloads
+  FOR func_record IN
+    SELECT oid::regprocedure
+    FROM pg_proc
+    WHERE proname = 'atomic_save_completed_break'
+    AND pronamespace = 'public'::regnamespace
+  LOOP
+    EXECUTE 'DROP FUNCTION IF EXISTS ' || func_record.oid::regprocedure || ' CASCADE';
+  END LOOP;
+END $$;
+
 -- ============================================================================
--- 1. Update atomic_save_completed_pomodoro (remove p_discord_id param)
+-- 1. Create atomic_save_completed_pomodoro (session-auth only)
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION public.atomic_save_completed_pomodoro(
@@ -86,8 +113,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Update grants to match new signature
-REVOKE EXECUTE ON FUNCTION public.atomic_save_completed_pomodoro(UUID, TEXT, INTEGER, INTEGER, TEXT, TEXT) FROM authenticated, anon;
+-- Grant execute to authenticated users
 GRANT EXECUTE ON FUNCTION public.atomic_save_completed_pomodoro(UUID, INTEGER, INTEGER, BOOLEAN, TEXT, TEXT) TO authenticated;
 
 COMMENT ON FUNCTION public.atomic_save_completed_pomodoro IS
@@ -189,8 +215,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Update grants to match new signature
-REVOKE EXECUTE ON FUNCTION public.atomic_save_completed_break(UUID, TEXT, TEXT, INTEGER, INTEGER) FROM authenticated;
+-- Grant execute to authenticated users
 GRANT EXECUTE ON FUNCTION public.atomic_save_completed_break(UUID, TEXT, INTEGER, INTEGER) TO authenticated;
 
 COMMENT ON FUNCTION public.atomic_save_completed_break IS
