@@ -357,7 +357,16 @@ export function useSettingsSync() {
           };
           return acc;
         }, {} as Record<string, { value: number; expiresAt: number | null; metadata?: Record<string, any> }>)
-        : {}
+        : {},
+
+      // Timezone settings (for weekend buff accuracy)
+      timezone: appUser.timezone || 'America/New_York',
+      weekendDays: appUser.weekend_days || [0, 6],
+      pendingTimezone: appUser.pending_timezone || null,
+      pendingTimezoneAppliesAt: appUser.pending_timezone_applies_at || null,
+      timezoneUpdatedAt: appUser.timezone_updated_at || null,
+      timezoneChangeCountMonth: appUser.timezone_change_count_month || 0,
+      lastTimezoneChangeAt: appUser.last_timezone_change_at || null,
     })
 
     // CRITICAL: Set initial synced state from STORE (not from appUser)
