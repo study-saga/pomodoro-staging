@@ -7,9 +7,50 @@ import type {
   MonthDayRule,
   CycleRule,
 } from '../types';
+import { isWeekendForUser } from '../lib/userSyncAuth';
+
+/**
+ * Server-authoritative buff activation check (SECURE)
+ *
+ * CRITICAL: For day-of-week rules (weekend buffs), uses server-side timezone check
+ * Client CANNOT manipulate weekend detection
+ *
+ * @param buff - Event buff to check
+ * @param userId - User ID (null for guest mode fallback)
+ * @returns Promise<boolean> - True if buff is active
+ */
+export async function isBuffActiveSecure(
+  buff: EventBuff,
+  userId: string | null
+): Promise<boolean> {
+  // For day-of-week rules, use server check
+  if (buff.dateRule.type === 'dayOfWeek') {
+    if (!userId) {
+      // Guest fallback - use client-side check
+      const date = new Date();
+      return buff.dateRule.days.includes(date.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6);
+    }
+
+    try {
+      const result = await isWeekendForUser(userId);
+      // Check if user's current day of week is in the buff's day list
+      return buff.dateRule.days.includes(result.dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6);
+    } catch (error) {
+      console.error('[BuffActivation] Server check failed:', error);
+      // Fallback to client-side (better than blocking)
+      const date = new Date();
+      return buff.dateRule.days.includes(date.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6);
+    }
+  }
+
+  // For other date rules (dateRange, specificDate, etc.), use existing sync logic
+  return isBuffActiveOnDate(buff, new Date());
+}
 
 /**
  * Pure functions to check if a buff is active on a given date
+ *
+ * @deprecated For day-of-week rules, use isBuffActiveSecure instead (server-authoritative)
  */
 export function isBuffActiveOnDate(buff: EventBuff, date: Date = new Date()): boolean {
   // If no durationHours, just check if date rule matches (day-level behavior)

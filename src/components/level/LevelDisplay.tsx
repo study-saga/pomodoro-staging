@@ -51,7 +51,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
 
   const { isMobile, isTablet, isCompact } = useDeviceType();
   const { appUser } = useAuth();
-  const { activeBuffs, upcomingBuffs } = useActiveEventBuffs(levelPath);
+  const { activeBuffs, upcomingBuffs } = useActiveEventBuffs(appUser?.id || null, levelPath);
 
   const xpNeeded = getXPNeeded(level);
   const levelName = getLevelName(level, levelPath);

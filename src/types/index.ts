@@ -77,6 +77,15 @@ export interface Settings {
     expiresAt: number | null;
     metadata?: Record<string, any>;
   }>;
+
+  // Timezone settings (for weekend buff accuracy)
+  timezone: string; // IANA format (e.g., 'America/New_York')
+  weekendDays: number[]; // [0,6] = Sat-Sun, [5,6] = Fri-Sat (0=Sunday, 6=Saturday)
+  pendingTimezone: string | null; // Pending timezone change (applies at pendingTimezoneAppliesAt)
+  pendingTimezoneAppliesAt: string | null; // ISO timestamp when pending timezone applies
+  timezoneUpdatedAt: string | null; // ISO timestamp of last timezone update
+  timezoneChangeCountMonth: number; // Number of timezone changes this month (max 5)
+  lastTimezoneChangeAt: string | null; // ISO timestamp of last timezone change
 }
 
 export interface LevelData {

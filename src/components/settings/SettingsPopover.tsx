@@ -1,6 +1,6 @@
 import { memo, useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings as SettingsIcon, X, Palette, Volume2, Sparkles, Bell, FileText, Trophy } from 'lucide-react';
+import { Settings as SettingsIcon, X, Palette, Volume2, Sparkles, Bell, FileText, Trophy, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useMouseActivity } from '../../hooks/useMouseActivity';
@@ -33,7 +33,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const isMouseActive = useMouseActivity(8000);
   const { appUser } = useAuth();
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'notifications' | 'music' | 'progress' | 'whats-new'>('timer');
+  const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'notifications' | 'timezone' | 'music' | 'progress' | 'whats-new'>('timer');
   const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameLoading, setUsernameLoading] = useState(false);
@@ -174,6 +174,12 @@ export const SettingsPopover = memo(function SettingsPopover() {
     firstLoginDate,
     playlist,
     setPlaylist,
+    timezone,
+    weekendDays,
+    pendingTimezone,
+    pendingTimezoneAppliesAt,
+    timezoneChangeCountMonth,
+    lastTimezoneChangeAt,
   } = useSettingsStore();
 
   // Filter backgrounds based on viewport orientation (portrait vs landscape)
@@ -458,6 +464,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'sounds', label: 'Sounds', icon: Volume2 },
     { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'timezone', label: 'Timezone', icon: Globe },
     { id: 'progress', label: 'Progress', icon: Trophy },
     { id: 'music', label: 'Credits', icon: FileText },
     { id: 'whats-new', label: "What's New", icon: Sparkles },
@@ -597,6 +604,12 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         pomodoroBoostActive={pomodoroBoostActive}
                         pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
                         firstLoginDate={firstLoginDate}
+                        timezone={timezone}
+                        weekendDays={weekendDays}
+                        pendingTimezone={pendingTimezone}
+                        pendingTimezoneAppliesAt={pendingTimezoneAppliesAt}
+                        timezoneChangeCountMonth={timezoneChangeCountMonth}
+                        lastTimezoneChangeAt={lastTimezoneChangeAt}
                       />
                     </div>
                   </ScrollArea>
@@ -759,6 +772,12 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         pomodoroBoostActive={pomodoroBoostActive}
                         pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
                         firstLoginDate={firstLoginDate}
+                        timezone={timezone}
+                        weekendDays={weekendDays}
+                        pendingTimezone={pendingTimezone}
+                        pendingTimezoneAppliesAt={pendingTimezoneAppliesAt}
+                        timezoneChangeCountMonth={timezoneChangeCountMonth}
+                        lastTimezoneChangeAt={lastTimezoneChangeAt}
                       />
                     </div>
                   </ScrollArea>

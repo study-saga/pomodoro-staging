@@ -752,5 +752,114 @@ export async function saveCompletedBreak(
   return breakId as string
 }
 
+/**
+ * Request timezone change with server-side validation
+ *
+ * SECURITY: Server enforces:
+ * - 14-day cooldown (waived for accounts <7 days old)
+ * - 5 changes/month limit
+ * - Next midnight UTC application (24-hour minimum delay)
+ * - IANA format validation
+ * - Weekend days array validation
+ *
+ * @param userId - User's UUID
+ * @param newTimezone - New timezone (IANA format, e.g., 'America/New_York')
+ * @param newWeekendDays - Custom weekend days [0,6]=Sat-Sun, [5,6]=Fri-Sat
+ * @returns Result with status and application details
+ */
+export async function requestTimezoneChange(
+  userId: string,
+  newTimezone: string,
+  newWeekendDays: number[]
+): Promise<{
+  status: 'pending' | 'rejected'
+  message: string
+  newTimezone?: string
+  newWeekendDays?: number[]
+  appliesAt?: string
+  hoursUntilApplied?: number
+  changesRemainingThisMonth?: number
+  cooldownUntil?: string
+  hoursRemaining?: number
+  resetDate?: string
+}> {
+  console.log(`[User Sync] Requesting timezone change for user ${userId} to ${newTimezone}`)
+
+  const { data, error } = await supabase.rpc('request_timezone_change', {
+    p_user_id: userId,
+    p_new_timezone: newTimezone,
+    p_new_weekend_days: newWeekendDays
+  })
+
+  if (error) {
+    console.error('[User Sync] Error requesting timezone change:', error)
+    throw new Error(`Failed to request timezone change: ${error.message}`)
+  }
+
+  const result = data as any
+  console.log(`[User Sync] Timezone change request result:`, result)
+
+  return {
+    status: result.status,
+    message: result.message,
+    newTimezone: result.newTimezone,
+    newWeekendDays: result.newWeekendDays,
+    appliesAt: result.appliesAt,
+    hoursUntilApplied: result.hoursUntilApplied,
+    changesRemainingThisMonth: result.changesRemainingThisMonth,
+    cooldownUntil: result.cooldownUntil,
+    hoursRemaining: result.hoursRemaining,
+    resetDate: result.resetDate
+  }
+}
+
+/**
+ * Check if it's currently weekend for a user (server-authoritative)
+ *
+ * SECURITY: Client CANNOT bypass this check
+ * - Server gets current UTC time
+ * - Converts to user's timezone (stored in database)
+ * - Checks day of week against user's custom weekend_days
+ *
+ * @param userId - User's UUID
+ * @returns Weekend status with debug info
+ */
+export async function isWeekendForUser(userId: string): Promise<{
+  isWeekend: boolean
+  dayOfWeek: number
+  weekendDays: number[]
+  userLocalTime: string
+  serverUtcTime: string
+  timezone: string
+}> {
+  const { data, error } = await supabase.rpc('is_weekend_for_user', {
+    p_user_id: userId
+  })
+
+  if (error) {
+    console.error('[User Sync] Error checking weekend status:', error)
+    // Fallback to client-side for guest mode
+    const now = new Date()
+    return {
+      isWeekend: now.getDay() === 0 || now.getDay() === 6,
+      dayOfWeek: now.getDay(),
+      weekendDays: [0, 6],
+      userLocalTime: now.toISOString(),
+      serverUtcTime: now.toISOString(),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    }
+  }
+
+  const result = data as any
+  return {
+    isWeekend: result.isWeekend,
+    dayOfWeek: result.dayOfWeek,
+    weekendDays: result.weekendDays,
+    userLocalTime: result.userLocalTime,
+    serverUtcTime: result.serverUtcTime,
+    timezone: result.timezone
+  }
+}
+
 // claimDailyGiftXP removed - dead code from old login streak system
 // New calendar grid system uses claimDailyGift() instead

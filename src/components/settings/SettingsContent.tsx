@@ -4,10 +4,11 @@ import { AMBIENT_SOUNDS } from '../../data/constants';
 import { Badge } from '../ui/badge';
 import { changelog, type ChangelogEntry } from '../../data/changelog';
 import { ProgressTab } from './ProgressTab';
+import { TimezoneTab } from './TimezoneTab';
 
 
 interface SettingsContentProps {
-  activeTab: 'timer' | 'appearance' | 'sounds' | 'notifications' | 'music' | 'progress' | 'whats-new';
+  activeTab: 'timer' | 'appearance' | 'sounds' | 'notifications' | 'timezone' | 'music' | 'progress' | 'whats-new';
   isMobile: boolean;
 
   // Timer settings
@@ -66,6 +67,14 @@ interface SettingsContentProps {
   pomodoroBoostActive: boolean;
   pomodoroBoostExpiresAt: number | null;
   firstLoginDate: string | null;
+
+  // Timezone settings
+  timezone: string;
+  weekendDays: number[];
+  pendingTimezone: string | null;
+  pendingTimezoneAppliesAt: string | null;
+  timezoneChangeCountMonth: number;
+  lastTimezoneChangeAt: string | null;
 }
 
 export function SettingsContent(props: SettingsContentProps) {
@@ -117,6 +126,12 @@ export function SettingsContent(props: SettingsContentProps) {
     pomodoroBoostActive,
     pomodoroBoostExpiresAt,
     firstLoginDate,
+    timezone,
+    weekendDays,
+    pendingTimezone,
+    pendingTimezoneAppliesAt,
+    timezoneChangeCountMonth,
+    lastTimezoneChangeAt,
   } = props;
 
   return (
@@ -532,6 +547,17 @@ export function SettingsContent(props: SettingsContentProps) {
             </a>
           </div>
         </motion.div>
+      )}
+
+      {activeTab === 'timezone' && (
+        <TimezoneTab
+          timezone={timezone}
+          weekendDays={weekendDays}
+          pendingTimezone={pendingTimezone}
+          pendingTimezoneAppliesAt={pendingTimezoneAppliesAt}
+          timezoneChangeCountMonth={timezoneChangeCountMonth}
+          lastTimezoneChangeAt={lastTimezoneChangeAt}
+        />
       )}
 
       {activeTab === 'progress' && (
