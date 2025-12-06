@@ -1,5 +1,5 @@
--- RPC function to request a timezone change with full validation
--- Enforces rate limits, cooldowns, and schedules change for next midnight UTC
+-- Update RPC to remove monthly limit (5/month) - keep only 14-day cooldown
+-- Monthly limit was unreachable due to 14-day cooldown (~2 changes/month max)
 
 CREATE OR REPLACE FUNCTION public.request_timezone_change(
   p_user_id UUID,
@@ -10,7 +10,6 @@ RETURNS JSONB AS $$
 DECLARE
   v_current_timezone VARCHAR(255);
   v_current_weekend_days INTEGER[];
-  v_change_count_month INTEGER;
   v_last_change_at TIMESTAMP WITH TIME ZONE;
   v_account_age_days INTEGER;
   v_applies_at TIMESTAMP WITH TIME ZONE;
@@ -34,13 +33,11 @@ BEGIN
   SELECT
     timezone,
     weekend_days,
-    timezone_change_count_month,
     last_timezone_change_at,
     EXTRACT(EPOCH FROM (NOW() - created_at)) / 86400
   INTO
     v_current_timezone,
     v_current_weekend_days,
-    v_change_count_month,
     v_last_change_at,
     v_account_age_days
   FROM public.users
@@ -89,15 +86,6 @@ BEGIN
     );
   END IF;
 
-  -- Check monthly limit (5/month)
-  IF v_change_count_month >= 5 THEN
-    RETURN jsonb_build_object(
-      'status', 'rejected',
-      'message', 'Monthly limit reached (5 changes per month)',
-      'resetDate', DATE_TRUNC('month', NOW()) + INTERVAL '1 month'
-    );
-  END IF;
-
   -- Calculate application time: next midnight 00:00 UTC
   v_applies_at := DATE_TRUNC('day', NOW()) + INTERVAL '1 day';
 
@@ -123,7 +111,6 @@ BEGIN
   SET pending_timezone = p_new_timezone,
       pending_timezone_applies_at = v_applies_at,
       weekend_days = p_new_weekend_days,
-      timezone_change_count_month = v_change_count_month + 1,
       last_timezone_change_at = NOW()
   WHERE id = p_user_id;
 
@@ -133,8 +120,7 @@ BEGIN
     'newTimezone', p_new_timezone,
     'newWeekendDays', p_new_weekend_days,
     'appliesAt', v_applies_at,
-    'hoursUntilApplied', CEIL(EXTRACT(EPOCH FROM (v_applies_at - NOW())) / 3600),
-    'changesRemainingThisMonth', 5 - (v_change_count_month + 1)
+    'hoursUntilApplied', CEIL(EXTRACT(EPOCH FROM (v_applies_at - NOW())) / 3600)
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -144,5 +130,5 @@ GRANT EXECUTE ON FUNCTION public.request_timezone_change TO authenticated;
 COMMENT ON FUNCTION public.request_timezone_change IS
   'Request timezone change with automated validation and rate limiting.
    Changes apply at next midnight UTC (24-hour minimum delay).
-   Enforces 14-day cooldown (waived for accounts <7 days old) and 5 changes/month limit.
+   Enforces 14-day cooldown (waived for accounts <7 days old).
    Fully automated - no manual review needed.';
