@@ -17,7 +17,7 @@ interface GlobalChatMessagesProps {
  * Displays the list of messages and handles auto-scrolling
  */
 export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: GlobalChatMessagesProps) {
-  const { globalMessages, deleteGlobalMessage, userRole, reportMessage, isGlobalConnected } = useChat();
+  const { globalMessages, deleteGlobalMessage, userRole, reportMessage, isGlobalConnected, connectionState, retryCount, manualRetry } = useChat();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -135,9 +135,27 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
     <>
       <div className="flex flex-col h-full relative">
         {/* Connection Status */}
-        {!isGlobalConnected && (
+        {connectionState === 'connecting' && (
           <div className="px-4 py-2 bg-yellow-500/10 backdrop-blur text-yellow-200 text-xs text-center border-b border-yellow-500/20 flex-shrink-0">
             Connecting to chat...
+          </div>
+        )}
+        {connectionState === 'reconnecting' && (
+          <div className="px-4 py-2 bg-yellow-500/10 backdrop-blur text-yellow-200 text-xs text-center border-b border-yellow-500/20 flex-shrink-0">
+            Reconnecting... (attempt {retryCount + 1}/4)
+          </div>
+        )}
+        {connectionState === 'error' && (
+          <div className="px-4 py-2 bg-red-500/10 backdrop-blur border-b border-red-500/20 flex-shrink-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-red-400">Connection failed</span>
+              <button
+                onClick={manualRetry}
+                className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 rounded text-red-400 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
           </div>
         )}
 
