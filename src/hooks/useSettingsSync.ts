@@ -365,7 +365,6 @@ export function useSettingsSync() {
       pendingTimezone: appUser.pending_timezone || null,
       pendingTimezoneAppliesAt: appUser.pending_timezone_applies_at || null,
       timezoneUpdatedAt: appUser.timezone_updated_at || null,
-      timezoneChangeCountMonth: appUser.timezone_change_count_month || 0,
       lastTimezoneChangeAt: appUser.last_timezone_change_at || null,
     })
 

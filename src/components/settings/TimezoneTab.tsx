@@ -34,7 +34,6 @@ interface TimezoneTabProps {
   weekendDays: number[];
   pendingTimezone: string | null;
   pendingTimezoneAppliesAt: string | null;
-  timezoneChangeCountMonth: number;
   lastTimezoneChangeAt: string | null;
 }
 
@@ -44,7 +43,6 @@ export function TimezoneTab(props: TimezoneTabProps) {
     weekendDays: currentWeekendDays,
     pendingTimezone,
     pendingTimezoneAppliesAt,
-    timezoneChangeCountMonth,
   } = props;
 
   const { appUser } = useAuth();
@@ -111,7 +109,6 @@ export function TimezoneTab(props: TimezoneTabProps) {
     }
   };
 
-  const changesRemaining = 5 - timezoneChangeCountMonth;
   const hasPendingChange = pendingTimezone !== null;
   const isChanged = selectedTimezone !== currentTimezone ||
     JSON.stringify(selectedWeekendDays) !== JSON.stringify(currentWeekendDays);
@@ -215,7 +212,6 @@ export function TimezoneTab(props: TimezoneTabProps) {
       {/* Rate Limits Info */}
       <div className="bg-gray-800/30 rounded-lg p-4 space-y-2">
         <div className="text-xs text-gray-400 space-y-1">
-          <div>📅 Changes remaining this month: <span className="text-white font-medium">{changesRemaining}/5</span></div>
           <div>⏱️ Changes apply at next midnight (00:00 UTC)</div>
           <div>🔒 14-day cooldown between changes</div>
         </div>

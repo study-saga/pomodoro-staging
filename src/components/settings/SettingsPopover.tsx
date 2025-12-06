@@ -178,7 +178,6 @@ export const SettingsPopover = memo(function SettingsPopover() {
     weekendDays,
     pendingTimezone,
     pendingTimezoneAppliesAt,
-    timezoneChangeCountMonth,
     lastTimezoneChangeAt,
   } = useSettingsStore();
 
@@ -608,7 +607,6 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         weekendDays={weekendDays}
                         pendingTimezone={pendingTimezone}
                         pendingTimezoneAppliesAt={pendingTimezoneAppliesAt}
-                        timezoneChangeCountMonth={timezoneChangeCountMonth}
                         lastTimezoneChangeAt={lastTimezoneChangeAt}
                       />
                     </div>
@@ -776,7 +774,6 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         weekendDays={weekendDays}
                         pendingTimezone={pendingTimezone}
                         pendingTimezoneAppliesAt={pendingTimezoneAppliesAt}
-                        timezoneChangeCountMonth={timezoneChangeCountMonth}
                         lastTimezoneChangeAt={lastTimezoneChangeAt}
                       />
                     </div>

@@ -152,7 +152,6 @@ export const DEFAULT_SETTINGS = {
   pendingTimezone: null,
   pendingTimezoneAppliesAt: null,
   timezoneUpdatedAt: null,
-  timezoneChangeCountMonth: 0,
   lastTimezoneChangeAt: null,
 };
 

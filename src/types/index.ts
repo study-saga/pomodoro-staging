@@ -84,8 +84,7 @@ export interface Settings {
   pendingTimezone: string | null; // Pending timezone change (applies at pendingTimezoneAppliesAt)
   pendingTimezoneAppliesAt: string | null; // ISO timestamp when pending timezone applies
   timezoneUpdatedAt: string | null; // ISO timestamp of last timezone update
-  timezoneChangeCountMonth: number; // Number of timezone changes this month (max 5)
-  lastTimezoneChangeAt: string | null; // ISO timestamp of last timezone change
+  lastTimezoneChangeAt: string | null; // ISO timestamp of last timezone change (14-day cooldown)
 }
 
 export interface LevelData {

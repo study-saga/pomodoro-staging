@@ -73,7 +73,6 @@ interface SettingsContentProps {
   weekendDays: number[];
   pendingTimezone: string | null;
   pendingTimezoneAppliesAt: string | null;
-  timezoneChangeCountMonth: number;
   lastTimezoneChangeAt: string | null;
 }
 
@@ -130,7 +129,6 @@ export function SettingsContent(props: SettingsContentProps) {
     weekendDays,
     pendingTimezone,
     pendingTimezoneAppliesAt,
-    timezoneChangeCountMonth,
     lastTimezoneChangeAt,
   } = props;
 
@@ -555,7 +553,6 @@ export function SettingsContent(props: SettingsContentProps) {
           weekendDays={weekendDays}
           pendingTimezone={pendingTimezone}
           pendingTimezoneAppliesAt={pendingTimezoneAppliesAt}
-          timezoneChangeCountMonth={timezoneChangeCountMonth}
           lastTimezoneChangeAt={lastTimezoneChangeAt}
         />
       )}
