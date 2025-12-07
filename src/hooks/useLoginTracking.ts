@@ -6,8 +6,8 @@ import { useSettingsStore } from '../store/useSettingsStore';
  * @example
  * ```tsx
  * const { totalLoginDays, consecutiveLoginDays } = useLoginTracking();
- * console.log(`Total days: ${totalLoginDays}`);
- * console.log(`Streak: ${consecutiveLoginDays}`);
+ * import.meta.env.DEV && console.log(`Total days: ${totalLoginDays}`);
+ * import.meta.env.DEV && console.log(`Streak: ${consecutiveLoginDays}`);
  * ```
  */
 export function useLoginTracking() {

@@ -35,7 +35,7 @@ export default function DiscordButton() {
 
     if (isDiscordActivity && discordSdk) {
       // Discord Activity mode - use SDK to avoid sandbox popup blocking
-      console.log('[Discord Button] Opening external link via Discord SDK')
+      import.meta.env.DEV && console.log('[Discord Button] Opening external link via Discord SDK')
       try {
         await discordSdk.commands.openExternalLink({ url })
       } catch (error) {
@@ -44,7 +44,7 @@ export default function DiscordButton() {
       }
     } else {
       // Web mode - use standard window.open
-      console.log('[Discord Button] Opening external link via window.open')
+      import.meta.env.DEV && console.log('[Discord Button] Opening external link via window.open')
       window.open(url, '_blank', 'noopener,noreferrer')
     }
   }

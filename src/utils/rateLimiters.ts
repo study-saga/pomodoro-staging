@@ -26,7 +26,7 @@ export function createRateLimiter(delayMs: number) {
 
             // Ignore if called within delay window
             if (now - lastCall < delayMs) {
-                console.log(`[Rate Limiter] Ignoring rapid call (${now - lastCall}ms since last call, need ${delayMs}ms)`);
+                import.meta.env.DEV && console.log(`[Rate Limiter] Ignoring rapid call (${now - lastCall}ms since last call, need ${delayMs}ms)`);
                 return;
             }
 
@@ -58,13 +58,13 @@ export function createAsyncRateLimiter(delayMs: number) {
 
             // Prevent overlapping executions
             if (isExecuting) {
-                console.log('[Async Rate Limiter] Already executing, ignoring call');
+                import.meta.env.DEV && console.log('[Async Rate Limiter] Already executing, ignoring call');
                 return;
             }
 
             // Enforce minimum delay between calls
             if (now - lastCall < delayMs) {
-                console.log(`[Async Rate Limiter] Too soon (${now - lastCall}ms since last call, need ${delayMs}ms)`);
+                import.meta.env.DEV && console.log(`[Async Rate Limiter] Too soon (${now - lastCall}ms since last call, need ${delayMs}ms)`);
                 return;
             }
 
@@ -112,7 +112,7 @@ export function rateLimitedToast(
 
     // Don't show same message within duration window
     if (now - lastShown < durationMs) {
-        console.log(`[Toast Rate Limiter] Suppressing duplicate: "${message.substring(0, 50)}..." (shown ${now - lastShown}ms ago)`);
+        import.meta.env.DEV && console.log(`[Toast Rate Limiter] Suppressing duplicate: "${message.substring(0, 50)}..." (shown ${now - lastShown}ms ago)`);
         return;
     }
 

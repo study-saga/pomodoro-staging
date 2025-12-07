@@ -23,7 +23,7 @@ export function useLevelNotifications() {
       prevXPRef.current = xp;
       prevLevelRef.current = level;
       isInitializedRef.current = true;
-      console.log('[LevelNotifications] Initialized with level:', level, 'XP:', xp);
+      import.meta.env.DEV && console.log('[LevelNotifications] Initialized with level:', level, 'XP:', xp);
     }
   }, [xp, level]);
 
@@ -48,7 +48,7 @@ export function useLevelNotifications() {
 
     // Level up detected!
     if (level !== prevLevel && level > prevLevel) {
-      console.log('[LevelNotifications] 🎉 LEVEL UP DETECTED! From', prevLevel, 'to', level);
+      import.meta.env.DEV && console.log('[LevelNotifications] 🎉 LEVEL UP DETECTED! From', prevLevel, 'to', level);
 
       setLevelUpData({
         level,
@@ -62,7 +62,7 @@ export function useLevelNotifications() {
       prevLevelRef.current = level;
     } else if (level !== prevLevel) {
       // Level changed but didn't increase (e.g., prestige or manual change)
-      console.log('[LevelNotifications] Level changed but not increased:', prevLevel, '→', level);
+      import.meta.env.DEV && console.log('[LevelNotifications] Level changed but not increased:', prevLevel, '→', level);
       prevLevelRef.current = level;
     }
   }, [xp, level, levelPath]);

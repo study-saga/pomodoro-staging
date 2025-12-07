@@ -164,7 +164,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
 
   // Debug logging for boost state
   if (import.meta.env.DEV && pomodoroBoostActive) {
-    console.log('[LevelDisplay] Boost state:', {
+    import.meta.env.DEV && console.log('[LevelDisplay] Boost state:', {
       active: pomodoroBoostActive,
       expiresAt: pomodoroBoostExpiresAt,
       now: Date.now(),
