@@ -169,7 +169,21 @@ export async function updateUserPreferences(
 
   if (error) {
     console.error('[User Sync] Error updating settings:', error)
-    throw new Error(`Failed to update settings: ${error.message}`)
+
+    // Extract clean error message (avoid HTML from 530 errors)
+    let errorMsg = 'Unknown error'
+    if (error?.message) {
+      // If message looks like HTML (contains tags), extract HTTP status
+      if (error.message.includes('<html') || error.message.includes('<!DOCTYPE')) {
+        errorMsg = error.code || error.hint || 'Network error (HTTP 530 - Origin DNS failure)'
+      } else {
+        errorMsg = error.message
+      }
+    } else if (error?.code) {
+      errorMsg = error.code
+    }
+
+    throw new Error(`Failed to update settings: ${errorMsg}`)
   }
 
   console.log('[User Sync] Settings updated successfully')
