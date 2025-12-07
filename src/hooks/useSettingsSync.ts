@@ -198,8 +198,11 @@ export function useSettingsSync() {
       }
     }
 
-    // Fire and forget - don't await
-    getSessionAndSync()
+    // Fire and forget - don't await, but catch rejections
+    getSessionAndSync().catch(err => {
+      console.error('[Settings Sync] Synchronous sync failed (page closing):', err)
+      // Non-fatal - page is closing anyway
+    })
   }
 
   // Sync function - only called when needed
@@ -409,6 +412,10 @@ export function useSettingsSync() {
       }
       debounceSyncRef.current = setTimeout(() => {
         syncToDatabase(isDiscordActivity ? 'discord-debounced' : 'web-debounced')
+          .catch(err => {
+            console.error('[Settings Sync] Debounced sync failed (non-fatal):', err)
+            // Non-fatal - user will retry on next change
+          })
       }, 500)
 
       // Debug: show what changed (only in development)
@@ -475,6 +482,9 @@ export function useSettingsSync() {
     const handleVisibilityChange = () => {
       if (document.hidden && isDirtyRef.current) {
         syncToDatabase('visibility-change')
+          .catch(err => {
+            console.error('[Settings Sync] Visibility sync failed (non-fatal):', err)
+          })
       }
     }
 
@@ -490,6 +500,9 @@ export function useSettingsSync() {
     periodicSyncIntervalRef.current = setInterval(() => {
       if (isDirtyRef.current) {
         syncToDatabase('periodic-2min')
+          .catch(err => {
+            console.error('[Settings Sync] Periodic sync failed (non-fatal):', err)
+          })
       }
     }, PERIODIC_SYNC_INTERVAL)
 

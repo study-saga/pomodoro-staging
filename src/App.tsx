@@ -13,6 +13,7 @@ import { LoginScreen } from './components/auth/LoginScreen';
 import DiscordButton from './components/DiscordButton';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { AdminActionHandler } from './components/admin/AdminActionHandler';
+import { ChunkLoadErrorBoundary } from './components/ChunkLoadErrorBoundary';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useBuffActivation } from './hooks/useBuffActivation';
 import { useSettingsStore } from './store/useSettingsStore';
@@ -252,12 +253,23 @@ function AppContent() {
       <AmbientSoundsPlayer musicPlaying={musicPlaying} />
 
       {/* Daily Gift Grid */}
-      <Suspense fallback={<LoadingSpinner />}>
-        <DailyGiftGrid
-          show={showDailyGift}
-          onClose={() => setShowDailyGift(false)}
-        />
-      </Suspense>
+      <ChunkLoadErrorBoundary
+        fallback={
+          <div className="flex items-center justify-center p-8">
+            <div className="text-gray-400">Failed to load rewards calendar</div>
+          </div>
+        }
+        onError={(error) => {
+          console.error('[DailyGiftGrid] Chunk load failed:', error);
+        }}
+      >
+        <Suspense fallback={<LoadingSpinner />}>
+          <DailyGiftGrid
+            show={showDailyGift}
+            onClose={() => setShowDailyGift(false)}
+          />
+        </Suspense>
+      </ChunkLoadErrorBoundary>
 
       {/* Active Boost Indicator */}
       {!isPIPMode && <ActiveBoostIndicator />}

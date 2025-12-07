@@ -73,6 +73,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     isBannedRef.current = isBanned;
   }, [isBanned]);
 
+  // Ref to track if initial data fetches are complete
+  const isInitializedRef = useRef(false);
+
   // 0. Fetch User Role & Check Ban Status
   useEffect(() => {
     if (!appUser) {
@@ -93,6 +96,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       if (userData) {
         setUserRole(userData.role as UserRole);
+        isInitializedRef.current = true;
       }
 
       // Check active bans
@@ -161,7 +165,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return () => {
       banChannel.unsubscribe();
     };
-  }, [appUser]);
+  }, [appUser?.id]);
 
   // 0.5. Listen for Unban (Delete) specifically
   useEffect(() => {
@@ -289,9 +293,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // 3. Realtime Subscription (Postgres Changes + Presence)
   useEffect(() => {
-    if (!appUser || !isChatEnabled || isBanned) {
+    if (!appUser || !isInitializedRef.current || !isChatEnabled || isBanned) {
       setOnlineUsers([]);
       setIsGlobalConnected(false);
+      channelRef.current = null;
       return;
     }
 
@@ -516,8 +521,24 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       disconnect();
+      channelRef.current = null;
     };
-  }, [appUser, isChatEnabled, isBanned, userRole, retryTrigger]); // Added retryTrigger for manual retry
+  }, [appUser?.id, isChatEnabled, isBanned, userRole]);
+
+  // 4. Update presence when chat opens/closes WITHOUT reconnecting
+  useEffect(() => {
+    if (!channelRef.current || !appUser || !isGlobalConnected) return;
+
+    channelRef.current.track({
+      id: appUser.id,
+      username: appUser.username,
+      avatar: appUser.avatar,
+      is_chatting: isChatOpen,
+      online_at: new Date().toISOString(),
+      role: userRole,
+      discord_id: appUser.discord_id
+    });
+  }, [isChatOpen, appUser, userRole, isGlobalConnected]);
 
   // Send Global Message (Database Insert)
   const sendGlobalMessage = useCallback(async (
