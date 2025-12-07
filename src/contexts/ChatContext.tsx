@@ -63,7 +63,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Connection state management
   const [connectionState, setConnectionState] = useState<'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error'>('disconnected');
   const [retryCount, setRetryCount] = useState(0);
-  const [retryTrigger, setRetryTrigger] = useState(0); // Trigger for manual retry
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -700,7 +699,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     console.log('[Chat] Manual retry triggered');
     setConnectionState('connecting');
     setRetryCount(0);
-    setRetryTrigger(prev => prev + 1); // Trigger reconnection via useEffect
   }, []);
 
   const value: ChatContextValue = {
