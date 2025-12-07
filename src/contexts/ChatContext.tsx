@@ -284,6 +284,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     if (!appUser || !isInitializedRef.current || !isChatEnabled || isBanned) {
       setOnlineUsers([]);
       setIsGlobalConnected(false);
+      channelRef.current = null;
       return;
     }
 
@@ -457,8 +458,24 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       disconnect();
+      channelRef.current = null;
     };
-  }, [appUser, isChatOpen, isChatEnabled, isBanned, userRole]);
+  }, [appUser?.id, isChatEnabled, isBanned, userRole]);
+
+  // 4. Update presence when chat opens/closes WITHOUT reconnecting
+  useEffect(() => {
+    if (!channelRef.current || !appUser || !isGlobalConnected) return;
+
+    channelRef.current.track({
+      id: appUser.id,
+      username: appUser.username,
+      avatar: appUser.avatar,
+      is_chatting: isChatOpen,
+      online_at: new Date().toISOString(),
+      role: userRole,
+      discord_id: appUser.discord_id
+    });
+  }, [isChatOpen, appUser, userRole, isGlobalConnected]);
 
   // Send Global Message (Database Insert)
   const sendGlobalMessage = useCallback(async (
