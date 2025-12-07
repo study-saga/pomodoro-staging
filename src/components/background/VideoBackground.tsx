@@ -19,7 +19,7 @@ export function VideoBackground() {
 
     // If current background doesn't match target (and target exists), switch it
     if (targetBackground && background !== targetBackground) {
-      console.log(`[VideoBackground] Switching to ${isMobile ? 'mobile' : 'desktop'} preference: ${targetBackground}`);
+      import.meta.env.DEV && console.log(`[VideoBackground] Switching to ${isMobile ? 'mobile' : 'desktop'} preference: ${targetBackground}`);
       setBackground(targetBackground);
       return;
     }
@@ -39,7 +39,7 @@ export function VideoBackground() {
 
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.play().catch((e) => console.log('Autoplay prevented:', e));
+      videoRef.current.play().catch((e) => import.meta.env.DEV && console.log('Autoplay prevented:', e));
     }
   }, [background]);
 

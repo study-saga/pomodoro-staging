@@ -43,7 +43,7 @@ export class ChunkLoadErrorBoundary extends Component<Props, State> {
       const hasReloaded = sessionStorage.getItem('chunk-error-reload');
       if (!hasReloaded) {
         sessionStorage.setItem('chunk-error-reload', 'true');
-        console.log('[ChunkLoadError] Auto-reloading...');
+        import.meta.env.DEV && console.log('[ChunkLoadError] Auto-reloading...');
         setTimeout(() => window.location.reload(), 1000);
       }
     }

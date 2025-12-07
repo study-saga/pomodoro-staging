@@ -281,7 +281,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
       // Success - update local Zustand store with new username and timestamp
       setUsername(usernameInput);
 
-      console.log('[Settings] Username updated successfully (free):', updatedUser.username);
+      import.meta.env.DEV && console.log('[Settings] Username updated successfully (free):', updatedUser.username);
       toast.success('Username updated successfully!');
 
     } catch (error) {
@@ -309,7 +309,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
                 // Success - update local Zustand store with new username, XP, and timestamp
                 setUsername(usernameInput, true);
 
-                console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
+                import.meta.env.DEV && console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
                 toast.success('Username updated! 50 XP deducted.');
                 showGameToast('-50 XP Spent');
 

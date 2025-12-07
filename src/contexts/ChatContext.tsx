@@ -306,7 +306,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const delays = [0, 1000, 2000, 4000]; // Exponential backoff
 
       if (attempt > 0) {
-        console.log(`[Chat] Retry ${attempt}/${maxAttempts - 1} after ${delays[attempt]}ms`);
+        import.meta.env.DEV && console.log(`[Chat] Retry ${attempt}/${maxAttempts - 1} after ${delays[attempt]}ms`);
         setConnectionState('reconnecting');
         await new Promise(resolve => setTimeout(resolve, delays[attempt]));
       } else {
@@ -352,7 +352,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         channel
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, async (payload) => {
-            console.log('[Chat] Received INSERT payload:', payload);
+            import.meta.env.DEV && console.log('[Chat] Received INSERT payload:', payload);
             const newMsg = payload.new as any;
 
             const { data: userData, error: userError } = await supabase
@@ -386,7 +386,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             });
           })
           .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, (payload) => {
-            console.log('[Chat] Received UPDATE payload:', payload);
+            import.meta.env.DEV && console.log('[Chat] Received UPDATE payload:', payload);
             const updatedMsg = payload.new as any;
             if (updatedMsg.is_deleted) {
               setGlobalMessages(prev => prev.filter(msg => msg.id !== updatedMsg.id));
@@ -397,7 +397,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             }
           })
           .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages' }, (payload) => {
-            console.log('[Chat] Received DELETE payload:', payload);
+            import.meta.env.DEV && console.log('[Chat] Received DELETE payload:', payload);
             const deletedId = payload.old.id;
             if (deletedId) {
               setGlobalMessages(prev => prev.filter(msg => msg.id !== deletedId));
@@ -432,12 +432,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             setOnlineUsers(users);
           })
           .subscribe(async (status, err) => {
-            console.log(`[Chat] Status: ${status}`, err);
+            import.meta.env.DEV && console.log(`[Chat] Status: ${status}`, err);
 
             if (status === 'SUBSCRIBED') {
               resolved = true;
               setIsGlobalConnected(true);
-              console.log('Connected to global chat (DB-backed)');
+              import.meta.env.DEV && console.log('Connected to global chat (DB-backed)');
 
               await channel!.track({
                 id: appUser.id,
@@ -490,7 +490,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     };
 
     const disconnect = () => {
-      console.log('[Chat] Disconnecting');
+      import.meta.env.DEV && console.log('[Chat] Disconnecting');
       clearTimeout(connectionTimeoutRef.current);
       clearTimeout(retryTimeoutRef.current);
       setConnectionState('disconnected');
@@ -717,7 +717,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // Manual retry for reconnection
   const manualRetry = useCallback(() => {
-    console.log('[Chat] Manual retry triggered');
+    import.meta.env.DEV && console.log('[Chat] Manual retry triggered');
     setConnectionState('connecting');
     setRetryCount(0);
   }, []);

@@ -48,12 +48,12 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
   // Step 1: Initialize Discord SDK
   const discordSdk = new DiscordSDK(import.meta.env.VITE_DISCORD_CLIENT_ID)
 
-  console.log('[Discord Auth] Initializing SDK...')
+  import.meta.env.DEV && console.log('[Discord Auth] Initializing SDK...')
 
   // Step 2: Wait for SDK to be ready
   await discordSdk.ready()
 
-  console.log('[Discord Auth] SDK ready, requesting authorization...')
+  import.meta.env.DEV && console.log('[Discord Auth] SDK ready, requesting authorization...')
 
   // Generate CSRF state token
   oauthState = generateOAuthState()
@@ -89,13 +89,13 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
       })
     })
 
-  console.log('[Discord Auth] Authorization successful, exchanging code...')
+  import.meta.env.DEV && console.log('[Discord Auth] Authorization successful, exchanging code...')
 
   // Step 4: Exchange code for access token
   // Use Discord proxy to avoid CSP blocking
   // Discord URL Mapping: /supabase → btjhclvebbtjxmdnprwz.supabase.co
   // patchUrlMappings (in main.tsx) automatically transforms this to /.proxy/supabase/...
-  console.log('[Discord Auth] Exchanging code for token...')
+  import.meta.env.DEV && console.log('[Discord Auth] Exchanging code for token...')
   const tokenResponse = await fetch(
     '/supabase/functions/v1/discord-token',
     {
@@ -107,8 +107,8 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
     }
   )
 
-  console.log('[Discord Auth] Response status:', tokenResponse.status, tokenResponse.statusText)
-  console.log('[Discord Auth] Response URL:', tokenResponse.url)
+  import.meta.env.DEV && console.log('[Discord Auth] Response status:', tokenResponse.status, tokenResponse.statusText)
+  import.meta.env.DEV && console.log('[Discord Auth] Response URL:', tokenResponse.url)
 
   if (!tokenResponse.ok) {
     const error = await tokenResponse.text()
@@ -117,10 +117,10 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
   }
 
   const { access_token, supabase_token } = await tokenResponse.json()
-  console.log('[Discord Auth] Token received successfully')
+  import.meta.env.DEV && console.log('[Discord Auth] Token received successfully')
 
   if (supabase_token) {
-    console.log('[Discord Auth] Supabase JWT received, setting session...')
+    import.meta.env.DEV && console.log('[Discord Auth] Supabase JWT received, setting session...')
     // Import supabase client dynamically to avoid circular dependencies if any
     const { supabase } = await import('./supabase')
 
@@ -132,18 +132,18 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
     if (error) {
       console.error('[Discord Auth] Failed to set Supabase session:', error)
     } else {
-      console.log('[Discord Auth] Supabase session established successfully')
+      import.meta.env.DEV && console.log('[Discord Auth] Supabase session established successfully')
     }
   }
 
-  console.log('[Discord Auth] Token received, authenticating SDK...')
+  import.meta.env.DEV && console.log('[Discord Auth] Token received, authenticating SDK...')
 
   // Step 5: Authenticate Discord SDK with access token
   await discordSdk.commands.authenticate({
     access_token,
   })
 
-  console.log('[Discord Auth] SDK authenticated, fetching user data...')
+  import.meta.env.DEV && console.log('[Discord Auth] SDK authenticated, fetching user data...')
 
   // Step 6: Fetch Discord user data
   const userResponse = await fetch('https://discord.com/api/users/@me', {
@@ -160,7 +160,7 @@ export async function authenticateDiscordUser(): Promise<AuthResult> {
 
   const discordUser: DiscordUser = await userResponse.json()
 
-  console.log('[Discord Auth] Authentication complete for:', discordUser.username)
+  import.meta.env.DEV && console.log('[Discord Auth] Authentication complete for:', discordUser.username)
 
   return {
     discordUser,

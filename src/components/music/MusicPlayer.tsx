@@ -96,7 +96,7 @@ export function MusicPlayer({ playing, setPlaying, isPIPMode = false }: MusicPla
           // Resume the Howler audio context if it's suspended
           if (Howler.ctx && Howler.ctx.state === 'suspended') {
             await Howler.ctx.resume();
-            console.log('[MusicPlayer] Audio context resumed');
+            import.meta.env.DEV && console.log('[MusicPlayer] Audio context resumed');
           }
 
           // If music was playing before lock, ensure it continues

@@ -86,7 +86,7 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
       const lastGiftDate = useSettingsStore.getState().lastDailyGiftDate;
 
       if (lastGiftDate === today) {
-        console.log('[DailyGift] Gift already claimed today (localStorage check)');
+        import.meta.env.DEV && console.log('[DailyGift] Gift already claimed today (localStorage check)');
         setXpAwarded(true);
         // Reveal the gift immediately since it was already claimed
         setGifts(prev => prev.map(g => ({
@@ -131,7 +131,7 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
             );
 
             if (result.success) {
-              console.log(`[DailyGift] ✓ Claimed ${result.xpAwarded} XP from server`);
+              import.meta.env.DEV && console.log(`[DailyGift] ✓ Claimed ${result.xpAwarded} XP from server`);
 
               // Mark gift as claimed locally for UI consistency
               markDailyGiftClaimed();
@@ -145,7 +145,7 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
 
               // Centralize boost state: sync to local store if activated
               if (result.boostActivated && result.boostExpiresAt) {
-                console.log(`[DailyGift] ✓ Pomodoro boost activated until ${new Date(result.boostExpiresAt)}`);
+                import.meta.env.DEV && console.log(`[DailyGift] ✓ Pomodoro boost activated until ${new Date(result.boostExpiresAt)}`);
                 useSettingsStore.setState({
                   pomodoroBoostActive: true,
                   pomodoroBoostExpiresAt: result.boostExpiresAt,
@@ -153,7 +153,7 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
                 });
               }
             } else if (result.alreadyClaimed) {
-              console.log('[DailyGift] Gift already claimed today (verified by server)');
+              import.meta.env.DEV && console.log('[DailyGift] Gift already claimed today (verified by server)');
               markDailyGiftClaimed();
               setXpAwarded(true);
             }
@@ -171,7 +171,7 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
 
     // Auto-close after 3 seconds total (give user time to see the reward)
     const closeTimer = setTimeout(() => {
-      console.log('[DailyGift] Auto-closing modal');
+      import.meta.env.DEV && console.log('[DailyGift] Auto-closing modal');
       onClose();
     }, 3000);
 

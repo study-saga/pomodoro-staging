@@ -52,9 +52,9 @@ function AppContent() {
         if (canClaim) {
           // Show daily gift modal - DailyGiftGrid will handle actual claim
           setShowDailyGift(true);
-          console.log('[Daily Gift] Gift available, showing modal');
+          import.meta.env.DEV && console.log('[Daily Gift] Gift available, showing modal');
         } else {
-          console.log('[Daily Gift] Already claimed today');
+          import.meta.env.DEV && console.log('[Daily Gift] Already claimed today');
         }
       })
       .catch((error) => {

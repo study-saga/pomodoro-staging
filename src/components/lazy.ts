@@ -18,7 +18,7 @@ const retryImport = <T,>(
     if (retriesLeft === 0) {
       throw error;
     }
-    console.log(`[Import Retry] Retrying... (${retriesLeft} attempts left)`);
+    import.meta.env.DEV && console.log(`[Import Retry] Retrying... (${retriesLeft} attempts left)`);
     return new Promise<T>((resolve) => {
       setTimeout(() => {
         resolve(retryImport(importFn, retriesLeft - 1, interval));
