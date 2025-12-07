@@ -15,6 +15,7 @@ const isDiscordActivity = () => {
 // Initialize Sentry with Discord CSP bypass via tunnel
 Sentry.init({
   dsn: "https://07207291057d3269e8c544fa37a6261f@o4510434264875008.ingest.de.sentry.io/4510434268086352",
+  environment: import.meta.env.MODE, // 'development' or 'production'
   integrations: [
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration(),
@@ -79,10 +80,6 @@ if (isDiscordActivity()) {
     {
       prefix: '/sentry',
       target: 'o4510434264875008.ingest.de.sentry.io'
-    },
-    {
-      prefix: '/assets',
-      target: window.location.origin + '/assets'
     }
   ])
 } else {
@@ -100,7 +97,11 @@ window.addEventListener('error', (event) => {
 
     // Report to Sentry
     Sentry.captureException(event.error, {
-      tags: { type: 'chunk-load-error-global' }
+      tags: {
+        type: 'chunk-load-error-global',
+        env: import.meta.env.MODE,
+        isDiscord: isDiscordActivity().toString()
+      }
     });
 
     // Prevent default error handling
