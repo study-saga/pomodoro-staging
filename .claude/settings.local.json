@@ -16,7 +16,8 @@
       "mcp__perplexity__reason",
       "mcp__supabase__list_projects",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "mcp__perplexity__deep_research"
     ]
   },
   "enableAllProjectMcpServers": true,
