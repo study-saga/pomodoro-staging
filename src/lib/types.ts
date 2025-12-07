@@ -77,6 +77,14 @@ export interface AppUser {
   // Username change tracking
   last_username_change: string | null
 
+  // Timezone settings (SERVER-CONTROLLED with 14-day cooldown)
+  timezone?: string
+  weekend_days?: number[]
+  pending_timezone?: string | null
+  pending_timezone_applies_at?: string | null
+  timezone_updated_at?: string | null
+  last_timezone_change_at?: string | null
+
   // Timestamps
   last_login: string | null
   created_at: string

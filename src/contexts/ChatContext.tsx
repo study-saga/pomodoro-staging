@@ -63,8 +63,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Connection state management
   const [connectionState, setConnectionState] = useState<'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error'>('disconnected');
   const [retryCount, setRetryCount] = useState(0);
-  const connectionTimeoutRef = useRef<NodeJS.Timeout>();
-  const retryTimeoutRef = useRef<NodeJS.Timeout>();
+  const [retryTrigger, setRetryTrigger] = useState(0); // Trigger for manual retry
+  const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Ref to track banned state without triggering effect re-runs
   const isBannedRef = useRef(isBanned);
@@ -501,13 +502,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    const manualRetry = () => {
-      console.log('[Chat] Manual retry');
-      setConnectionState('connecting');
-      setRetryCount(0);
-      connect();
-    };
-
     const handleVisibilityChange = () => {
       if (document.hidden) {
         disconnect();
@@ -523,7 +517,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       disconnect();
     };
-  }, [appUser, isChatEnabled, isBanned, userRole]); // Removed isChatOpen to prevent toggle reconnects
+  }, [appUser, isChatEnabled, isBanned, userRole, retryTrigger]); // Added retryTrigger for manual retry
 
   // Send Global Message (Database Insert)
   const sendGlobalMessage = useCallback(async (
@@ -700,6 +694,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       toast.success('User has been unbanned.');
     }
   }, [appUser, userRole]);
+
+  // Manual retry for reconnection
+  const manualRetry = useCallback(() => {
+    console.log('[Chat] Manual retry triggered');
+    setConnectionState('connecting');
+    setRetryCount(0);
+    setRetryTrigger(prev => prev + 1); // Trigger reconnection via useEffect
+  }, []);
 
   const value: ChatContextValue = {
     globalMessages,

@@ -17,7 +17,7 @@ interface GlobalChatMessagesProps {
  * Displays the list of messages and handles auto-scrolling
  */
 export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: GlobalChatMessagesProps) {
-  const { globalMessages, deleteGlobalMessage, userRole, reportMessage, isGlobalConnected, connectionState, retryCount, manualRetry } = useChat();
+  const { globalMessages, deleteGlobalMessage, userRole, reportMessage, connectionState, retryCount, manualRetry } = useChat();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
