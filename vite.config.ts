@@ -22,6 +22,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    modulePreload: false, // Disable automatic module preload to prevent warnings
     // Ensure we don't have conflicting chunk names
     rollupOptions: {
       output: {

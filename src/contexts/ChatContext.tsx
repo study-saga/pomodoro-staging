@@ -61,6 +61,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     isBannedRef.current = isBanned;
   }, [isBanned]);
 
+  // Ref to track if initial data fetches are complete
+  const isInitializedRef = useRef(false);
+
   // 0. Fetch User Role & Check Ban Status
   useEffect(() => {
     if (!appUser) {
@@ -81,6 +84,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       if (userData) {
         setUserRole(userData.role as UserRole);
+        isInitializedRef.current = true;
       }
 
       // Check active bans
@@ -149,7 +153,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return () => {
       banChannel.unsubscribe();
     };
-  }, [appUser]);
+  }, [appUser?.id]);
 
   // 0.5. Listen for Unban (Delete) specifically
   useEffect(() => {
@@ -277,7 +281,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // 3. Realtime Subscription (Postgres Changes + Presence)
   useEffect(() => {
-    if (!appUser || !isChatEnabled || isBanned) {
+    if (!appUser || !isInitializedRef.current || !isChatEnabled || isBanned) {
       setOnlineUsers([]);
       setIsGlobalConnected(false);
       return;
