@@ -43,6 +43,12 @@ export const changelog: ChangelogEntry[] = [
     tags: ['feature'],
   },
   {
+    date: '2025-12-08',
+    title: 'Buff Timers',
+    description: 'Added live countdowns to active buffs so you know exactly when they expire.',
+    tags: ['feature']
+  },
+  {
     date: '2025-11-24',
     title: 'Enhanced Buff System',
     description: 'Custom buff icons, hover tooltips (desktop) and tap interactions (mobile), always visible.',
