@@ -380,7 +380,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setRetryCount(0);
         clearTimeout(connectionTimeoutRef.current);
         clearTimeout(retryTimeoutRef.current);
-      } catch (error) {
+      } catch (error: any) {
+        // Ignore aborted connections (intentional disconnects)
+        if (error.message === 'Connection aborted') return;
+
         console.error(`[Chat] Attempt ${attempt} failed:`, error);
 
         if (attempt < maxAttempts - 1) {
@@ -514,6 +517,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               setIsGlobalConnected(false);
               reject(new Error(`Channel error: ${err?.message || 'Unknown'}`));
             } else if (status === 'CLOSED' && !resolved) {
+              // Check if this closure was intentional (channel removed via disconnect)
+              if (channelRef.current !== channel) {
+                resolved = true;
+                reject(new Error('Connection aborted'));
+                return;
+              }
+
               resolved = true;
               setIsGlobalConnected(false);
               reject(new Error('Channel closed before subscription'));
