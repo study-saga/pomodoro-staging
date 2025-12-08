@@ -32,27 +32,42 @@ export class ChunkLoadErrorBoundary extends Component<Props, State> {
     throw error;
   }
 
+  attemptReload() {
+    const hasReloaded = sessionStorage.getItem('chunk-error-reload');
+    if (!hasReloaded) {
+      sessionStorage.setItem('chunk-error-reload', 'true');
+      console.log('[ChunkLoadError] Auto-reloading...');
+      // Use replace to avoid adding to history
+      window.location.replace(window.location.href);
+    }
+  }
+
   componentDidCatch(error: Error) {
     console.error('[ChunkLoadError]', error);
     this.props.onError?.(error);
+
+    // If we caught a chunk error (determined by getDerivedStateFromError or here), try validity check
+    if (this.state.hasError) {
+      this.attemptReload();
+    }
   }
 
   componentDidMount() {
-    // If error exists on mount, auto-reload once
+    // If error exists on mount (from getDerivedStateFromError), auto-reload once
     if (this.state.hasError) {
-      const hasReloaded = sessionStorage.getItem('chunk-error-reload');
-      if (!hasReloaded) {
-        sessionStorage.setItem('chunk-error-reload', 'true');
-        console.log('[ChunkLoadError] Auto-reloading...');
-        setTimeout(() => window.location.reload(), 1000);
-      }
+      this.attemptReload();
     }
   }
 
   componentWillUnmount() {
-    // Clear reload flag on successful mount
+    // Clear reload flag on successful mount (if no error occurred)
+    // We only clear if we stayed mounted successfully for a bit, 
+    // but effectively if we unmount without error, we can reset.
     if (!this.state.hasError) {
-      sessionStorage.removeItem('chunk-error-reload');
+      // delayed clear to ensure it wasn't just a quick flash
+      setTimeout(() => {
+        sessionStorage.removeItem('chunk-error-reload');
+      }, 1000);
     }
   }
 

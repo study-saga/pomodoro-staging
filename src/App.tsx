@@ -286,9 +286,13 @@ function AppContent() {
 
       {/* Chat Container (Bottom Left) */}
       {!isPIPMode && (
-        <Suspense fallback={<LoadingSpinner />}>
-          <ChatContainer />
-        </Suspense>
+        <ChunkLoadErrorBoundary
+          onError={(error) => console.error('[ChatContainer] Chunk load failed:', error)}
+        >
+          <Suspense fallback={<LoadingSpinner />}>
+            <ChatContainer />
+          </Suspense>
+        </ChunkLoadErrorBoundary>
       )}
 
       {/* Toaster for notifications */}
