@@ -196,9 +196,15 @@ export const useSettingsStore = create<SettingsStore>()(
         }, 1);
 
         // Calculate flat XP bonus from active buffs
-        const flatXPBonus = roleFilteredBuffs.reduce((total, buff) => {
-          return total + (buff.flatXPBonus || 0);
-        }, 0);
+        // ANTI-ABUSE: Only award flat bonus if session is at least 15 minutes
+        let flatXPBonus = 0;
+        if (minutes >= 15) {
+          flatXPBonus = roleFilteredBuffs.reduce((total, buff) => {
+            return total + (buff.flatXPBonus || 0);
+          }, 0);
+        } else if (roleFilteredBuffs.some(b => b.flatXPBonus && b.flatXPBonus > 0)) {
+          console.log('[XP] Session too short (min 15m) - Flat XP bonus skipped');
+        }
 
         if (eventBuffMultiplier > 1 && roleFilteredBuffs.length > 0) {
           import.meta.env.DEV && console.log(

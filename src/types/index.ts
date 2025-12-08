@@ -188,4 +188,5 @@ export interface EventBuff {
   dateRule: DateRule; // When this buff is active
   durationHours?: number; // Optional: expires after N hours
   previewHours?: number; // Optional: hours before start to show preview (default: 48)
+  showCountdown?: boolean; // Optional: show live countdown to end date in tooltip
 }
