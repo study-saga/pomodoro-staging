@@ -75,6 +75,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Ref to track if initial data fetches are complete
   const isInitializedRef = useRef(false);
 
+  // Ref to track previous connection state for reconnection detection
+  const prevConnectedRef = useRef<boolean | undefined>(undefined);
+
   // 0. Fetch User Role & Check Ban Status
   useEffect(() => {
     if (!appUser) {
@@ -289,6 +292,67 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     fetchMessages();
   }, [isChatEnabled, isBanned]);
+
+  // 2.5. Refetch messages on reconnection (tab visibility change)
+  useEffect(() => {
+    const wasDisconnected = prevConnectedRef.current === false;
+    const isNowConnected = isGlobalConnected === true;
+
+    // Only refetch if we went from disconnected → connected (reconnection)
+    if (wasDisconnected && isNowConnected) {
+      console.log('[Chat] Reconnected - refetching messages to catch up');
+
+      const fetchMessages = async () => {
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select(`
+            id,
+            content,
+            created_at,
+            is_deleted,
+            user_id,
+            users (
+              id,
+              username,
+              avatar,
+              discord_id,
+              role
+            )
+          `)
+          .eq('is_deleted', false)
+          .order('created_at', { ascending: false })
+          .limit(MAX_MESSAGES);
+
+        if (error) {
+          console.error('[Chat] Error refetching messages on reconnection:', error);
+          return;
+        }
+
+        // Transform to ChatMessage type
+        const messages: ChatMessage[] = data.map((msg: any) => ({
+          id: msg.id,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+          deleted: msg.is_deleted,
+          user: {
+            id: msg.users?.id || msg.user_id,
+            username: msg.users?.username || 'Unknown',
+            avatar: msg.users?.avatar || null,
+            discord_id: msg.users?.discord_id,
+            role: msg.users?.role || 'user'
+          }
+        })).reverse(); // Reverse to show oldest first
+
+        setGlobalMessages(messages);
+        console.log(`[Chat] Refetched ${messages.length} messages after reconnection`);
+      };
+
+      fetchMessages();
+    }
+
+    // Update ref for next check
+    prevConnectedRef.current = isGlobalConnected;
+  }, [isGlobalConnected]);
 
   // 3. Realtime Subscription (Postgres Changes + Presence)
   useEffect(() => {
