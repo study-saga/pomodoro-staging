@@ -15,6 +15,7 @@ import type { ChatTab } from '../../types/chat';
 import { BanModal } from '../lazy';
 import { LoadingSpinner } from '../LoadingSpinner';
 import { useDeviceType } from '../../hooks/useDeviceType';
+import { useSettingsStore } from '../../store/useSettingsStore';
 
 /**
  * Main chat container with collapsible functionality
@@ -26,6 +27,7 @@ export function ChatContainer() {
   const { canSend, timeUntilReset, recordMessage } = useRateLimit();
   const { isCompact, isMobile } = useDeviceType();
   const isMouseActive = useMouseActivity(8000); // 8 seconds
+  const autoHideUI = useSettingsStore((state) => state.autoHideUI);
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTab>('local');
@@ -147,9 +149,9 @@ export function ChatContainer() {
     return (
       <motion.button
         onClick={() => setIsExpanded(true)}
-        animate={{ opacity: isMouseActive ? 1 : 0 }}
+        animate={{ opacity: isMouseActive || !autoHideUI ? 1 : 0 }}
         transition={{ duration: 0.5 }}
-        className={`fixed bottom-20 right-4 z-50 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${!isMouseActive ? 'pointer-events-none' : ''} ${isChatEnabled && !isBanned
+        className={`fixed bottom-20 right-4 z-50 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${(!isMouseActive && autoHideUI) ? 'pointer-events-none' : ''} ${isChatEnabled && !isBanned
           ? 'text-white hover:text-white drop-shadow-2xl'
           : 'text-red-400 hover:text-red-300 drop-shadow-lg'
           }`}
@@ -290,9 +292,9 @@ export function ChatContainer() {
       {!isExpanded && (
         <motion.button
           onClick={() => setIsExpanded(true)}
-          animate={{ opacity: isMouseActive ? 1 : 0 }}
+          animate={{ opacity: isMouseActive || !autoHideUI ? 1 : 0 }}
           transition={{ duration: 0.5 }}
-          className={`fixed bottom-24 left-4 z-40 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${!isMouseActive ? 'pointer-events-none' : ''} ${isChatEnabled && !isBanned
+          className={`fixed bottom-24 left-4 z-40 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${(!isMouseActive && autoHideUI) ? 'pointer-events-none' : ''} ${isChatEnabled && !isBanned
             ? 'text-white hover:text-white drop-shadow-2xl'
             : 'text-red-400 hover:text-red-300 drop-shadow-lg'
             }`}
@@ -318,9 +320,9 @@ export function ChatContainer() {
       {/* Expanded: Full chat interface */}
       {isExpanded && (
         <motion.div
-          animate={{ opacity: isMouseActive ? 1 : 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className={`fixed bottom-24 left-4 z-40 flex flex-col gap-1.5 ${isCompact ? 'w-72' : 'w-96'} max-w-[calc(100vw-2rem)] ${!isMouseActive ? 'pointer-events-none' : ''}`}
+          className={`fixed bottom-24 left-4 z-40 flex flex-col gap-1.5 ${isCompact ? 'w-72' : 'w-96'} max-w-[calc(100vw-2rem)]`}
         >
           {/* Main Glass Box (Tabs + Content) */}
           <div className={`${isCompact ? 'h-[350px]' : 'h-[450px]'} max-h-[55vh] bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative transition-all duration-300`}>

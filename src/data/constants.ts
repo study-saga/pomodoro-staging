@@ -121,6 +121,7 @@ export const DEFAULT_SETTINGS = {
     underwater: 0,
   },
   background: 'room-video',
+  autoHideUI: true,
   playlist: 'lofi' as const,
   xp: 0,
   level: 1,

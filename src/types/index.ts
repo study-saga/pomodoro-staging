@@ -35,6 +35,7 @@ export interface Settings {
 
   // Visual settings
   background: string;
+  autoHideUI: boolean;
   playlist: 'lofi' | 'synthwave';
 
   // Level system

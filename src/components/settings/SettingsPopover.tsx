@@ -179,6 +179,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
     pendingTimezone,
     pendingTimezoneAppliesAt,
     lastTimezoneChangeAt,
+    autoHideUI,
+    setAutoHideUI
   } = useSettingsStore();
 
   // Filter backgrounds based on viewport orientation (portrait vs landscape)
@@ -195,6 +197,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const [tempMusicVolume, setTempMusicVolume] = useState(musicVolume);
   const [tempAmbientVolumes, setTempAmbientVolumes] = useState(ambientVolumes);
   const [tempBackground, setTempBackground] = useState(background);
+  const [tempAutoHideUI, setTempAutoHideUI] = useState(autoHideUI);
   const [tempLevelSystemEnabled, setTempLevelSystemEnabled] = useState(levelSystemEnabled);
   const [tempPlaylist, setTempPlaylist] = useState(playlist);
   const [usernameInput, setUsernameInput] = useState(username);
@@ -210,18 +213,20 @@ export const SettingsPopover = memo(function SettingsPopover() {
     tempMusicVolume !== musicVolume ||
     JSON.stringify(tempAmbientVolumes) !== JSON.stringify(ambientVolumes) ||
     tempBackground !== background ||
+    tempAutoHideUI !== autoHideUI ||
     tempLevelSystemEnabled !== levelSystemEnabled ||
     tempPlaylist !== playlist;
 
-  // Close settings when mouse becomes inactive (unless there are pending changes)
+  // Close settings when mouse becomes inactive (unless there are pending changes or auto-hide is disabled)
   useEffect(() => {
     // Don't auto-close if there are unsaved changes or username operations pending
+    // Also don't auto-close if the user has disabled auto-hiding
     const hasPendingChanges = hasUnsavedChanges || usernameLoading || usernameError !== null;
 
-    if (!isMouseActive && open && !hasPendingChanges) {
+    if (!isMouseActive && open && !hasPendingChanges && autoHideUI) {
       setOpen(false);
     }
-  }, [isMouseActive, open, hasUnsavedChanges, usernameLoading, usernameError]);
+  }, [isMouseActive, open, hasUnsavedChanges, usernameLoading, usernameError, autoHideUI]);
 
   // Reset temporary state when modal opens
   useEffect(() => {
@@ -235,12 +240,13 @@ export const SettingsPopover = memo(function SettingsPopover() {
       setTempMusicVolume(musicVolume);
       setTempAmbientVolumes(ambientVolumes);
       setTempBackground(background);
+      setTempAutoHideUI(autoHideUI);
       setTempLevelSystemEnabled(levelSystemEnabled);
       setTempPlaylist(playlist);
       setUsernameInput(username);
       setActiveTab('timer'); // Default to General tab
     }
-  }, [open, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, playlist, username]);
+  }, [open, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, playlist, username, autoHideUI]);
 
   const handleSaveUsername = async () => {
     if (!appUser) {
@@ -361,6 +367,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setVolume(tempVolume);
     setMusicVolume(tempMusicVolume);
     setBackground(tempBackground);
+    setAutoHideUI(tempAutoHideUI);
     setLevelSystemEnabled(tempLevelSystemEnabled);
     setPlaylist(tempPlaylist);
 
@@ -380,6 +387,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     tempMusicVolume,
     tempAmbientVolumes,
     tempBackground,
+    tempAutoHideUI,
     tempLevelSystemEnabled,
     tempPlaylist,
     setPomodoroDuration,
@@ -392,6 +400,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setVolume,
     setMusicVolume,
     setBackground,
+    setAutoHideUI,
     setLevelSystemEnabled,
     setPlaylist,
     setAmbientVolume,
@@ -453,6 +462,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setTempMusicVolume(musicVolume);
     setTempAmbientVolumes(ambientVolumes);
     setTempBackground(background);
+    setTempAutoHideUI(autoHideUI);
     setTempLevelSystemEnabled(levelSystemEnabled);
     setTempPlaylist(playlist);
     setUsernameInput(username);
@@ -476,10 +486,10 @@ export const SettingsPopover = memo(function SettingsPopover() {
       onClick={() => setOpen(true)}
       aria-label="Open settings"
       animate={{
-        padding: isMouseActive ? '0.75rem' : '0.25rem'
+        opacity: isMouseActive || !autoHideUI ? 1 : 0
       }}
       transition={{ duration: 0.5, ease: "easeInOut" }}
-      className="bg-black/40 backdrop-blur-md rounded-full text-gray-400 hover:bg-black/60 transition-colors border border-gray-400/60"
+      className={`p-3 bg-black/40 backdrop-blur-md rounded-full text-gray-400 hover:bg-black/60 transition-colors border border-gray-400/60 ${(!isMouseActive && autoHideUI) ? 'pointer-events-none' : ''}`}
     >
       <SettingsIcon size={24} />
     </motion.button>
@@ -575,6 +585,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         notificationPermission={notificationPermission}
                         tempBackground={tempBackground}
                         setTempBackground={setTempBackground}
+                        tempAutoHideUI={tempAutoHideUI}
+                        setTempAutoHideUI={setTempAutoHideUI}
                         filteredBackgrounds={filteredBackgrounds}
                         tempMusicVolume={tempMusicVolume}
                         setTempMusicVolume={setTempMusicVolume}
@@ -742,6 +754,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         notificationPermission={notificationPermission}
                         tempBackground={tempBackground}
                         setTempBackground={setTempBackground}
+                        tempAutoHideUI={tempAutoHideUI}
+                        setTempAutoHideUI={setTempAutoHideUI}
                         filteredBackgrounds={filteredBackgrounds}
                         tempMusicVolume={tempMusicVolume}
                         setTempMusicVolume={setTempMusicVolume}

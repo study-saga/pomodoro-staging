@@ -45,6 +45,8 @@ interface SettingsStore extends Settings {
   setBackground: (background: string) => void;
   backgroundMobile: string;
   backgroundDesktop: string;
+  setAutoHideUI: (enabled: boolean) => void;
+  autoHideUI: boolean;
   setPlaylist: (playlist: 'lofi' | 'synthwave') => void;
 
   // Level system actions
@@ -133,6 +135,7 @@ export const useSettingsStore = create<SettingsStore>()(
           backgroundDesktop: !isMobile ? validBackground : state.backgroundDesktop
         }));
       },
+      setAutoHideUI: (enabled) => set({ autoHideUI: enabled }),
       setPlaylist: (playlist) => set({ playlist }),
 
       // Level system actions

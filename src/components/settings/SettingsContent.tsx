@@ -31,6 +31,8 @@ interface SettingsContentProps {
   // Appearance settings
   tempBackground: string;
   setTempBackground: React.Dispatch<React.SetStateAction<string>>;
+  tempAutoHideUI: boolean;
+  setTempAutoHideUI: React.Dispatch<React.SetStateAction<boolean>>;
   filteredBackgrounds: Array<{ id: string; name: string; poster: string; orientation: string }>;
 
   // Sound settings
@@ -97,6 +99,8 @@ export function SettingsContent(props: SettingsContentProps) {
     notificationPermission,
     tempBackground,
     setTempBackground,
+    tempAutoHideUI,
+    setTempAutoHideUI,
     filteredBackgrounds,
     tempMusicVolume,
     setTempMusicVolume,
@@ -295,6 +299,19 @@ export function SettingsContent(props: SettingsContentProps) {
           transition={{ duration: 0.2 }}
           className="space-y-4"
         >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-white font-bold text-lg">Auto-hide UI</h3>
+              <p className="text-gray-400 text-sm">Hide controls when mouse is inactive</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={tempAutoHideUI}
+              onChange={(e) => setTempAutoHideUI(e.target.checked)}
+              className="w-5 h-5 rounded cursor-pointer"
+            />
+          </div>
+
           <h3 className="text-white font-bold text-lg">Background</h3>
           <div className="grid grid-cols-3 gap-4">
             {filteredBackgrounds.map((bg) => (
