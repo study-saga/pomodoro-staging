@@ -4,7 +4,7 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://pkxgxfjcxxshlofbl
 
 test('authenticated user sees dashboard', async ({ page }) => {
     // Mock Supabase Auth User endpoint
-    await page.route(`${SUPABASE_URL}/auth/v1/user`, async route => {
+    await page.route('**/auth/v1/user', async route => {
         await route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -23,7 +23,7 @@ test('authenticated user sees dashboard', async ({ page }) => {
     });
 
     // Mock "users" table select (fetchOrCreateAppUser)
-    await page.route(`${SUPABASE_URL}/rest/v1/users?select=*&auth_user_id=eq.test-user-id&limit=1`, async route => {
+    await page.route('**/rest/v1/users*', async route => {
         await route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -39,7 +39,7 @@ test('authenticated user sees dashboard', async ({ page }) => {
     });
 
     // Mock "completed_pomodoros" select (getRecentPomodoros)
-    await page.route(`${SUPABASE_URL}/rest/v1/completed_pomodoros?*`, async route => {
+    await page.route('**/rest/v1/completed_pomodoros*', async route => {
         await route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -48,11 +48,23 @@ test('authenticated user sees dashboard', async ({ page }) => {
     });
 
     // Mock "user_unlocked_rewards"
-    await page.route(`${SUPABASE_URL}/rpc/get_user_unlocked_rewards`, async route => {
+    await page.route('**/rpc/get_user_unlocked_rewards', async route => {
         await route.fulfill({
             status: 200,
             contentType: 'application/json',
             body: JSON.stringify([])
+        });
+    });
+
+    // Mock "sync_discord_user_data"
+    await page.route('**/rpc/sync_discord_user_data', async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                id: 'test-user-uuid',
+                username: 'Test User'
+            })
         });
     });
 
@@ -73,21 +85,30 @@ test('authenticated user sees dashboard', async ({ page }) => {
                 id: 'test-user-id',
                 aud: 'authenticated',
                 role: 'authenticated',
-                email: 'test@example.com'
+                email: 'test@example.com',
+                user_metadata: {
+                    full_name: 'Test User',
+                    avatar_url: 'https://example.com/avatar.png',
+                    provider_id: '123456789'
+                }
             }
         }));
     }, { key: storageKey });
 
     await page.goto('/');
 
+    // Check for loading screen disappearance
+    await expect(page.getByText('Connecting to Discord...')).not.toBeVisible({ timeout: 10000 });
+
+    // Check for auth error
+    await expect(page.getByText('Authentication Failed')).not.toBeVisible();
+
     // Should NOT see "Sign in"
     await expect(page.getByRole('button', { name: /Sign in with Discord/i })).not.toBeVisible();
 
-    // Should see the Timer (Start button)
-    await expect(page.getByText('Start')).toBeVisible();
+    // Should see the Timer (Start button) - Allow more time for mobile hydration
+    await expect(page.getByText('Start')).toBeVisible({ timeout: 10000 });
 
-    // Should see user name (if displayed) or some dashboard element
-    // Since we mocked level 5, maybe check for that if it's visible?
-    // Or check if "Pomodoro" tab is visible
-    await expect(page.getByText('Pomodoro', { exact: true })).toBeVisible();
+    // Should see the Reset button
+    await expect(page.getByText('Reset')).toBeVisible();
 });

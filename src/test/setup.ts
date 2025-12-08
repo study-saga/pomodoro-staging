@@ -2,26 +2,34 @@ import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 
 // Mock IntersectionObserver
-const observe = vi.fn();
-const unobserve = vi.fn();
-const disconnect = vi.fn();
-
-window.IntersectionObserver = vi.fn(() => ({
-    observe,
-    unobserve,
-    disconnect,
-    takeRecords: () => [],
-    root: null,
-    rootMargin: '',
-    thresholds: [],
-}));
+class IntersectionObserverMock {
+    readonly root: Element | null = null;
+    readonly rootMargin: string = '';
+    readonly thresholds: ReadonlyArray<number> = [];
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+    takeRecords = vi.fn(() => []);
+    constructor() { }
+}
+Object.defineProperty(window, 'IntersectionObserver', {
+    writable: true,
+    configurable: true,
+    value: IntersectionObserverMock
+});
 
 // Mock ResizeObserver
-window.ResizeObserver = vi.fn(() => ({
-    observe: vi.fn(),
-    unobserve: vi.fn(),
-    disconnect: vi.fn(),
-}));
+class ResizeObserverMock {
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+    constructor() { }
+}
+Object.defineProperty(window, 'ResizeObserver', {
+    writable: true,
+    configurable: true,
+    value: ResizeObserverMock
+});
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -42,3 +50,28 @@ Object.defineProperty(window, 'matchMedia', {
 window.HTMLMediaElement.prototype.load = vi.fn();
 window.HTMLMediaElement.prototype.play = vi.fn(() => Promise.resolve());
 window.HTMLMediaElement.prototype.pause = vi.fn();
+
+// Mock localStorage
+const localStorageMock = (function () {
+    let store: Record<string, string> = {};
+    return {
+        getItem: vi.fn((key: string) => store[key] || null),
+        setItem: vi.fn((key: string, value: string) => {
+            store[key] = value.toString();
+        }),
+        removeItem: vi.fn((key: string) => {
+            delete store[key];
+        }),
+        clear: vi.fn(() => {
+            store = {};
+        }),
+        key: vi.fn((index: number) => Object.keys(store)[index] || null),
+        get length() {
+            return Object.keys(store).length;
+        }
+    };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+    value: localStorageMock
+});

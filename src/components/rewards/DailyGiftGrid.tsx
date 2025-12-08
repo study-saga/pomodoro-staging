@@ -110,7 +110,7 @@ export function DailyGiftGrid({ show, onClose }: DailyGiftGridProps) {
         if (currentGift?.xpAmount) {
           try {
             // Check if user is authenticated (either web or Discord mode)
-            if (!userId || !discordId) {
+            if (!userId && !discordId) {
               console.warn('[DailyGift] No user ID or Discord ID - gift not claimed');
               markDailyGiftClaimed(); // Mark locally to prevent re-showing
               setXpAwarded(true);
