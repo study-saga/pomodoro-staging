@@ -12,7 +12,7 @@ RETURNS JSONB AS $$
 DECLARE
   v_current_timezone TEXT;
   v_last_change TIMESTAMPTZ;
-  v_last_change TIMESTAMPTZ;
+
   v_account_age_days INT;
   v_applies_at TIMESTAMPTZ;
   v_hours_until_applied INT;
