@@ -65,6 +65,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [retryCount, setRetryCount] = useState(0);
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [retryTrigger, setRetryTrigger] = useState(0);
 
   // Ref to track banned state without triggering effect re-runs
   const isBannedRef = useRef(isBanned);
@@ -590,7 +591,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       disconnect();
     };
-  }, [appUser?.id, isChatEnabled, isBanned]); // Only reconnect if ID changes, not just XP/stats
+  }, [appUser?.id, isChatEnabled, isBanned, retryTrigger]); // Only reconnect if ID changes, or retry triggered
 
   // 3.5. Update Presence when Role Update (without reconnecting)
   useEffect(() => {
@@ -784,11 +785,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [appUser, userRole]);
 
+  // Manual retry trigger state NOT NEEDED HERE
+
   // Manual retry for reconnection
   const manualRetry = useCallback(() => {
     import.meta.env.DEV && console.log('[Chat] Manual retry triggered');
     setConnectionState('connecting');
     setRetryCount(0);
+    setRetryTrigger(prev => prev + 1);
   }, []);
 
   const value: ChatContextValue = {

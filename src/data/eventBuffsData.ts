@@ -384,20 +384,42 @@ export function getEventBuffEndDate(buff: EventBuff, currentDate: Date = new Dat
     const daysAround = rule.daysAround || 0;
 
     // Target date for the main event
-    const targetDate = new Date(currentYear, rule.month - 1, rule.day, 23, 59, 59);
+    let targetDate = new Date(currentYear, rule.month - 1, rule.day, 23, 59, 59);
 
-    // If we have days around, the end date is target + daysAround
-    // Note: This logic assumes simple window centered on date or extending around it.
-    // For 'daysAround', we typically treat it as +/- days. 
-    // So end date = targetDate + daysAround days.
-    const endDate = new Date(targetDate);
+    // If active in January but event was December, we might need adjustments,
+    // but typically monthDay is simple year-agnostic recurrence.
+    // However, if we are currently active, we want the end date relative to the CURRENT activation.
+
+    // Calculate start and end for CURRENT YEAR instance
+    let startDate = new Date(targetDate);
+    startDate.setDate(startDate.getDate() - daysAround);
+    startDate.setHours(0, 0, 0, 0);
+
+    let endDate = new Date(targetDate);
     endDate.setDate(endDate.getDate() + daysAround);
 
-    // Check if we are in next year's window (e.g. Jan 1 active but logic calculated previous year)?
-    // For simplicity, we assume the current active check has passed, so we just want the nearest end date.
-    // But for monthDay, if we are in Dec and it rolls over, handling year is tricky.
-    // Given the specific Dec 16 +/- 15 days use case, it covers end of Dec.
+    // Check if we are currently within this window
+    if (currentDate >= startDate && currentDate <= endDate) {
+      return endDate;
+    }
 
+    // If not, maybe it's a year-boundary case? (e.g. Dec - Jan window)
+    // If we are in Jan, and event is Dec, check PREVIOUS year's event window
+    const prevYearTarget = new Date(currentYear - 1, rule.month - 1, rule.day, 23, 59, 59);
+    let prevYearEnd = new Date(prevYearTarget);
+    prevYearEnd.setDate(prevYearEnd.getDate() + daysAround);
+    let prevYearStart = new Date(prevYearTarget);
+    prevYearStart.setDate(prevYearStart.getDate() - daysAround);
+    prevYearStart.setHours(0, 0, 0, 0);
+
+    if (currentDate >= prevYearStart && currentDate <= prevYearEnd) {
+      return prevYearEnd;
+    }
+
+    // If we are in Dec, and event is Jan, check NEXT year's event window?
+    // (Less common for 'daysAround', usually handles single date)
+
+    // Fallback: Return current year's end date if closest
     return endDate;
   }
 

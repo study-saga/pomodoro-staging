@@ -203,7 +203,8 @@ export const useSettingsStore = create<SettingsStore>()(
             return total + (buff.flatXPBonus || 0);
           }, 0);
         } else if (roleFilteredBuffs.some(b => b.flatXPBonus && b.flatXPBonus > 0)) {
-          console.log('[XP] Session too short (min 15m) - Flat XP bonus skipped');
+        } else if (roleFilteredBuffs.some(b => b.flatXPBonus && b.flatXPBonus > 0)) {
+          import.meta.env.DEV && console.log('[XP] Session too short (min 15m) - Flat XP bonus skipped');
         }
 
         if (eventBuffMultiplier > 1 && roleFilteredBuffs.length > 0) {

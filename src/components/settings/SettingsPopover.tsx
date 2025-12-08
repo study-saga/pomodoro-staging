@@ -485,6 +485,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
       ref={triggerButtonRef}
       onClick={() => setOpen(true)}
       aria-label="Open settings"
+      aria-hidden={!isMouseActive && autoHideUI}
+      tabIndex={(!isMouseActive && autoHideUI) ? -1 : 0}
       animate={{
         opacity: isMouseActive || !autoHideUI ? 1 : 0
       }}

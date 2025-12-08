@@ -767,22 +767,25 @@ export async function saveCompletedBreak(
  * @param newWeekendDays - Custom weekend days [0,6]=Sat-Sun, [5,6]=Fri-Sat
  * @returns Result with status and application details
  */
+// Interface for request_timezone_change response
+interface TimezoneChangeResponse {
+  status: 'pending' | 'rejected';
+  message: string;
+  newTimezone?: string;
+  newWeekendDays?: number[];
+  appliesAt?: string;
+  hoursUntilApplied?: number;
+  changesRemainingThisMonth?: number;
+  cooldownUntil?: string;
+  hoursRemaining?: number;
+  resetDate?: string;
+}
+
 export async function requestTimezoneChange(
   userId: string,
   newTimezone: string,
   newWeekendDays: number[]
-): Promise<{
-  status: 'pending' | 'rejected'
-  message: string
-  newTimezone?: string
-  newWeekendDays?: number[]
-  appliesAt?: string
-  hoursUntilApplied?: number
-  changesRemainingThisMonth?: number
-  cooldownUntil?: string
-  hoursRemaining?: number
-  resetDate?: string
-}> {
+): Promise<TimezoneChangeResponse> {
   import.meta.env.DEV && console.log(`[User Sync] Requesting timezone change for user ${userId} to ${newTimezone}`)
 
   const { data, error } = await supabase.rpc('request_timezone_change', {
@@ -796,21 +799,11 @@ export async function requestTimezoneChange(
     throw new Error(`Failed to request timezone change: ${error.message}`)
   }
 
-  const result = data as any
+  // Type assertion is safe here as we defined the interface matching the RPC return structure
+  const result = data as TimezoneChangeResponse // Only 'as any' was flagged, using specific type is better
   import.meta.env.DEV && console.log(`[User Sync] Timezone change request result:`, result)
 
-  return {
-    status: result.status,
-    message: result.message,
-    newTimezone: result.newTimezone,
-    newWeekendDays: result.newWeekendDays,
-    appliesAt: result.appliesAt,
-    hoursUntilApplied: result.hoursUntilApplied,
-    changesRemainingThisMonth: result.changesRemainingThisMonth,
-    cooldownUntil: result.cooldownUntil,
-    hoursRemaining: result.hoursRemaining,
-    resetDate: result.resetDate
-  }
+  return result
 }
 
 /**
@@ -824,41 +817,30 @@ export async function requestTimezoneChange(
  * @param userId - User's UUID
  * @returns Weekend status with debug info
  */
-export async function isWeekendForUser(userId: string): Promise<{
-  isWeekend: boolean
-  dayOfWeek: number
-  weekendDays: number[]
-  userLocalTime: string
-  serverUtcTime: string
-  timezone: string
-}> {
+// Interface for is_weekend_for_user response
+interface WeekendStatusResponse {
+  isWeekend: boolean;
+  dayOfWeek: number;
+  weekendDays: number[];
+  userLocalTime: string;
+  serverUtcTime: string;
+  timezone: string;
+}
+
+export async function isWeekendForUser(userId: string): Promise<WeekendStatusResponse> {
   const { data, error } = await supabase.rpc('is_weekend_for_user', {
     p_user_id: userId
   })
 
   if (error) {
     console.error('[User Sync] Error checking weekend status:', error)
-    // Fallback to client-side for guest mode
-    const now = new Date()
-    return {
-      isWeekend: now.getDay() === 0 || now.getDay() === 6,
-      dayOfWeek: now.getDay(),
-      weekendDays: [0, 6],
-      userLocalTime: now.toISOString(),
-      serverUtcTime: now.toISOString(),
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-    }
+    // Server-authoritative: If check fails, we must throw, NOT fallback to client time.
+    // Falling back allows users to bypass checks by blocking the request.
+    throw new Error('Failed to verify weekend status with server');
   }
 
-  const result = data as any
-  return {
-    isWeekend: result.isWeekend,
-    dayOfWeek: result.dayOfWeek,
-    weekendDays: result.weekendDays,
-    userLocalTime: result.userLocalTime,
-    serverUtcTime: result.serverUtcTime,
-    timezone: result.timezone
-  }
+  const result = data as WeekendStatusResponse
+  return result
 }
 
 // claimDailyGiftXP removed - dead code from old login streak system

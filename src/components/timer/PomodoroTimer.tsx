@@ -149,9 +149,14 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
       // Attempt to unlock audio context on first interaction
       if (soundEnabled && audioRef.current) {
-        // Play silence or just load to unlock
-        audioRef.current.load();
-        // audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
+        // Play and pause immediately to unlock audio on iOS/Safari
+        const audio = audioRef.current;
+        audio.play().then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+        }).catch(() => {
+          // Playback failed (e.g. no user gesture) - harmless
+        });
       }
     }
 
@@ -280,7 +285,6 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     // Show notification
     showNotification(timerType);
 
-    // Play completion sound
     // Play completion sound
     if (soundEnabled) {
       if (audioRef.current) {
