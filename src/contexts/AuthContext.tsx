@@ -163,6 +163,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return
       }
 
+      // Handle "No session found" gracefully - show LoginScreen
+      if (errorMessage === 'No session found') {
+        import.meta.env.DEV && console.log('[Auth] No session found, showing login screen')
+        setAuthenticated(false)
+        setLoading(false)
+        return
+      }
+
       console.error('[Auth] Web authentication failed:', err)
       setError(errorMessage)
       setAuthenticated(false)

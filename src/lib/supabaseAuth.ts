@@ -51,11 +51,9 @@ export async function authenticateWithSupabase(): Promise<AuthResult> {
   }
 
   // No session - need to authenticate
-  import.meta.env.DEV && console.log('[Supabase Auth] No session found, initiating Discord OAuth...')
-  await signInWithDiscord()
-
-  // This will not return immediately - the page will redirect to Discord
-  throw new Error('Redirecting to Discord authentication...')
+  import.meta.env.DEV && console.log('[Supabase Auth] No session found')
+  // Do NOT auto-redirect. Let the UI handle the unauthenticated state (LoginScreen).
+  throw new Error('No session found')
 }
 
 /**
@@ -99,23 +97,23 @@ export async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
   // Extract Discord data from user metadata
   // Discord OAuth may use different field names
   const discordId = authUser.user_metadata?.provider_id ||
-                    authUser.user_metadata?.sub
-  
+    authUser.user_metadata?.sub
+
   if (!discordId) {
     console.error('[Supabase Auth] Missing Discord ID in user metadata:', authUser.user_metadata)
     throw new Error('Discord authentication failed: missing Discord user ID')
   }
 
   const username = authUser.user_metadata?.full_name ||
-                   authUser.user_metadata?.name ||
-                   authUser.user_metadata?.user_name ||
-                   authUser.user_metadata?.username ||
-                   authUser.email?.split('@')[0] ||
-                   `Discord User ${discordId.substring(0, 8)}`
+    authUser.user_metadata?.name ||
+    authUser.user_metadata?.user_name ||
+    authUser.user_metadata?.username ||
+    authUser.email?.split('@')[0] ||
+    `Discord User ${discordId.substring(0, 8)}`
 
   const avatar = authUser.user_metadata?.avatar_url ||
-                 authUser.user_metadata?.picture ||
-                 null
+    authUser.user_metadata?.picture ||
+    null
 
   import.meta.env.DEV && console.log('[Supabase Auth] Discord data:', { discordId, username, avatar })
 
