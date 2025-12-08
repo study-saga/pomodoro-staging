@@ -287,7 +287,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
         className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden
           ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' :
             isTablet ? 'p-3.5 min-w-[220px] max-w-[280px]' :
-            'p-4 min-w-[280px] max-w-[320px]'}
+              'p-4 min-w-[280px] max-w-[320px]'}
           ${!isMouseActive || isPIPMode ? 'pointer-events-none opacity-0' : ''}
           ${shouldScaleDown ? 'scale-[0.65] origin-top-left' : ''}`}
       >
@@ -643,7 +643,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
             opacity: isMobile ? (activeBuffTooltip === 'role-buff' ? 1 : 0) : undefined,
           }}
         >
-          <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-4 py-2.5 shadow-lg min-w-[220px]">
+          <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] max-w-[260px]">
             <p className="text-sm font-semibold text-purple-300 mb-1">
               {levelPath === 'elf' ? 'Elf Consistency' : 'Human Risk/Reward'}
             </p>
@@ -666,7 +666,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
             opacity: isMobile ? (activeBuffTooltip === 'boost' ? 1 : 0) : undefined,
           }}
         >
-          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] border border-yellow-500/30">
+          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] max-w-[260px] border border-yellow-500/30">
             <p className="text-sm font-semibold mb-1 text-yellow-300">
               🍅 +25% XP Boost
             </p>
@@ -698,7 +698,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
               opacity: isMobile ? (activeBuffTooltip === buffId ? 1 : 0) : undefined,
             }}
           >
-            <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
+            <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] max-w-[260px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
               }`}>
               <p className={`text-sm font-semibold mb-1 ${isElfBuff ? 'text-green-300' : 'text-cyan-300'
                 }`}>
@@ -731,7 +731,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
               opacity: isMobile ? (activeBuffTooltip === buffId ? 1 : 0) : undefined,
             }}
           >
-            <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
+            <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] max-w-[260px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
               }`}>
               <p className={`text-sm font-semibold mb-1 ${isElfBuff ? 'text-green-300' : 'text-cyan-300'
                 }`}>
