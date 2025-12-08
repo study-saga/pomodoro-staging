@@ -35,6 +35,7 @@ export interface Settings {
 
   // Visual settings
   background: string;
+  autoHideUI: boolean;
   playlist: 'lofi' | 'synthwave';
 
   // Level system
@@ -77,6 +78,14 @@ export interface Settings {
     expiresAt: number | null;
     metadata?: Record<string, any>;
   }>;
+
+  // Timezone settings (for weekend buff accuracy)
+  timezone: string; // IANA format (e.g., 'America/New_York')
+  weekendDays: number[]; // [0,6] = Sat-Sun, [5,6] = Fri-Sat (0=Sunday, 6=Saturday)
+  pendingTimezone: string | null; // Pending timezone change (applies at pendingTimezoneAppliesAt)
+  pendingTimezoneAppliesAt: string | null; // ISO timestamp when pending timezone applies
+  timezoneUpdatedAt: string | null; // ISO timestamp of last timezone update
+  lastTimezoneChangeAt: string | null; // ISO timestamp of last timezone change (14-day cooldown)
 }
 
 export interface LevelData {
@@ -179,4 +188,5 @@ export interface EventBuff {
   dateRule: DateRule; // When this buff is active
   durationHours?: number; // Optional: expires after N hours
   previewHours?: number; // Optional: hours before start to show preview (default: 48)
+  showCountdown?: boolean; // Optional: show live countdown to end date in tooltip
 }

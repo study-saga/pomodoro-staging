@@ -84,7 +84,7 @@ export async function setUserBuff(
       throw new Error(`Failed to set buff: ${error.message}`);
     }
 
-    console.log(`[BuffManager] ✓ Set buff ${buffId} for user (Discord, value: ${value}, expires: ${expiresAt ? new Date(expiresAt) : 'never'})`);
+    import.meta.env.DEV && console.log(`[BuffManager] ✓ Set buff ${buffId} for user (Discord, value: ${value}, expires: ${expiresAt ? new Date(expiresAt) : 'never'})`);
     return;
   }
 
@@ -102,7 +102,7 @@ export async function setUserBuff(
     throw new Error(`Failed to set buff: ${error.message}`);
   }
 
-  console.log(`[BuffManager] ✓ Set buff ${buffId} for user (value: ${value}, expires: ${expiresAt ? new Date(expiresAt) : 'never'})`);
+  import.meta.env.DEV && console.log(`[BuffManager] ✓ Set buff ${buffId} for user (value: ${value}, expires: ${expiresAt ? new Date(expiresAt) : 'never'})`);
 }
 
 /**
@@ -126,7 +126,7 @@ export async function removeUserBuff(
       throw new Error(`Failed to remove buff: ${error.message}`);
     }
 
-    console.log(`[BuffManager] ✓ Removed buff ${buffId} for user (Discord)`);
+    import.meta.env.DEV && console.log(`[BuffManager] ✓ Removed buff ${buffId} for user (Discord)`);
     return;
   }
 
@@ -141,7 +141,7 @@ export async function removeUserBuff(
     throw new Error(`Failed to remove buff: ${error.message}`);
   }
 
-  console.log(`[BuffManager] ✓ Removed buff ${buffId} for user`);
+  import.meta.env.DEV && console.log(`[BuffManager] ✓ Removed buff ${buffId} for user`);
 }
 
 /**
@@ -160,7 +160,7 @@ export async function clearExpiredBuffs(userId: string, discordId?: string): Pro
       throw new Error(`Failed to clear expired buffs: ${error.message}`);
     }
 
-    console.log('[BuffManager] ✓ Cleared expired buffs (Discord)');
+    import.meta.env.DEV && console.log('[BuffManager] ✓ Cleared expired buffs (Discord)');
     return;
   }
 
@@ -174,7 +174,7 @@ export async function clearExpiredBuffs(userId: string, discordId?: string): Pro
     throw new Error(`Failed to clear expired buffs: ${error.message}`);
   }
 
-  console.log('[BuffManager] ✓ Cleared expired buffs');
+  import.meta.env.DEV && console.log('[BuffManager] ✓ Cleared expired buffs');
 }
 
 /**
@@ -202,7 +202,7 @@ export function calculateBuffStack(
   for (const [buffId, buffData] of Object.entries(activeBuffs)) {
     // Check if expired (skip time-limited buffs that expired)
     if (buffData.expiresAt && buffData.expiresAt <= now) {
-      console.log(`[BuffManager] Skipping expired buff: ${buffId}`);
+      import.meta.env.DEV && console.log(`[BuffManager] Skipping expired buff: ${buffId}`);
       continue;
     }
 
@@ -217,7 +217,7 @@ export function calculateBuffStack(
       const isEventActive = now >= startDate && now < endDate;
 
       if (!isEventActive) {
-        console.log('[BuffManager] Slingshot event not active, keeping in storage');
+        import.meta.env.DEV && console.log('[BuffManager] Slingshot event not active, keeping in storage');
         continue; // Skip XP bonus but preserve in DB
       }
     }
@@ -231,7 +231,7 @@ export function calculateBuffStack(
 
     // Check if buff applies to this role
     if (!eventBuffAppliesToRole(buffConfig, roleType)) {
-      console.log(`[BuffManager] Buff ${buffId} doesn't apply to ${roleType}`);
+      import.meta.env.DEV && console.log(`[BuffManager] Buff ${buffId} doesn't apply to ${roleType}`);
       continue;
     }
 
@@ -246,7 +246,7 @@ export function calculateBuffStack(
     const percentage = Math.round(buffMultiplier * 100);
     result.bonusStrings.push(`+${percentage}% ${buffConfig.name}`);
 
-    console.log(`[BuffManager] Applied buff ${buffId}: +${percentage}%`);
+    import.meta.env.DEV && console.log(`[BuffManager] Applied buff ${buffId}: +${percentage}%`);
   }
 
   return result;
@@ -261,7 +261,7 @@ export async function activateSlingshotBuff(userId: string, discordId?: string):
   const startDate = Date.UTC(2025, 10, 22); // Nov 22 00:00 UTC (month is 0-indexed)
 
   if (now < startDate) {
-    console.log('[BuffManager] Slingshot buff not yet active (activates Nov 22 UTC)');
+    import.meta.env.DEV && console.log('[BuffManager] Slingshot buff not yet active (activates Nov 22 UTC)');
     return;
   }
 
@@ -275,7 +275,7 @@ export async function activateSlingshotBuff(userId: string, discordId?: string):
     discordId
   );
 
-  console.log('[BuffManager] ✓ Activated slingshot buff (+25% XP)');
+  import.meta.env.DEV && console.log('[BuffManager] ✓ Activated slingshot buff (+25% XP)');
 }
 
 /**
@@ -293,7 +293,7 @@ export async function activateDay10Boost(userId: string, discordId?: string): Pr
     discordId
   );
 
-  console.log('[BuffManager] ✓ Activated day 10 boost (expires in 24h)');
+  import.meta.env.DEV && console.log('[BuffManager] ✓ Activated day 10 boost (expires in 24h)');
 }
 
 /**

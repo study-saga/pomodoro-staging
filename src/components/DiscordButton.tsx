@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 import { useMouseActivity } from '../hooks/useMouseActivity'
+import { useSettingsStore } from '../store/useSettingsStore'
 
 const DiscordIcon = () => (
   <svg
@@ -29,13 +30,14 @@ const DiscordIcon = () => (
 export default function DiscordButton() {
   const isMouseActive = useMouseActivity(8000); // 8 seconds
   const { discordSdk, isDiscordActivity } = useAuth()
+  const autoHideUI = useSettingsStore((state) => state.autoHideUI);
 
   const handleClick = async () => {
     const url = 'https://discord.gg/8jbthVPmnb'
 
     if (isDiscordActivity && discordSdk) {
       // Discord Activity mode - use SDK to avoid sandbox popup blocking
-      console.log('[Discord Button] Opening external link via Discord SDK')
+      import.meta.env.DEV && console.log('[Discord Button] Opening external link via Discord SDK')
       try {
         await discordSdk.commands.openExternalLink({ url })
       } catch (error) {
@@ -44,7 +46,7 @@ export default function DiscordButton() {
       }
     } else {
       // Web mode - use standard window.open
-      console.log('[Discord Button] Opening external link via window.open')
+      import.meta.env.DEV && console.log('[Discord Button] Opening external link via window.open')
       window.open(url, '_blank', 'noopener,noreferrer')
     }
   }
@@ -52,11 +54,11 @@ export default function DiscordButton() {
   return (
     <motion.button
       initial={{ opacity: 1 }}
-      animate={{ opacity: isMouseActive ? 1 : 0 }}
+      animate={{ opacity: isMouseActive || !autoHideUI ? 1 : 0 }}
       transition={{ duration: 0.5 }}
       onClick={handleClick}
       aria-label="Join our Discord community"
-      className={`p-3 bg-[#5865F2] hover:bg-[#4752C4] backdrop-blur-md rounded-full text-white transition-colors border border-[#5865F2] z-40 ${!isMouseActive ? 'pointer-events-none' : ''}`}
+      className={`p-3 bg-[#5865F2] hover:bg-[#4752C4] backdrop-blur-md rounded-full text-white transition-colors border border-[#5865F2] z-40 ${(!isMouseActive && autoHideUI) ? 'pointer-events-none' : ''}`}
       title="Join our Discord community"
     >
       <DiscordIcon />

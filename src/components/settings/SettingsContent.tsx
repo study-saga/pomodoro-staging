@@ -4,10 +4,11 @@ import { AMBIENT_SOUNDS } from '../../data/constants';
 import { Badge } from '../ui/badge';
 import { changelog, type ChangelogEntry } from '../../data/changelog';
 import { ProgressTab } from './ProgressTab';
+import { TimezoneTab } from './TimezoneTab';
 
 
 interface SettingsContentProps {
-  activeTab: 'timer' | 'appearance' | 'sounds' | 'notifications' | 'music' | 'progress' | 'whats-new';
+  activeTab: 'timer' | 'appearance' | 'sounds' | 'notifications' | 'timezone' | 'music' | 'progress' | 'whats-new';
   isMobile: boolean;
 
   // Timer settings
@@ -30,6 +31,8 @@ interface SettingsContentProps {
   // Appearance settings
   tempBackground: string;
   setTempBackground: React.Dispatch<React.SetStateAction<string>>;
+  tempAutoHideUI: boolean;
+  setTempAutoHideUI: React.Dispatch<React.SetStateAction<boolean>>;
   filteredBackgrounds: Array<{ id: string; name: string; poster: string; orientation: string }>;
 
   // Sound settings
@@ -66,6 +69,13 @@ interface SettingsContentProps {
   pomodoroBoostActive: boolean;
   pomodoroBoostExpiresAt: number | null;
   firstLoginDate: string | null;
+
+  // Timezone settings
+  timezone: string;
+  weekendDays: number[];
+  pendingTimezone: string | null;
+  pendingTimezoneAppliesAt: string | null;
+  lastTimezoneChangeAt: string | null;
 }
 
 export function SettingsContent(props: SettingsContentProps) {
@@ -89,6 +99,8 @@ export function SettingsContent(props: SettingsContentProps) {
     notificationPermission,
     tempBackground,
     setTempBackground,
+    tempAutoHideUI,
+    setTempAutoHideUI,
     filteredBackgrounds,
     tempMusicVolume,
     setTempMusicVolume,
@@ -117,6 +129,11 @@ export function SettingsContent(props: SettingsContentProps) {
     pomodoroBoostActive,
     pomodoroBoostExpiresAt,
     firstLoginDate,
+    timezone,
+    weekendDays,
+    pendingTimezone,
+    pendingTimezoneAppliesAt,
+    lastTimezoneChangeAt,
   } = props;
 
   return (
@@ -282,6 +299,19 @@ export function SettingsContent(props: SettingsContentProps) {
           transition={{ duration: 0.2 }}
           className="space-y-4"
         >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-white font-bold text-lg">Auto-hide UI</h3>
+              <p className="text-gray-400 text-sm">Hide controls when mouse is inactive</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={tempAutoHideUI}
+              onChange={(e) => setTempAutoHideUI(e.target.checked)}
+              className="w-5 h-5 rounded cursor-pointer"
+            />
+          </div>
+
           <h3 className="text-white font-bold text-lg">Background</h3>
           <div className="grid grid-cols-3 gap-4">
             {filteredBackgrounds.map((bg) => (
@@ -532,6 +562,16 @@ export function SettingsContent(props: SettingsContentProps) {
             </a>
           </div>
         </motion.div>
+      )}
+
+      {activeTab === 'timezone' && (
+        <TimezoneTab
+          timezone={timezone}
+          weekendDays={weekendDays}
+          pendingTimezone={pendingTimezone}
+          pendingTimezoneAppliesAt={pendingTimezoneAppliesAt}
+          lastTimezoneChangeAt={lastTimezoneChangeAt}
+        />
       )}
 
       {activeTab === 'progress' && (

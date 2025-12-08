@@ -101,7 +101,7 @@ export function useSettingsSync() {
   const syncSynchronously = (reason: string) => {
     if (!appUser || !isDirtyRef.current) return
 
-    console.log(`[Settings Sync] Syncing synchronously (reason: ${reason})`)
+    import.meta.env.DEV && console.log(`[Settings Sync] Syncing synchronously (reason: ${reason})`)
 
     // Get auth session for JWT token (if available)
     const getSessionAndSync = async () => {
@@ -175,7 +175,7 @@ export function useSettingsSync() {
         if (typeof navigator.sendBeacon === 'function') {
           // Beacon doesn't support custom headers, so we can't use it with Supabase auth
           // Fall through to fetch with keepalive
-          console.log('[Settings Sync] Beacon API available but requires custom headers, using fetch with keepalive')
+          import.meta.env.DEV && console.log('[Settings Sync] Beacon API available but requires custom headers, using fetch with keepalive')
         }
 
         // Use fetch with keepalive (works with custom headers)
@@ -188,7 +188,7 @@ export function useSettingsSync() {
           // Update state on success (won't run if page already unloaded - that's okay)
           lastSyncedStateRef.current = serializeSettings()
           isDirtyRef.current = false
-          console.log('[Settings Sync] ✓ Synced synchronously')
+          import.meta.env.DEV && console.log('[Settings Sync] ✓ Synced synchronously')
         }).catch((error) => {
           // Log error but don't retry (page is closing anyway)
           console.error('[Settings Sync] Synchronous sync failed:', error)
@@ -207,7 +207,7 @@ export function useSettingsSync() {
     if (!appUser || !isDirtyRef.current) return
 
     try {
-      console.log(`[Settings Sync] Syncing to database (reason: ${reason})`)
+      import.meta.env.DEV && console.log(`[Settings Sync] Syncing to database (reason: ${reason})`)
 
       // Get fresh settings state (avoid stale closure)
       const currentSettings = getCurrentSettings()
@@ -243,7 +243,7 @@ export function useSettingsSync() {
       lastSyncedStateRef.current = serializeSettings()
       isDirtyRef.current = false
 
-      console.log('[Settings Sync] ✓ Synced successfully')
+      import.meta.env.DEV && console.log('[Settings Sync] ✓ Synced successfully')
     } catch (error) {
       console.error('[Settings Sync] Failed to sync:', error)
       // Keep dirty flag set so we retry later
@@ -264,7 +264,7 @@ export function useSettingsSync() {
 
     if (!isInitialLoadRef.current) return
 
-    console.log('[Settings Sync] Loading ALL user data from database (one-time)')
+    import.meta.env.DEV && console.log('[Settings Sync] Loading ALL user data from database (one-time)')
 
     // Load timer preferences
     settings.setPomodoroDuration(appUser.timer_pomodoro_minutes)
@@ -357,7 +357,15 @@ export function useSettingsSync() {
           };
           return acc;
         }, {} as Record<string, { value: number; expiresAt: number | null; metadata?: Record<string, any> }>)
-        : {}
+        : {},
+
+      // Timezone settings (for weekend buff accuracy)
+      timezone: appUser.timezone || 'America/New_York',
+      weekendDays: appUser.weekend_days || [0, 6],
+      pendingTimezone: appUser.pending_timezone || null,
+      pendingTimezoneAppliesAt: appUser.pending_timezone_applies_at || null,
+      timezoneUpdatedAt: appUser.timezone_updated_at || null,
+      lastTimezoneChangeAt: appUser.last_timezone_change_at || null,
     })
 
     // CRITICAL: Set initial synced state from STORE (not from appUser)
@@ -376,7 +384,7 @@ export function useSettingsSync() {
 
       // Mark settings sync as complete - safe to attempt daily gift claim
       useSettingsStore.getState().setSettingsSyncComplete(true)
-      console.log('[Settings Sync] ✓ Loaded from database and captured store state')
+      import.meta.env.DEV && console.log('[Settings Sync] ✓ Loaded from database and captured store state')
     }, 100)
 
     isInitialLoadRef.current = false
@@ -391,7 +399,7 @@ export function useSettingsSync() {
     // Only mark dirty if state actually changed
     if (currentState !== lastSyncedStateRef.current) {
       isDirtyRef.current = true
-      console.log('[Settings Sync] Settings changed - marked dirty (will sync on trigger)')
+      import.meta.env.DEV && console.log('[Settings Sync] Settings changed - marked dirty (will sync on trigger)')
 
       // Sync with 500ms debounce (both web + Discord)
       // Discord: don't rely on unload events in iframe
@@ -415,7 +423,7 @@ export function useSettingsSync() {
             }
           })
           if (changes.length > 0) {
-            console.log('[Settings Sync] Changed fields:', changes.join(', '))
+            import.meta.env.DEV && console.log('[Settings Sync] Changed fields:', changes.join(', '))
           }
         } catch (e) {
           // Ignore parse errors

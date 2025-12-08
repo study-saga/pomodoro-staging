@@ -42,7 +42,7 @@ export function useChatNotifications(): UseChatNotificationsResult {
   const showNotification = useCallback(
     (title: string, body: string, onClick?: () => void) => {
       if (permission !== 'granted') {
-        console.log('Notification permission not granted');
+        import.meta.env.DEV && console.log('Notification permission not granted');
         return;
       }
 

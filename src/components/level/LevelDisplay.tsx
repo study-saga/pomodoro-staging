@@ -19,7 +19,7 @@ import { UserStatsPopover } from './UserStatsPopover';
 import { UserStatsModal } from './UserStatsModal';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useActiveEventBuffs } from '../../hooks/useActiveEventBuffs';
-import { getBuffStartDateText } from '../../data/eventBuffsData';
+import { getBuffStartDateText, getEventBuffEndDate } from '../../data/eventBuffsData';
 import { useSmartPIPMode } from '../../hooks/useSmartPIPMode';
 
 export const LevelDisplay = memo(function LevelDisplay() {
@@ -34,6 +34,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
     addXP,
     pomodoroBoostActive,
     pomodoroBoostExpiresAt,
+    autoHideUI,
   } = useSettingsStore();
 
   const [showStatsPopover, setShowStatsPopover] = useState(false);
@@ -49,9 +50,27 @@ export const LevelDisplay = memo(function LevelDisplay() {
   const eventBuffRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const rafRef = useRef<number | null>(null);
 
+  // Helper for formatting duration
+  const formatDuration = (ms: number) => {
+    if (ms <= 0) return 'Ending soon...';
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (days > 0) return `${days}d ${hours}h left`;
+    return `${hours}h ${minutes}m left`;
+  };
+
+  // Update time every minute for countdowns
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
+
   const { isMobile, isTablet, isCompact } = useDeviceType();
   const { appUser } = useAuth();
-  const { activeBuffs, upcomingBuffs } = useActiveEventBuffs(levelPath);
+  const { activeBuffs, upcomingBuffs } = useActiveEventBuffs(appUser?.id || null, levelPath);
 
   const xpNeeded = getXPNeeded(level);
   const levelName = getLevelName(level, levelPath);
@@ -164,7 +183,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
 
   // Debug logging for boost state
   if (import.meta.env.DEV && pomodoroBoostActive) {
-    console.log('[LevelDisplay] Boost state:', {
+    import.meta.env.DEV && console.log('[LevelDisplay] Boost state:', {
       active: pomodoroBoostActive,
       expiresAt: pomodoroBoostExpiresAt,
       now: Date.now(),
@@ -282,7 +301,7 @@ export const LevelDisplay = memo(function LevelDisplay() {
       {/* Level UI Container - Fixed position with fade animation */}
       <motion.div
         initial={{ opacity: 1 }}
-        animate={{ opacity: isPIPMode ? 0 : (isMouseActive ? 1 : 0) }}
+        animate={{ opacity: isPIPMode ? 0 : (isMouseActive || !autoHideUI ? 1 : 0) }}
         transition={{ duration: isPIPMode ? 0 : 0.5 }}
         className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden
           ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' :
@@ -700,10 +719,20 @@ export const LevelDisplay = memo(function LevelDisplay() {
           >
             <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] max-w-[260px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
               }`}>
-              <p className={`text-sm font-semibold mb-1 ${isElfBuff ? 'text-green-300' : 'text-cyan-300'
-                }`}>
-                {buff.title}
-              </p>
+              <div className="flex justify-between items-start mb-1">
+                <p className={`text-sm font-semibold ${isElfBuff ? 'text-green-300' : 'text-cyan-300'}`}>
+                  {buff.title}
+                </p>
+                {buff.showCountdown && (
+                  <span className="text-[10px] font-mono text-gray-400 bg-black/30 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">
+                    {(() => {
+                      const endDate = getEventBuffEndDate(buff);
+                      if (!endDate) return '';
+                      return formatDuration(endDate.getTime() - now);
+                    })()}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-400 leading-relaxed">
                 {buff.description}
               </p>

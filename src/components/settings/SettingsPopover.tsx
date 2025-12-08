@@ -1,6 +1,6 @@
 import { memo, useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings as SettingsIcon, X, Palette, Volume2, Sparkles, Bell, FileText, Trophy } from 'lucide-react';
+import { Settings as SettingsIcon, X, Palette, Volume2, Sparkles, Bell, FileText, Trophy, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useMouseActivity } from '../../hooks/useMouseActivity';
@@ -33,7 +33,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const isMouseActive = useMouseActivity(8000);
   const { appUser } = useAuth();
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'notifications' | 'music' | 'progress' | 'whats-new'>('timer');
+  const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'notifications' | 'timezone' | 'music' | 'progress' | 'whats-new'>('timer');
   const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameLoading, setUsernameLoading] = useState(false);
@@ -174,6 +174,13 @@ export const SettingsPopover = memo(function SettingsPopover() {
     firstLoginDate,
     playlist,
     setPlaylist,
+    timezone,
+    weekendDays,
+    pendingTimezone,
+    pendingTimezoneAppliesAt,
+    lastTimezoneChangeAt,
+    autoHideUI,
+    setAutoHideUI
   } = useSettingsStore();
 
   // Filter backgrounds based on viewport orientation (portrait vs landscape)
@@ -190,6 +197,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const [tempMusicVolume, setTempMusicVolume] = useState(musicVolume);
   const [tempAmbientVolumes, setTempAmbientVolumes] = useState(ambientVolumes);
   const [tempBackground, setTempBackground] = useState(background);
+  const [tempAutoHideUI, setTempAutoHideUI] = useState(autoHideUI);
   const [tempLevelSystemEnabled, setTempLevelSystemEnabled] = useState(levelSystemEnabled);
   const [tempPlaylist, setTempPlaylist] = useState(playlist);
   const [usernameInput, setUsernameInput] = useState(username);
@@ -205,18 +213,20 @@ export const SettingsPopover = memo(function SettingsPopover() {
     tempMusicVolume !== musicVolume ||
     JSON.stringify(tempAmbientVolumes) !== JSON.stringify(ambientVolumes) ||
     tempBackground !== background ||
+    tempAutoHideUI !== autoHideUI ||
     tempLevelSystemEnabled !== levelSystemEnabled ||
     tempPlaylist !== playlist;
 
-  // Close settings when mouse becomes inactive (unless there are pending changes)
+  // Close settings when mouse becomes inactive (unless there are pending changes or auto-hide is disabled)
   useEffect(() => {
     // Don't auto-close if there are unsaved changes or username operations pending
+    // Also don't auto-close if the user has disabled auto-hiding
     const hasPendingChanges = hasUnsavedChanges || usernameLoading || usernameError !== null;
 
-    if (!isMouseActive && open && !hasPendingChanges) {
+    if (!isMouseActive && open && !hasPendingChanges && autoHideUI) {
       setOpen(false);
     }
-  }, [isMouseActive, open, hasUnsavedChanges, usernameLoading, usernameError]);
+  }, [isMouseActive, open, hasUnsavedChanges, usernameLoading, usernameError, autoHideUI]);
 
   // Reset temporary state when modal opens
   useEffect(() => {
@@ -230,12 +240,13 @@ export const SettingsPopover = memo(function SettingsPopover() {
       setTempMusicVolume(musicVolume);
       setTempAmbientVolumes(ambientVolumes);
       setTempBackground(background);
+      setTempAutoHideUI(autoHideUI);
       setTempLevelSystemEnabled(levelSystemEnabled);
       setTempPlaylist(playlist);
       setUsernameInput(username);
       setActiveTab('timer'); // Default to General tab
     }
-  }, [open, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, playlist, username]);
+  }, [open, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, playlist, username, autoHideUI]);
 
   const handleSaveUsername = async () => {
     if (!appUser) {
@@ -276,7 +287,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
       // Success - update local Zustand store with new username and timestamp
       setUsername(usernameInput);
 
-      console.log('[Settings] Username updated successfully (free):', updatedUser.username);
+      import.meta.env.DEV && console.log('[Settings] Username updated successfully (free):', updatedUser.username);
       toast.success('Username updated successfully!');
 
     } catch (error) {
@@ -304,7 +315,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
                 // Success - update local Zustand store with new username, XP, and timestamp
                 setUsername(usernameInput, true);
 
-                console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
+                import.meta.env.DEV && console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
                 toast.success('Username updated! 50 XP deducted.');
                 showGameToast('-50 XP Spent');
 
@@ -356,6 +367,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setVolume(tempVolume);
     setMusicVolume(tempMusicVolume);
     setBackground(tempBackground);
+    setAutoHideUI(tempAutoHideUI);
     setLevelSystemEnabled(tempLevelSystemEnabled);
     setPlaylist(tempPlaylist);
 
@@ -375,6 +387,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     tempMusicVolume,
     tempAmbientVolumes,
     tempBackground,
+    tempAutoHideUI,
     tempLevelSystemEnabled,
     tempPlaylist,
     setPomodoroDuration,
@@ -387,6 +400,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setVolume,
     setMusicVolume,
     setBackground,
+    setAutoHideUI,
     setLevelSystemEnabled,
     setPlaylist,
     setAmbientVolume,
@@ -448,6 +462,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setTempMusicVolume(musicVolume);
     setTempAmbientVolumes(ambientVolumes);
     setTempBackground(background);
+    setTempAutoHideUI(autoHideUI);
     setTempLevelSystemEnabled(levelSystemEnabled);
     setTempPlaylist(playlist);
     setUsernameInput(username);
@@ -458,6 +473,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'sounds', label: 'Sounds', icon: Volume2 },
     { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'timezone', label: 'Timezone', icon: Globe },
     { id: 'progress', label: 'Progress', icon: Trophy },
     { id: 'music', label: 'Credits', icon: FileText },
     { id: 'whats-new', label: "What's New", icon: Sparkles },
@@ -469,11 +485,13 @@ export const SettingsPopover = memo(function SettingsPopover() {
       ref={triggerButtonRef}
       onClick={() => setOpen(true)}
       aria-label="Open settings"
+      aria-hidden={!isMouseActive && autoHideUI}
+      tabIndex={(!isMouseActive && autoHideUI) ? -1 : 0}
       animate={{
-        padding: isMouseActive ? '0.75rem' : '0.25rem'
+        opacity: isMouseActive || !autoHideUI ? 1 : 0
       }}
       transition={{ duration: 0.5, ease: "easeInOut" }}
-      className="bg-black/40 backdrop-blur-md rounded-full text-gray-400 hover:bg-black/60 transition-colors border border-gray-400/60"
+      className={`p-3 bg-black/40 backdrop-blur-md rounded-full text-gray-400 hover:bg-black/60 transition-colors border border-gray-400/60 ${(!isMouseActive && autoHideUI) ? 'pointer-events-none' : ''}`}
     >
       <SettingsIcon size={24} />
     </motion.button>
@@ -569,6 +587,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         notificationPermission={notificationPermission}
                         tempBackground={tempBackground}
                         setTempBackground={setTempBackground}
+                        tempAutoHideUI={tempAutoHideUI}
+                        setTempAutoHideUI={setTempAutoHideUI}
                         filteredBackgrounds={filteredBackgrounds}
                         tempMusicVolume={tempMusicVolume}
                         setTempMusicVolume={setTempMusicVolume}
@@ -597,6 +617,11 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         pomodoroBoostActive={pomodoroBoostActive}
                         pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
                         firstLoginDate={firstLoginDate}
+                        timezone={timezone}
+                        weekendDays={weekendDays}
+                        pendingTimezone={pendingTimezone}
+                        pendingTimezoneAppliesAt={pendingTimezoneAppliesAt}
+                        lastTimezoneChangeAt={lastTimezoneChangeAt}
                       />
                     </div>
                   </ScrollArea>
@@ -731,6 +756,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         notificationPermission={notificationPermission}
                         tempBackground={tempBackground}
                         setTempBackground={setTempBackground}
+                        tempAutoHideUI={tempAutoHideUI}
+                        setTempAutoHideUI={setTempAutoHideUI}
                         filteredBackgrounds={filteredBackgrounds}
                         tempMusicVolume={tempMusicVolume}
                         setTempMusicVolume={setTempMusicVolume}
@@ -759,6 +786,11 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         pomodoroBoostActive={pomodoroBoostActive}
                         pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
                         firstLoginDate={firstLoginDate}
+                        timezone={timezone}
+                        weekendDays={weekendDays}
+                        pendingTimezone={pendingTimezone}
+                        pendingTimezoneAppliesAt={pendingTimezoneAppliesAt}
+                        lastTimezoneChangeAt={lastTimezoneChangeAt}
                       />
                     </div>
                   </ScrollArea>

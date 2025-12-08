@@ -19,6 +19,18 @@ export interface ChangelogEntry {
 export const changelog: ChangelogEntry[] = [
   // ⬇️ ADD NEW UPDATES HERE (most recent first) ⬇️
   {
+    date: '2025-12-08',
+    title: 'Auto-Hide UI',
+    description: 'We added a toggle to auto-hide the UI when you\'re inactive for a cleaner study view. You can maintain focus without distractions!',
+    tags: ['feature'],
+  },
+  {
+    date: '2025-12-08',
+    title: 'Region-Based Buffs',
+    description: 'We introduced region-based weekend buffs! Your location now helps determine special bonuses to boost your progress during weekends.',
+    tags: ['feature'],
+  },
+  {
     date: '2025-11-25',
     title: 'Global Chat',
     description: 'Connect with other users in real-time! We implemented a new chat system to help you stay motivated together.',

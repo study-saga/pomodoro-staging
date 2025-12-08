@@ -12,7 +12,7 @@ import type { AppUser } from './supabaseAuth'
  * Update user's XP atomically
  */
 export async function incrementUserXP(userId: string, xpToAdd: number): Promise<void> {
-  console.log(`[User Sync] Incrementing XP for user ${userId} by ${xpToAdd}`)
+  import.meta.env.DEV && console.log(`[User Sync] Incrementing XP for user ${userId} by ${xpToAdd}`)
 
   const { error } = await supabase.rpc('increment_user_xp', {
     p_user_id: userId,
@@ -24,7 +24,7 @@ export async function incrementUserXP(userId: string, xpToAdd: number): Promise<
     throw new Error('Failed to update XP')
   }
 
-  console.log('[User Sync] XP updated successfully')
+  import.meta.env.DEV && console.log('[User Sync] XP updated successfully')
 }
 
 /**
@@ -35,7 +35,7 @@ export async function incrementPomodoroTotals(
   pomodoroCount: number,
   minutes: number
 ): Promise<void> {
-  console.log(`[User Sync] Incrementing pomodoro totals for user ${userId}`)
+  import.meta.env.DEV && console.log(`[User Sync] Incrementing pomodoro totals for user ${userId}`)
 
   const { error } = await supabase.rpc('increment_pomodoro_totals', {
     p_user_id: userId,
@@ -48,7 +48,7 @@ export async function incrementPomodoroTotals(
     throw new Error('Failed to update pomodoro statistics')
   }
 
-  console.log('[User Sync] Pomodoro totals updated successfully')
+  import.meta.env.DEV && console.log('[User Sync] Pomodoro totals updated successfully')
 }
 
 /**
@@ -64,7 +64,7 @@ export async function updateUserSettings(
     level_path?: 'elf' | 'human'
   }
 ): Promise<void> {
-  console.log(`[User Sync] Updating settings for user ${userId}`, settings)
+  import.meta.env.DEV && console.log(`[User Sync] Updating settings for user ${userId}`, settings)
 
   const { error } = await supabase
     .from('users')
@@ -79,7 +79,7 @@ export async function updateUserSettings(
     throw new Error('Failed to update settings')
   }
 
-  console.log('[User Sync] Settings updated successfully')
+  import.meta.env.DEV && console.log('[User Sync] Settings updated successfully')
 }
 
 /**
@@ -127,7 +127,7 @@ export async function updateUserPreferences(
     level_path?: 'elf' | 'human'  // Visual preference only
   }
 ): Promise<AppUser> {
-  console.log(`[User Sync] Updating user settings for user ${userId}`)
+  import.meta.env.DEV && console.log(`[User Sync] Updating user settings for user ${userId}`)
 
   // Always use Supabase Auth with auth.uid()
   // The session is now guaranteed to exist in both Web and Discord Activity modes
@@ -137,7 +137,7 @@ export async function updateUserPreferences(
     throw new Error('Authentication required to update settings')
   }
 
-  console.log('[User Sync] Using authenticated session')
+  import.meta.env.DEV && console.log('[User Sync] Using authenticated session')
 
   const { data, error } = await supabase.rpc('update_user_settings', {
     p_user_id: userId,
@@ -172,7 +172,7 @@ export async function updateUserPreferences(
     throw new Error(`Failed to update settings: ${error.message}`)
   }
 
-  console.log('[User Sync] Settings updated successfully')
+  import.meta.env.DEV && console.log('[User Sync] Settings updated successfully')
   return data as AppUser
 }
 
@@ -180,7 +180,7 @@ export async function updateUserPreferences(
  * Get user by auth user ID
  */
 export async function getUserByAuthId(authUserId: string): Promise<AppUser | null> {
-  console.log(`[User Sync] Fetching user by auth ID: ${authUserId}`)
+  import.meta.env.DEV && console.log(`[User Sync] Fetching user by auth ID: ${authUserId}`)
 
   const { data, error } = await supabase
     .from('users')
@@ -218,7 +218,7 @@ export async function checkUsernameAvailability(username: string): Promise<boole
  * Update user login streak
  */
 export async function updateLoginStreak(userId: string): Promise<void> {
-  console.log(`[User Sync] Updating login streak for user ${userId}`)
+  import.meta.env.DEV && console.log(`[User Sync] Updating login streak for user ${userId}`)
 
   // Fetch current user to check last login date
   const { data: user, error: fetchError } = await supabase
@@ -247,7 +247,7 @@ export async function updateLoginStreak(userId: string): Promise<void> {
     updates.total_unique_days = 1
   } else if (lastLoginDate === today) {
     // Already logged in today - no streak change
-    console.log('[User Sync] User already logged in today')
+    import.meta.env.DEV && console.log('[User Sync] User already logged in today')
     return
   } else {
     const lastDate = new Date(lastLoginDate)
@@ -274,7 +274,7 @@ export async function updateLoginStreak(userId: string): Promise<void> {
     console.error('[User Sync] Error updating streak:', updateError)
     // Non-fatal - continue
   } else {
-    console.log('[User Sync] Login streak updated:', updates)
+    import.meta.env.DEV && console.log('[User Sync] Login streak updated:', updates)
   }
 }
 
@@ -292,7 +292,7 @@ export async function saveCompletedPomodoro(
     notes?: string
   }
 ): Promise<string> {
-  console.log(`[User Sync] Saving pomodoro for user ${userId}`)
+  import.meta.env.DEV && console.log(`[User Sync] Saving pomodoro for user ${userId}`)
 
   // Use atomic RPC function to save pomodoro and update stats in one transaction
   // RPC validates auth.uid() matches user's auth_user_id
@@ -313,7 +313,7 @@ export async function saveCompletedPomodoro(
     throw new Error(`Failed to save pomodoro: ${error.message}`)
   }
 
-  console.log('[User Sync] Pomodoro saved successfully:', pomodoroId)
+  import.meta.env.DEV && console.log('[User Sync] Pomodoro saved successfully:', pomodoroId)
   return pomodoroId as string
 }
 
@@ -381,7 +381,7 @@ export async function unlockMilestoneReward(
   unlockId: string,
   milestoneId?: string
 ): Promise<string> {
-  console.log(`[User Sync] Unlocking reward for user ${userId}: ${rewardType}/${unlockId}`)
+  import.meta.env.DEV && console.log(`[User Sync] Unlocking reward for user ${userId}: ${rewardType}/${unlockId}`)
 
   const { data: rewardId, error } = await supabase.rpc('unlock_milestone_reward', {
     p_user_id: userId,
@@ -395,7 +395,7 @@ export async function unlockMilestoneReward(
     throw new Error(`Failed to unlock reward: ${error.message}`)
   }
 
-  console.log('[User Sync] Reward unlocked successfully:', rewardId)
+  import.meta.env.DEV && console.log('[User Sync] Reward unlocked successfully:', rewardId)
   return rewardId as string
 }
 
@@ -412,7 +412,7 @@ export async function getUserUnlockedRewards(
   milestone_id: string | null
   unlocked_at: string
 }>> {
-  console.log(`[User Sync] Fetching unlocked rewards for user ${userId}`)
+  import.meta.env.DEV && console.log(`[User Sync] Fetching unlocked rewards for user ${userId}`)
 
   const { data, error } = await supabase.rpc('get_user_unlocked_rewards', {
     p_user_id: userId,
@@ -475,7 +475,7 @@ export async function updateUsernameSecure(
   newUsername: string,
   forceWithXP: boolean = false
 ): Promise<AppUser> {
-  console.log(`[User Sync] Updating username for user ${userId} to: ${newUsername} (forceWithXP: ${forceWithXP})`)
+  import.meta.env.DEV && console.log(`[User Sync] Updating username for user ${userId} to: ${newUsername} (forceWithXP: ${forceWithXP})`)
 
   // Always use Supabase Auth with auth.uid()
   const { data: { session } } = await supabase.auth.getSession()
@@ -484,7 +484,7 @@ export async function updateUsernameSecure(
     throw new Error('Authentication required to update username')
   }
 
-  console.log('[User Sync] Using authenticated session')
+  import.meta.env.DEV && console.log('[User Sync] Using authenticated session')
 
   const { data, error } = await supabase.rpc('update_username', {
     p_user_id: userId,
@@ -497,7 +497,7 @@ export async function updateUsernameSecure(
     throw new Error(`Failed to update username: ${error.message}`)
   }
 
-  console.log('[User Sync] Username updated successfully')
+  import.meta.env.DEV && console.log('[User Sync] Username updated successfully')
   return data as AppUser
 }
 
@@ -514,7 +514,7 @@ export async function updateUsername(
   message: string
   user?: AppUser
 }> {
-  console.log(`[User Sync] Updating username for user ${userId} to: ${newUsername}`)
+  import.meta.env.DEV && console.log(`[User Sync] Updating username for user ${userId} to: ${newUsername}`)
 
   const { data, error } = await supabase.rpc('update_username_with_cooldown', {
     p_user_id: userId,
@@ -567,7 +567,7 @@ export async function claimDailyGift(
   boostMultiplier?: number
   alreadyClaimed?: boolean
 }> {
-  console.log(`[User Sync] Claiming daily gift for user ${userId} (XP: ${xpAmount}, Boost: ${activateBoost}, Multiplier: ${boostMultiplier})`)
+  import.meta.env.DEV && console.log(`[User Sync] Claiming daily gift for user ${userId} (XP: ${xpAmount}, Boost: ${activateBoost}, Multiplier: ${boostMultiplier})`)
 
   // Always use Supabase Auth with auth.uid()
   const { data: { session } } = await supabase.auth.getSession()
@@ -576,7 +576,7 @@ export async function claimDailyGift(
     throw new Error('Authentication required to claim daily gift')
   }
 
-  console.log('[User Sync] Using authenticated session')
+  import.meta.env.DEV && console.log('[User Sync] Using authenticated session')
 
   const { data, error } = await supabase.rpc('claim_daily_gift', {
     p_user_id: userId,
@@ -594,11 +594,11 @@ export async function claimDailyGift(
   const resultData = data as any
 
   if (!resultData.success) {
-    console.log('[User Sync] Daily gift already claimed today')
+    import.meta.env.DEV && console.log('[User Sync] Daily gift already claimed today')
   } else {
-    console.log(`[User Sync] Daily gift claimed successfully - ${resultData.xp_awarded} XP awarded`)
+    import.meta.env.DEV && console.log(`[User Sync] Daily gift claimed successfully - ${resultData.xp_awarded} XP awarded`)
     if (resultData.boost_activated) {
-      console.log(`[User Sync] Boost activated: ${resultData.boost_multiplier}x until ${new Date(resultData.boost_expires_at)}`)
+      import.meta.env.DEV && console.log(`[User Sync] Boost activated: ${resultData.boost_multiplier}x until ${new Date(resultData.boost_expires_at)}`)
     }
   }
 
@@ -618,7 +618,7 @@ export async function claimDailyGift(
     }
   }
 
-  console.log('[User Sync] Boost expires at:', {
+  import.meta.env.DEV && console.log('[User Sync] Boost expires at:', {
     raw: resultData.boost_expires_at,
     converted: boostExpiresAtMs,
     activated: resultData.boost_activated
@@ -644,7 +644,7 @@ export async function claimDailyGift(
  * @returns true if gift can be claimed, false if already claimed today
  */
 export async function canClaimDailyGift(userId: string): Promise<boolean> {
-  console.log(`[User Sync] Checking if user ${userId} can claim daily gift`)
+  import.meta.env.DEV && console.log(`[User Sync] Checking if user ${userId} can claim daily gift`)
 
   // Always use Supabase Auth with auth.uid()
   const { data: { session } } = await supabase.auth.getSession()
@@ -675,7 +675,7 @@ export async function canClaimDailyGift(userId: string): Promise<boolean> {
 export async function resetUserProgress(
   userId: string
 ): Promise<AppUser> {
-  console.log(`[User Sync] Resetting progress for user ${userId}`)
+  import.meta.env.DEV && console.log(`[User Sync] Resetting progress for user ${userId}`)
 
   // Always use Supabase Auth with auth.uid()
   const { data: { session } } = await supabase.auth.getSession()
@@ -684,7 +684,7 @@ export async function resetUserProgress(
     throw new Error('Authentication required to reset progress')
   }
 
-  console.log('[User Sync] Using authenticated session')
+  import.meta.env.DEV && console.log('[User Sync] Using authenticated session')
 
   const { data, error } = await supabase.rpc('reset_user_progress', {
     p_user_id: userId
@@ -700,7 +700,7 @@ export async function resetUserProgress(
     throw new Error('Failed to reset progress: No data returned')
   }
 
-  console.log('[User Sync] Progress reset successfully')
+  import.meta.env.DEV && console.log('[User Sync] Progress reset successfully')
   return data as AppUser
 }
 
@@ -722,7 +722,7 @@ export async function saveCompletedBreak(
     xp_earned: number
   }
 ): Promise<string> {
-  console.log(`[User Sync] Saving break for user ${userId}`)
+  import.meta.env.DEV && console.log(`[User Sync] Saving break for user ${userId}`)
 
   // Always use Supabase Auth with auth.uid()
   const { data: { session } } = await supabase.auth.getSession()
@@ -731,7 +731,7 @@ export async function saveCompletedBreak(
     throw new Error('Authentication required to save break')
   }
 
-  console.log('[User Sync] Using authenticated session')
+  import.meta.env.DEV && console.log('[User Sync] Using authenticated session')
 
   const { data: breakId, error } = await supabase.rpc(
     'atomic_save_completed_break',
@@ -748,8 +748,99 @@ export async function saveCompletedBreak(
     throw new Error(`Failed to save break: ${error.message}`)
   }
 
-  console.log('[User Sync] Break saved successfully:', breakId)
+  import.meta.env.DEV && console.log('[User Sync] Break saved successfully:', breakId)
   return breakId as string
+}
+
+/**
+ * Request timezone change with server-side validation
+ *
+ * SECURITY: Server enforces:
+ * - 14-day cooldown (waived for accounts <7 days old)
+ * - 5 changes/month limit
+ * - Next midnight UTC application (24-hour minimum delay)
+ * - IANA format validation
+ * - Weekend days array validation
+ *
+ * @param userId - User's UUID
+ * @param newTimezone - New timezone (IANA format, e.g., 'America/New_York')
+ * @param newWeekendDays - Custom weekend days [0,6]=Sat-Sun, [5,6]=Fri-Sat
+ * @returns Result with status and application details
+ */
+// Interface for request_timezone_change response
+interface TimezoneChangeResponse {
+  status: 'pending' | 'rejected';
+  message: string;
+  newTimezone?: string;
+  newWeekendDays?: number[];
+  appliesAt?: string;
+  hoursUntilApplied?: number;
+  changesRemainingThisMonth?: number;
+  cooldownUntil?: string;
+  hoursRemaining?: number;
+  resetDate?: string;
+}
+
+export async function requestTimezoneChange(
+  userId: string,
+  newTimezone: string,
+  newWeekendDays: number[]
+): Promise<TimezoneChangeResponse> {
+  import.meta.env.DEV && console.log(`[User Sync] Requesting timezone change for user ${userId} to ${newTimezone}`)
+
+  const { data, error } = await supabase.rpc('request_timezone_change', {
+    p_user_id: userId,
+    p_new_timezone: newTimezone,
+    p_new_weekend_days: newWeekendDays
+  })
+
+  if (error) {
+    console.error('[User Sync] Error requesting timezone change:', error)
+    throw new Error(`Failed to request timezone change: ${error.message}`)
+  }
+
+  // Type assertion is safe here as we defined the interface matching the RPC return structure
+  const result = data as TimezoneChangeResponse // Only 'as any' was flagged, using specific type is better
+  import.meta.env.DEV && console.log(`[User Sync] Timezone change request result:`, result)
+
+  return result
+}
+
+/**
+ * Check if it's currently weekend for a user (server-authoritative)
+ *
+ * SECURITY: Client CANNOT bypass this check
+ * - Server gets current UTC time
+ * - Converts to user's timezone (stored in database)
+ * - Checks day of week against user's custom weekend_days
+ *
+ * @param userId - User's UUID
+ * @returns Weekend status with debug info
+ */
+// Interface for is_weekend_for_user response
+interface WeekendStatusResponse {
+  isWeekend: boolean;
+  dayOfWeek: number;
+  weekendDays: number[];
+  userLocalTime: string;
+  serverUtcTime: string;
+  timezone: string;
+}
+
+export async function isWeekendForUser(userId: string): Promise<WeekendStatusResponse> {
+  const { data, error } = await supabase.rpc('is_weekend_for_user', {
+    p_user_id: userId
+  })
+
+  if (error) {
+    console.error('[User Sync] Error checking weekend status:', error)
+    // Server-authoritative: If check fails, we must throw, NOT fallback to client time.
+    // Falling back allows users to bypass checks by blocking the request.
+    throw new Error('Failed to verify weekend status with server');
+  }
+
+  const result = data as WeekendStatusResponse
+  return result
 }
 
 // claimDailyGiftXP removed - dead code from old login streak system

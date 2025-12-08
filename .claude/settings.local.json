@@ -10,7 +10,14 @@
       "Bash(gh pr view:*)",
       "mcp__supabase__execute_sql",
       "mcp__supabase__get_advisors",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "mcp__perplexity__search",
+      "mcp__perplexity__reason",
+      "mcp__supabase__list_projects",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "mcp__perplexity__deep_research"
     ]
   },
   "enableAllProjectMcpServers": true,

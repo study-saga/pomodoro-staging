@@ -57,8 +57,8 @@ if (isDiscordActivity()) {
     throw new Error(errorMsg)
   }
 
-  console.log('[Main] Discord Activity detected - applying URL mappings')
-  console.log('[Main] Supabase host:', supabaseHost)
+  import.meta.env.DEV && console.log('[Main] Discord Activity detected - applying URL mappings')
+  import.meta.env.DEV && console.log('[Main] Supabase host:', supabaseHost)
 
   patchUrlMappings([
     {
@@ -83,7 +83,7 @@ if (isDiscordActivity()) {
     }
   ])
 } else {
-  console.log('[Main] Web environment detected - skipping URL mappings')
+  import.meta.env.DEV && console.log('[Main] Web environment detected - skipping URL mappings')
 }
 
 // Global handler for unhandled chunk load errors

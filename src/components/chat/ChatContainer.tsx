@@ -15,6 +15,7 @@ import type { ChatTab } from '../../types/chat';
 import { BanModal } from '../lazy';
 import { LoadingSpinner } from '../LoadingSpinner';
 import { useDeviceType } from '../../hooks/useDeviceType';
+import { useSettingsStore } from '../../store/useSettingsStore';
 
 /**
  * Main chat container with collapsible functionality
@@ -26,6 +27,7 @@ export function ChatContainer() {
   const { canSend, timeUntilReset, recordMessage } = useRateLimit();
   const { isCompact, isMobile } = useDeviceType();
   const isMouseActive = useMouseActivity(8000); // 8 seconds
+  const autoHideUI = useSettingsStore((state) => state.autoHideUI);
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<ChatTab>('local');
@@ -147,9 +149,9 @@ export function ChatContainer() {
     return (
       <motion.button
         onClick={() => setIsExpanded(true)}
-        animate={{ opacity: isMouseActive ? 1 : 0 }}
+        animate={{ opacity: isMouseActive || !autoHideUI ? 1 : 0 }}
         transition={{ duration: 0.5 }}
-        className={`fixed bottom-20 right-4 z-50 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${!isMouseActive ? 'pointer-events-none' : ''} ${isChatEnabled && !isBanned
+        className={`fixed bottom-20 right-4 z-50 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${(!isMouseActive && autoHideUI) ? 'pointer-events-none' : ''} ${isChatEnabled && !isBanned
           ? 'text-white hover:text-white drop-shadow-2xl'
           : 'text-red-400 hover:text-red-300 drop-shadow-lg'
           }`}
@@ -290,9 +292,9 @@ export function ChatContainer() {
       {!isExpanded && (
         <motion.button
           onClick={() => setIsExpanded(true)}
-          animate={{ opacity: isMouseActive ? 1 : 0 }}
+          animate={{ opacity: isMouseActive || !autoHideUI ? 1 : 0 }}
           transition={{ duration: 0.5 }}
-          className={`fixed bottom-24 left-4 z-40 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${!isMouseActive ? 'pointer-events-none' : ''} ${isChatEnabled && !isBanned
+          className={`fixed bottom-24 left-4 z-40 transition-all duration-300 ease-out hover:scale-110 active:scale-95 ${(!isMouseActive && autoHideUI) ? 'pointer-events-none' : ''} ${isChatEnabled && !isBanned
             ? 'text-white hover:text-white drop-shadow-2xl'
             : 'text-red-400 hover:text-red-300 drop-shadow-lg'
             }`}
@@ -318,94 +320,116 @@ export function ChatContainer() {
       {/* Expanded: Full chat interface */}
       {isExpanded && (
         <motion.div
-          animate={{ opacity: isMouseActive ? 1 : 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className={`fixed bottom-24 left-4 z-40 flex flex-col gap-1.5 ${isCompact ? 'w-72' : 'w-96'} max-w-[calc(100vw-2rem)] ${!isMouseActive ? 'pointer-events-none' : ''}`}
+          className={`fixed bottom-24 left-4 z-40 flex flex-col gap-1.5 ${isCompact ? 'w-72' : 'w-96'} max-w-[calc(100vw-2rem)]`}
         >
           {/* Main Glass Box (Tabs + Content) */}
-          <div className={`${isCompact ? 'h-[350px]' : 'h-[450px]'} max-h-[55vh] bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative transition-all duration-300`}>
-            {/* Minimize Button (Absolute top-right) */}
-            <button
-              onClick={() => setIsExpanded(false)}
-              className="absolute top-2 right-2 p-1.5 hover:bg-white/10 rounded-lg transition-colors z-20 text-gray-400 hover:text-white"
-              title="Minimize"
-            >
-              <Minimize2 size={16} />
-            </button>
+          <div className={`${isCompact ? 'h-[350px]' : 'h-[450px]'} max-h-[55vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col relative transition-all duration-300`}>
 
-            {/* Ban Overlay */}
-            {isBanned && (
-              <div className="absolute inset-0 z-30 bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
-                <div className="p-4 bg-red-500/10 rounded-full mb-4 animate-pulse">
-                  <Lock size={48} className="text-red-500" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-2">Account Banned</h3>
-                <p className="text-red-200 font-medium mb-6 max-w-xs">{banReason}</p>
-
-                {banExpiresAt ? (
-                  <div className="flex flex-col items-center gap-2 text-gray-400">
-                    <span className="text-xs uppercase tracking-widest">Unban In</span>
-                    <div className="flex items-center gap-2 text-xl font-mono text-white">
-                      <Clock size={20} className="text-red-400" />
-                      {timeLeft}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="px-4 py-2 bg-red-500/20 rounded-lg text-red-200 text-sm font-bold">
-                    PERMANENT BAN
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Maintenance Overlay */}
-            {!isChatEnabled && !isBanned && (
-              <div className="absolute inset-0 z-10 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
-                <AlertTriangle size={48} className="text-red-500 mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Chat Disabled</h3>
-                <p className="text-gray-300">
-                  Chat is currently disabled for maintenance. Please check back later.
-                </p>
-              </div>
-            )}
-
-            <ChatTabs
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              localCount={chattingCount}
-              onlineCount={onlineUsers.length}
+            {/* Background Layer (Fades on inactivity) */}
+            <motion.div
+              initial={{ opacity: 1 }}
+              animate={{ opacity: isMouseActive || !autoHideUI ? 1 : 0.3 }}
+              transition={{ duration: 0.5 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xl border border-white/10 pointer-events-none"
             />
 
-            <div className="flex-1 overflow-hidden flex flex-col">
-              {activeTab === 'local' && (
-                <GlobalChatMessages
-                  currentUser={appUser}
-                  onBanUser={handleOpenBanModal}
-                  isExpanded={isExpanded}
-                />
+            {/* Content Layer (Always visible) */}
+            <div className="relative z-10 flex flex-col h-full">
+              {/* Minimize Button (Absolute top-right) */}
+              <button
+                onClick={() => setIsExpanded(false)}
+                className="absolute top-2 right-2 p-1.5 hover:bg-white/10 rounded-lg transition-colors z-20 text-gray-400 hover:text-white"
+                title="Minimize"
+              >
+                <Minimize2 size={16} />
+              </button>
+
+              {/* Ban Overlay */}
+              {isBanned && (
+                <div className="absolute inset-0 z-30 bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+                  <div className="p-4 bg-red-500/10 rounded-full mb-4 animate-pulse">
+                    <Lock size={48} className="text-red-500" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-2">Account Banned</h3>
+                  <p className="text-red-200 font-medium mb-6 max-w-xs">{banReason}</p>
+
+                  {banExpiresAt ? (
+                    <div className="flex flex-col items-center gap-2 text-gray-400">
+                      <span className="text-xs uppercase tracking-widest">Unban In</span>
+                      <div className="flex items-center gap-2 text-xl font-mono text-white">
+                        <Clock size={20} className="text-red-400" />
+                        {timeLeft}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="px-4 py-2 bg-red-500/20 rounded-lg text-red-200 text-sm font-bold">
+                      PERMANENT BAN
+                    </div>
+                  )}
+                </div>
               )}
-              {activeTab === 'online' && (
-                <OnlineUsersList
-                  users={onlineUsers}
-                  currentUserId={appUser.id}
-                  onBanUser={handleOpenBanModal}
-                />
+
+              {/* Maintenance Overlay */}
+              {!isChatEnabled && !isBanned && (
+                <div className="absolute inset-0 z-10 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+                  <AlertTriangle size={48} className="text-red-500 mb-4" />
+                  <h3 className="text-xl font-bold text-white mb-2">Chat Disabled</h3>
+                  <p className="text-gray-300">
+                    Chat is currently disabled for maintenance. Please check back later.
+                  </p>
+                </div>
               )}
-              {activeTab === 'banned' && <BannedUsersList />}
+
+              <ChatTabs
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                localCount={chattingCount}
+                onlineCount={onlineUsers.length}
+              />
+
+              <div className="flex-1 overflow-hidden flex flex-col">
+                {activeTab === 'local' && (
+                  <GlobalChatMessages
+                    currentUser={appUser}
+                    onBanUser={handleOpenBanModal}
+                    isExpanded={isExpanded}
+                  />
+                )}
+                {activeTab === 'online' && (
+                  <OnlineUsersList
+                    users={onlineUsers}
+                    currentUserId={appUser.id}
+                    onBanUser={handleOpenBanModal}
+                  />
+                )}
+                {activeTab === 'banned' && <BannedUsersList />}
+              </div>
             </div>
           </div>
 
           {/* Detached Input (Only for local tab) */}
           {activeTab === 'local' && !isBanned && (
-            <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl overflow-hidden">
-              <MessageInput
-                onSendMessage={handleSendMessage}
-                placeholder="say something..."
-                canSend={canSend}
-                timeUntilReset={timeUntilReset}
-                disabled={!isGlobalConnected || !isChatEnabled}
-                autoFocus={true}
+            <div className="relative rounded-2xl shadow-xl overflow-hidden">
+              {/* Background Layer for Input */}
+              <motion.div
+                initial={{ opacity: 1 }}
+                animate={{ opacity: isMouseActive || !autoHideUI ? 1 : 0.3 }}
+                transition={{ duration: 0.5 }}
+                className="absolute inset-0 bg-black/60 backdrop-blur-xl border border-white/10 pointer-events-none"
               />
+
+              <div className="relative z-10">
+                <MessageInput
+                  onSendMessage={handleSendMessage}
+                  placeholder="say something..."
+                  canSend={canSend}
+                  timeUntilReset={timeUntilReset}
+                  disabled={!isGlobalConnected || !isChatEnabled}
+                  autoFocus={true}
+                />
+              </div>
             </div>
           )}
         </motion.div>
