@@ -22,10 +22,20 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    audioRef.current = new Audio(BELL_SOUND);
-    // Pre-load
-    audioRef.current.load();
+    // Only create audio if it doesn't exist
+    if (!audioRef.current) {
+      audioRef.current = new Audio(BELL_SOUND);
+      // Pre-load
+      audioRef.current.load();
+    }
+
     return () => {
+      // In StrictMode, this might run while the component is still mounted.
+      // We should only clean up if we're actually unmounting.
+      // However, separating "unmount" from "strictmode effect cleanup" is hard.
+      // For safety in this specific case, we can rely on garbage collection 
+      // or clear it if we are sure. To be safe, we'll keep the cleanup but
+      // the lazy init above protects against re-creation issues.
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = "";
@@ -148,15 +158,24 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       start();
 
       // Attempt to unlock audio context on first interaction
-      if (soundEnabled && audioRef.current) {
-        // Play and pause immediately to unlock audio on iOS/Safari
-        const audio = audioRef.current;
-        audio.play().then(() => {
-          audio.pause();
-          audio.currentTime = 0;
-        }).catch(() => {
-          // Playback failed (e.g. no user gesture) - harmless
-        });
+      // Attempt to unlock audio context on first interaction
+      if (soundEnabled) {
+        // Lazy initialization if audioRef is missing (e.g. clean up race condition)
+        if (!audioRef.current) {
+          audioRef.current = new Audio(BELL_SOUND);
+          audioRef.current.load();
+        }
+
+        if (audioRef.current) {
+          // Play and pause immediately to unlock audio on iOS/Safari
+          const audio = audioRef.current;
+          audio.play().then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          }).catch(() => {
+            // Playback failed (e.g. no user gesture) - harmless
+          });
+        }
       }
     }
 
@@ -289,6 +308,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     if (soundEnabled) {
       if (audioRef.current) {
         audioRef.current.volume = volume / 100;
+        audioRef.current.currentTime = 0; // Reset playback position
         audioRef.current.play().catch(e => {
           import.meta.env.DEV && console.log('Audio playback failed:', e);
           // Try to reset if playback failed

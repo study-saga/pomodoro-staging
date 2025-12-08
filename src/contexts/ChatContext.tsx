@@ -533,13 +533,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         channelRef.current = channel;
 
-        // Backup timeout for subscription callback
+        // Backup timeout for subscription callback (9s)
+        // This fires before the global timeout (10s) to ensure we catch subscription hangs
         setTimeout(() => {
           if (!resolved) {
             resolved = true;
             reject(new Error('Subscription callback timeout'));
           }
-        }, 8000);
+        }, 9000);
       });
     };
 

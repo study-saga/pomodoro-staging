@@ -740,7 +740,7 @@ RETURNS JSONB AS $$
 DECLARE
   v_current_timezone TEXT;
   v_last_change TIMESTAMPTZ;
-  v_change_count INT;
+  v_last_change TIMESTAMPTZ;
   v_account_age_days INT;
   v_applies_at TIMESTAMPTZ;
   v_hours_until_applied INT;
@@ -771,12 +771,10 @@ BEGIN
   SELECT 
     timezone, 
     last_timezone_change_at, 
-    timezone_change_count_month,
     EXTRACT(DAY FROM (NOW() - created_at))::INT
   INTO 
     v_current_timezone, 
     v_last_change, 
-    v_change_count, 
     v_account_age_days
   FROM public.users 
   WHERE id = p_user_id;
