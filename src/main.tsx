@@ -108,6 +108,7 @@ window.addEventListener('error', (event) => {
     event.preventDefault();
   }
 });
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Sentry.ErrorBoundary fallback={<div className="flex items-center justify-center min-h-screen text-white">An error has occurred</div>} showDialog>

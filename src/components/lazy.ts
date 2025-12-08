@@ -18,7 +18,7 @@ const retryImport = <T,>(
     if (retriesLeft === 0) {
       throw error;
     }
-    import.meta.env.DEV && console.log(`[Import Retry] Retrying... (${retriesLeft} attempts left)`);
+    console.log(`[Import Retry] Retrying... (${retriesLeft} attempts left)`);
     return new Promise<T>((resolve) => {
       setTimeout(() => {
         resolve(retryImport(importFn, retriesLeft - 1, interval));
@@ -28,7 +28,11 @@ const retryImport = <T,>(
 };
 
 // Daily Gift Grid (375 lines) - Rewards calendar
-export const DailyGiftGrid = lazy(() => import('./rewards/DailyGiftGrid').then(m => ({ default: m.DailyGiftGrid })));
+export const DailyGiftGrid = lazy(() =>
+  retryImport(() =>
+    import('./rewards/DailyGiftGrid').then(m => ({ default: m.DailyGiftGrid }))
+  )
+);
 
 // Chat Container (410 lines) - Global/team chat interface
 export const ChatContainer = lazy(() =>
