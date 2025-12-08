@@ -18,6 +18,23 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isPIPMode = useSmartPIPMode(750);
 
+  // Ref for audio to prevent pool exhaustion and allow pre-loading
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    audioRef.current = new Audio(BELL_SOUND);
+    // Pre-load
+    audioRef.current.load();
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current.load(); // Detaches from audio subsystem
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
   const { appUser, isDiscordActivity } = useAuth();
 
   const {
@@ -129,6 +146,13 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       // Initial state → Start fresh
       setHasBeenStarted(true);
       start();
+
+      // Attempt to unlock audio context on first interaction
+      if (soundEnabled && audioRef.current) {
+        // Play silence or just load to unlock
+        audioRef.current.load();
+        // audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
+      }
     }
 
     // Clear flag after state updates complete
@@ -257,10 +281,20 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     showNotification(timerType);
 
     // Play completion sound
+    // Play completion sound
     if (soundEnabled) {
-      const audio = new Audio(BELL_SOUND);
-      audio.volume = volume / 100;
-      audio.play().catch(e => import.meta.env.DEV && console.log('Audio playback failed:', e));
+      // Use the ref if available, otherwise create new (fallback)
+      const audioToPlay = audioRef.current || new Audio(BELL_SOUND);
+      audioToPlay.volume = volume / 100;
+      audioToPlay.play().catch(e => {
+        import.meta.env.DEV && console.log('Audio playback failed:', e);
+        // If the ref failed (e.g. detached), try a fresh one
+        if (audioRef.current) {
+          const fallback = new Audio(BELL_SOUND);
+          fallback.volume = volume / 100;
+          fallback.play().catch(err => console.error('Fallback audio failed:', err));
+        }
+      });
     }
 
     // Visual flash effect

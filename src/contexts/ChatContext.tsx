@@ -590,7 +590,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       disconnect();
     };
-  }, [appUser, isChatEnabled, isBanned, userRole]); // Added retryTrigger for manual retry
+  }, [appUser?.id, isChatEnabled, isBanned]); // Only reconnect if ID changes, not just XP/stats
+
+  // 3.5. Update Presence when Role Update (without reconnecting)
+  useEffect(() => {
+    if (isGlobalConnected && channelRef.current && appUser) {
+      import.meta.env.DEV && console.log('[Chat] Updating presence with new role:', userRole);
+      channelRef.current.track({
+        id: appUser.id,
+        username: appUser.username,
+        avatar: appUser.avatar,
+        is_chatting: isChatOpen,
+        online_at: new Date().toISOString(),
+        role: userRole,
+        discord_id: appUser.discord_id
+      });
+    }
+  }, [userRole, isGlobalConnected, isChatOpen, appUser]);
 
   // Send Global Message (Database Insert)
   const sendGlobalMessage = useCallback(async (
