@@ -296,7 +296,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     // Only refetch if we went from disconnected → connected (reconnection)
     if (wasDisconnected && isNowConnected) {
-      console.log('[Chat] Reconnected - refetching messages to catch up');
+      import.meta.env.DEV && console.log('[Chat] Reconnected - refetching messages to catch up');
 
       const fetchMessages = async () => {
         const { data, error } = await supabase
@@ -340,7 +340,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         })).reverse(); // Reverse to show oldest first
 
         setGlobalMessages(messages);
-        console.log(`[Chat] Refetched ${messages.length} messages after reconnection`);
+        import.meta.env.DEV && console.log(`[Chat] Refetched ${messages.length} messages after reconnection`);
       };
 
       fetchMessages();

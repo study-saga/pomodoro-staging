@@ -283,18 +283,16 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     // Play completion sound
     // Play completion sound
     if (soundEnabled) {
-      // Use the ref if available, otherwise create new (fallback)
-      const audioToPlay = audioRef.current || new Audio(BELL_SOUND);
-      audioToPlay.volume = volume / 100;
-      audioToPlay.play().catch(e => {
-        import.meta.env.DEV && console.log('Audio playback failed:', e);
-        // If the ref failed (e.g. detached), try a fresh one
-        if (audioRef.current) {
-          const fallback = new Audio(BELL_SOUND);
-          fallback.volume = volume / 100;
-          fallback.play().catch(err => console.error('Fallback audio failed:', err));
-        }
-      });
+      if (audioRef.current) {
+        audioRef.current.volume = volume / 100;
+        audioRef.current.play().catch(e => {
+          import.meta.env.DEV && console.log('Audio playback failed:', e);
+          // Try to reset if playback failed
+          audioRef.current?.load();
+        });
+      } else {
+        import.meta.env.DEV && console.warn('[Timer] Audio ref missing, skipping sound.');
+      }
     }
 
     // Visual flash effect
