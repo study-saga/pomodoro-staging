@@ -139,10 +139,10 @@ export function TimezoneTab(props: TimezoneTabProps) {
       {/* Current Status */}
       <div className="bg-gray-800/50 rounded-lg p-4 space-y-3">
         <div className="flex items-start gap-3">
-          <Clock className="w-5 h-5 text-blue-400 mt-0.5" />
-          <div>
+          <Clock className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
+          <div className="min-w-0 flex-1">
             <div className="text-sm font-medium text-white">Current Timezone</div>
-            <div className="text-sm text-gray-300">{currentTimezone}</div>
+            <div className="text-sm text-gray-300 break-words">{currentTimezone}</div>
             <div className="text-xs text-gray-400 mt-1">
               Weekend: {currentWeekendDays.map(d => DAY_NAMES[d]).join(', ')}
             </div>
@@ -151,10 +151,10 @@ export function TimezoneTab(props: TimezoneTabProps) {
 
         {hasPendingChange && (
           <div className="flex items-start gap-3 pt-3 border-t border-gray-700">
-            <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5" />
-            <div>
+            <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5 shrink-0" />
+            <div className="min-w-0 flex-1">
               <div className="text-sm font-medium text-yellow-400">Pending Change</div>
-              <div className="text-sm text-gray-300">{pendingTimezone}</div>
+              <div className="text-sm text-gray-300 break-words">{pendingTimezone}</div>
               <div className="text-xs text-gray-400 mt-1">
                 Applies: {new Date(pendingTimezoneAppliesAt!).toLocaleString()}
               </div>
@@ -188,7 +188,7 @@ export function TimezoneTab(props: TimezoneTabProps) {
         <label className="block text-sm font-medium text-gray-300">
           Weekend Days
         </label>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {DAY_NAMES.map((day, index) => (
             <div
               key={day}
