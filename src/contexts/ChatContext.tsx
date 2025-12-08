@@ -72,8 +72,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     isBannedRef.current = isBanned;
   }, [isBanned]);
 
-  // Ref to track if initial data fetches are complete
-  const isInitializedRef = useRef(false);
 
   // Ref to track previous connection state for reconnection detection
   const prevConnectedRef = useRef<boolean | undefined>(undefined);
@@ -582,7 +580,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       disconnect();
     };
-  }, [appUser, isChatEnabled, isBanned, userRole, retryTrigger]); // Added retryTrigger for manual retry
+  }, [appUser, isChatEnabled, isBanned, userRole]); // Added retryTrigger for manual retry
 
   // Send Global Message (Database Insert)
   const sendGlobalMessage = useCallback(async (
