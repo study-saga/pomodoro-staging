@@ -15,6 +15,7 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 import { AdminActionHandler } from './components/admin/AdminActionHandler';
 import { ChunkLoadErrorBoundary } from './components/ChunkLoadErrorBoundary';
 import { SnowOverlay } from './components/effects/SnowOverlay';
+import SnowToggle from './components/effects/SnowToggle';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useBuffActivation } from './hooks/useBuffActivation';
 import { useSettingsStore } from './store/useSettingsStore';
@@ -23,6 +24,7 @@ import { ChatProvider } from './contexts/ChatContext';
 import { getEnvironment } from './lib/environment';
 import { canClaimDailyGift } from './lib/userSyncAuth';
 import { useSmartPIPMode } from './hooks/useSmartPIPMode';
+import { useDeviceType } from './hooks/useDeviceType';
 
 
 function AppContent() {
@@ -39,6 +41,7 @@ function AppContent() {
   const [showDailyGift, setShowDailyGift] = useState(false);
   const [dailyGiftClaimed, setDailyGiftClaimed] = useState(false);
   const isPIPMode = useSmartPIPMode(750);
+  const { isMobile } = useDeviceType();
 
   // Check if daily gift available (actual claim happens in DailyGiftGrid to prevent double-claiming)
   useEffect(() => {
@@ -283,6 +286,7 @@ function AppContent() {
         <div className="fixed top-4 right-4 z-[60] flex items-center gap-2">
           {/* Sentry Test Button */}
 
+          {!isMobile && <SnowToggle />}
           <DiscordButton />
           <SettingsPopover />
         </div>
