@@ -491,7 +491,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
         opacity: isMouseActive || !autoHideUI ? 1 : 0
       }}
       transition={{ duration: 0.5, ease: "easeInOut" }}
-      className={`p-3 bg-black/40 backdrop-blur-md rounded-full text-gray-400 hover:bg-black/60 transition-colors border border-gray-400/60 ${(!isMouseActive && autoHideUI) ? 'pointer-events-none' : ''}`}
+      className={`p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors border border-gray-400/60 ${(!isMouseActive && autoHideUI) ? 'pointer-events-none' : ''}`}
     >
       <SettingsIcon size={24} />
     </motion.button>

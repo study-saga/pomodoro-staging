@@ -48,6 +48,8 @@ interface SettingsStore extends Settings {
   setAutoHideUI: (enabled: boolean) => void;
   autoHideUI: boolean;
   setPlaylist: (playlist: 'lofi' | 'synthwave') => void;
+  snowEnabled: boolean;
+  toggleSnow: () => void;
 
   // Level system actions
   addXP: (minutes: number) => void;
@@ -137,6 +139,10 @@ export const useSettingsStore = create<SettingsStore>()(
       },
       setAutoHideUI: (enabled) => set({ autoHideUI: enabled }),
       setPlaylist: (playlist) => set({ playlist }),
+
+      // Effects
+      snowEnabled: true,
+      toggleSnow: () => set((state) => ({ snowEnabled: !state.snowEnabled })),
 
       // Level system actions
       addXP: (minutes) => {

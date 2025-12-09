@@ -1,25 +1,28 @@
 import ReactSnowfall from 'react-snowfall';
+import { useSettingsStore } from '../../store/useSettingsStore';
+import { useDeviceType } from '../../hooks/useDeviceType';
 
 export const SnowOverlay = () => {
+    const { snowEnabled } = useSettingsStore();
+    const { isMobile } = useDeviceType();
+
+    if (!snowEnabled || isMobile) return null;
+
     return (
-        <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            pointerEvents: 'none',
-            zIndex: 1 // Above background (-10) but behind Chat (40) and other controls
-        }}>
+        <div
+            style={{
+                position: 'fixed',
+                width: '100vw',
+                height: '100vh',
+                zIndex: 1, // Above background (-10) but behind Chat (40) and other controls
+                pointerEvents: 'none', // Allow clicking through
+            }}
+        >
             <ReactSnowfall
-                snowflakeCount={150}
-                style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                }}
+                snowflakeCount={200}
+                radius={[0.5, 3.0]}
+                speed={[0.5, 3.0]}
+                wind={[-0.5, 2.0]}
             />
         </div>
     );

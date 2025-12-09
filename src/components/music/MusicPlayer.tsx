@@ -273,7 +273,7 @@ export function MusicPlayer({ playing, setPlaying, isPIPMode = false }: MusicPla
                 <div className="flex items-center justify-end gap-3">
                   {/* Inline Volume Slider */}
                   <div className="flex items-center gap-2">
-                    <Volume2 size={18} className="text-gray-400" />
+                    <Volume2 size={18} className="text-white" />
                     <div className="w-24 relative">
                       <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
                         <div
@@ -433,7 +433,7 @@ export function MusicPlayer({ playing, setPlaying, isPIPMode = false }: MusicPla
                       {showVolumeSlider && (
                         <div className="absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-xl rounded-lg p-4 border border-white/10 w-48">
                           <div className="flex items-center gap-3">
-                            <Volume2 size={16} className="text-gray-400" />
+                            <Volume2 size={16} className="text-white" />
                             <div className="flex-1 relative">
                               <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                                 <div
