@@ -6,6 +6,8 @@ import { saveCompletedBreak } from '../../lib/userSyncAuth';
 import { useAuth } from '../../contexts/AuthContext';
 import type { TimerType } from '../../types';
 
+import { useSmartPIPMode } from '../../hooks/useSmartPIPMode';
+
 const XP_PER_MINUTE_BREAK = 1;
 
 export const PomodoroTimer = memo(function PomodoroTimer() {
@@ -14,6 +16,34 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [isFlashing, setIsFlashing] = useState(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const isPIPMode = useSmartPIPMode(750);
+
+  // Ref for audio to prevent pool exhaustion and allow pre-loading
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // Only create audio if it doesn't exist
+    if (!audioRef.current) {
+      audioRef.current = new Audio(BELL_SOUND);
+      // Pre-load
+      audioRef.current.load();
+    }
+
+    return () => {
+      // In StrictMode, this might run while the component is still mounted.
+      // We should only clean up if we're actually unmounting.
+      // However, separating "unmount" from "strictmode effect cleanup" is hard.
+      // For safety in this specific case, we can rely on garbage collection 
+      // or clear it if we are sure. To be safe, we'll keep the cleanup but
+      // the lazy init above protects against re-creation issues.
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current.load(); // Detaches from audio subsystem
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const { appUser, isDiscordActivity } = useAuth();
 
@@ -66,10 +96,10 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const switchTimer = useCallback((type: TimerType, autoStart = false) => {
     isUserInteracting.current = true;
 
-    console.log(`[Timer] Switching to ${type}, autoStart=${autoStart}`);
+    import.meta.env.DEV && console.log(`[Timer] Switching to ${type}, autoStart=${autoStart}`);
 
     const duration = getTimerDuration(type);
-    console.log(`[Timer] Duration for ${type}: ${duration} seconds (${duration / 60} minutes)`);
+    import.meta.env.DEV && console.log(`[Timer] Duration for ${type}: ${duration} seconds (${duration / 60} minutes)`);
 
     if (duration <= 0) {
       console.error(`[Timer] Invalid duration: ${duration} seconds for ${type}`);
@@ -80,7 +110,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     const time = new Date();
     time.setSeconds(time.getSeconds() + duration);
 
-    console.log(`[Timer] Expiry timestamp:`, time, `Current time:`, new Date());
+    import.meta.env.DEV && console.log(`[Timer] Expiry timestamp:`, time, `Current time:`, new Date());
 
     // Update UI state
     setTimerType(type);
@@ -90,7 +120,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     // Call restart with the autoStart parameter directly
     // This should update the display AND start if autoStart=true
     restart(time, autoStart);
-    console.log(`[Timer] Called restart with autoStart=${autoStart}`);
+    import.meta.env.DEV && console.log(`[Timer] Called restart with autoStart=${autoStart}`);
 
     // Clear guard after state updates complete
     setTimeout(() => {
@@ -126,6 +156,27 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       // Initial state → Start fresh
       setHasBeenStarted(true);
       start();
+
+      // Attempt to unlock audio context on first interaction
+      // Attempt to unlock audio context on first interaction
+      if (soundEnabled) {
+        // Lazy initialization if audioRef is missing (e.g. clean up race condition)
+        if (!audioRef.current) {
+          audioRef.current = new Audio(BELL_SOUND);
+          audioRef.current.load();
+        }
+
+        if (audioRef.current) {
+          // Play and pause immediately to unlock audio on iOS/Safari
+          const audio = audioRef.current;
+          audio.play().then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          }).catch(() => {
+            // Playback failed (e.g. no user gesture) - harmless
+          });
+        }
+      }
     }
 
     // Clear flag after state updates complete
@@ -190,7 +241,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   }, []);
 
   const showNotification = (type: TimerType) => {
-    console.log('[Notification] showNotification called', {
+    import.meta.env.DEV && console.log('[Notification] showNotification called', {
       type,
       isDiscordActivity,
       notificationInWindow: 'Notification' in window,
@@ -200,17 +251,17 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
     // Only show browser notifications on web (not Discord Activity)
     if (isDiscordActivity) {
-      console.log('[Notification] Blocked: running in Discord Activity');
+      import.meta.env.DEV && console.log('[Notification] Blocked: running in Discord Activity');
       return;
     }
 
     if (!('Notification' in window)) {
-      console.log('[Notification] Blocked: Notification API not available');
+      import.meta.env.DEV && console.log('[Notification] Blocked: Notification API not available');
       return;
     }
 
     if (notificationPermission !== 'granted') {
-      console.log('[Notification] Blocked: permission not granted', { notificationPermission });
+      import.meta.env.DEV && console.log('[Notification] Blocked: permission not granted', { notificationPermission });
       return;
     }
 
@@ -227,7 +278,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
         longBreak: 'Feeling refreshed? Let\'s get back to work!'
       };
 
-      console.log('[Notification] Creating notification', {
+      import.meta.env.DEV && console.log('[Notification] Creating notification', {
         title: titles[type],
         body: bodies[type]
       });
@@ -240,7 +291,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
         requireInteraction: false
       });
 
-      console.log('[Notification] ✓ Notification created successfully', notification);
+      import.meta.env.DEV && console.log('[Notification] ✓ Notification created successfully', notification);
 
       // Auto-close after 10 seconds
       setTimeout(() => notification.close(), 10000);
@@ -255,9 +306,17 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
     // Play completion sound
     if (soundEnabled) {
-      const audio = new Audio(BELL_SOUND);
-      audio.volume = volume / 100;
-      audio.play().catch(e => console.log('Audio playback failed:', e));
+      if (audioRef.current) {
+        audioRef.current.volume = volume / 100;
+        audioRef.current.currentTime = 0; // Reset playback position
+        audioRef.current.play().catch(e => {
+          import.meta.env.DEV && console.log('Audio playback failed:', e);
+          // Try to reset if playback failed
+          audioRef.current?.load();
+        });
+      } else {
+        import.meta.env.DEV && console.warn('[Timer] Audio ref missing, skipping sound.');
+      }
     }
 
     // Visual flash effect
@@ -281,7 +340,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       const durationMinutes = timerType === 'shortBreak' ? timers.shortBreak : timers.longBreak;
       const xpEarned = durationMinutes * XP_PER_MINUTE_BREAK;
 
-      console.log(`[Timer] ${timerType} complete! Awarding ${xpEarned} XP (${durationMinutes} min × ${XP_PER_MINUTE_BREAK} XP/min)`);
+      import.meta.env.DEV && console.log(`[Timer] ${timerType} complete! Awarding ${xpEarned} XP (${durationMinutes} min × ${XP_PER_MINUTE_BREAK} XP/min)`);
 
       // Manually update XP without incrementing pomodoro count
       const currentState = useSettingsStore.getState();
@@ -291,7 +350,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
       // Save to database (async - don't block UI)
       if (appUser?.id && appUser?.discord_id) {
-        console.log('[Timer] Saving break to database...', {
+        import.meta.env.DEV && console.log('[Timer] Saving break to database...', {
           userId: appUser.id,
           discordId: appUser.discord_id,
           breakType: timerType === 'shortBreak' ? 'short' : 'long',
@@ -299,13 +358,13 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
           xp: xpEarned
         });
 
-        saveCompletedBreak(appUser.id, appUser.discord_id, {
+        saveCompletedBreak(appUser.id, {
           break_type: timerType === 'shortBreak' ? 'short' : 'long',
           duration_minutes: durationMinutes,
           xp_earned: xpEarned
         })
           .then(() => {
-            console.log('[Timer] ✓ Break saved to database successfully');
+            import.meta.env.DEV && console.log('[Timer] ✓ Break saved to database successfully');
           })
           .catch((error) => {
             console.error('[Timer] ✗ Failed to save break to database:', error);
@@ -320,7 +379,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
     // so we must read current settings instead of relying on captured values
     const currentSettings = useSettingsStore.getState();
 
-    console.log('[Timer] Current settings:', {
+    import.meta.env.DEV && console.log('[Timer] Current settings:', {
       autoStartBreaks: currentSettings.autoStartBreaks,
       autoStartPomodoros: currentSettings.autoStartPomodoros,
       pomodoroCount: pomodoroCount,
@@ -334,36 +393,36 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       const isLongBreakTime = (pomodoroCount + 1) % pomodorosBeforeLongBreak === 0;
       if (isLongBreakTime) {
         nextType = 'longBreak';
-        console.log('[Timer] Pomodoro complete! Next: Long Break (completed', pomodoroCount + 1, 'pomodoros)');
+        import.meta.env.DEV && console.log('[Timer] Pomodoro complete! Next: Long Break (completed', pomodoroCount + 1, 'pomodoros)');
       } else {
         nextType = 'shortBreak';
-        console.log('[Timer] Pomodoro complete! Next: Short Break (completed', pomodoroCount + 1, 'pomodoros)');
+        import.meta.env.DEV && console.log('[Timer] Pomodoro complete! Next: Short Break (completed', pomodoroCount + 1, 'pomodoros)');
       }
 
       // Auto-start break if enabled (use fresh value from store)
       // Use setTimeout to ensure timer state has fully reset after onExpire
       setTimeout(() => {
         if (currentSettings.autoStartBreaks) {
-          console.log('[Timer] Auto-start breaks ENABLED → starting break automatically');
+          import.meta.env.DEV && console.log('[Timer] Auto-start breaks ENABLED → starting break automatically');
           switchTimer(nextType, true);
         } else {
-          console.log('[Timer] Auto-start breaks DISABLED → break ready but not started');
+          import.meta.env.DEV && console.log('[Timer] Auto-start breaks DISABLED → break ready but not started');
           switchTimer(nextType, false);
         }
       }, 100);
     } else {
       // After a break, start Pomodoro
       nextType = 'pomodoro';
-      console.log('[Timer] Break complete! Next: Pomodoro');
+      import.meta.env.DEV && console.log('[Timer] Break complete! Next: Pomodoro');
 
       // Auto-start pomodoro if enabled (use fresh value from store)
       // Use setTimeout to ensure timer state has fully reset after onExpire
       setTimeout(() => {
         if (currentSettings.autoStartPomodoros) {
-          console.log('[Timer] Auto-start pomodoros ENABLED → starting pomodoro automatically');
+          import.meta.env.DEV && console.log('[Timer] Auto-start pomodoros ENABLED → starting pomodoro automatically');
           switchTimer(nextType, true);
         } else {
-          console.log('[Timer] Auto-start pomodoros DISABLED → pomodoro ready but not started');
+          import.meta.env.DEV && console.log('[Timer] Auto-start pomodoros DISABLED → pomodoro ready but not started');
           switchTimer(nextType, false);
         }
       }, 100);
@@ -376,45 +435,47 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
 
   return (
     <div className="flex flex-col items-center justify-center space-y-6">
-      {/* Timer Type Selector */}
-      <div className="flex gap-2 sm:gap-3 p-1 bg-black/20 rounded-xl backdrop-blur-sm" role="tablist" aria-label="Timer type selector">
-        <button
-          onClick={() => switchTimer('pomodoro')}
-          role="tab"
-          aria-selected={timerType === 'pomodoro'}
-          aria-label="Pomodoro timer"
-          className={`px-3 py-1.5 sm:px-6 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-all ${timerType === 'pomodoro'
+      {/* Timer Type Selector - Hidden in PIP mode */}
+      {!isPIPMode && (
+        <div className="flex gap-2 sm:gap-3 p-1 bg-black/20 rounded-xl backdrop-blur-sm" role="tablist" aria-label="Timer type selector">
+          <button
+            onClick={() => switchTimer('pomodoro')}
+            role="tab"
+            aria-selected={timerType === 'pomodoro'}
+            aria-label="Pomodoro timer"
+            className={`px-3 py-1.5 sm:px-6 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-all ${timerType === 'pomodoro'
               ? 'bg-white text-gray-900 shadow-lg'
               : 'text-white/80 hover:bg-white/10 hover:text-white'
-            }`}
-        >
-          Pomodoro
-        </button>
-        <button
-          onClick={() => switchTimer('shortBreak')}
-          role="tab"
-          aria-selected={timerType === 'shortBreak'}
-          aria-label="Short break timer"
-          className={`px-3 py-1.5 sm:px-6 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-all ${timerType === 'shortBreak'
+              }`}
+          >
+            Pomodoro
+          </button>
+          <button
+            onClick={() => switchTimer('shortBreak')}
+            role="tab"
+            aria-selected={timerType === 'shortBreak'}
+            aria-label="Short break timer"
+            className={`px-3 py-1.5 sm:px-6 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-all ${timerType === 'shortBreak'
               ? 'bg-white text-gray-900 shadow-lg'
               : 'text-white/80 hover:bg-white/10 hover:text-white'
-            }`}
-        >
-          Short Break
-        </button>
-        <button
-          onClick={() => switchTimer('longBreak')}
-          role="tab"
-          aria-selected={timerType === 'longBreak'}
-          aria-label="Long break timer"
-          className={`px-3 py-1.5 sm:px-6 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-all ${timerType === 'longBreak'
+              }`}
+          >
+            Short Break
+          </button>
+          <button
+            onClick={() => switchTimer('longBreak')}
+            role="tab"
+            aria-selected={timerType === 'longBreak'}
+            aria-label="Long break timer"
+            className={`px-3 py-1.5 sm:px-6 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-all ${timerType === 'longBreak'
               ? 'bg-white text-gray-900 shadow-lg'
               : 'text-white/80 hover:bg-white/10 hover:text-white'
-            }`}
-        >
-          Long Break
-        </button>
-      </div>
+              }`}
+          >
+            Long Break
+          </button>
+        </div>
+      )}
 
       {/* Timer Display */}
       <div
@@ -428,23 +489,25 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
         {formatTime(minutes, seconds)}
       </div>
 
-      {/* Control Buttons */}
-      <div className="flex gap-3 sm:gap-4">
-        <button
-          onClick={handleStartPauseResume}
-          aria-label={isRunning ? 'Pause timer' : hasBeenStarted ? 'Resume timer' : 'Start timer'}
-          className="px-6 py-2 sm:px-8 sm:py-3 bg-white text-gray-900 rounded-lg font-bold text-base sm:text-lg hover:bg-gray-100 transition-colors shadow-lg active:scale-95 transform"
-        >
-          {isRunning ? 'Pause' : hasBeenStarted ? 'Resume' : 'Start'}
-        </button>
-        <button
-          onClick={handleReset}
-          aria-label="Reset timer"
-          className="px-6 py-2 sm:px-8 sm:py-3 bg-white/20 text-white rounded-lg font-bold text-base sm:text-lg hover:bg-white/30 transition-colors backdrop-blur-sm active:scale-95 transform"
-        >
-          Reset
-        </button>
-      </div>
+      {/* Control Buttons - Hidden in PIP mode */}
+      {!isPIPMode && (
+        <div className="flex gap-3 sm:gap-4">
+          <button
+            onClick={handleStartPauseResume}
+            aria-label={isRunning ? 'Pause timer' : hasBeenStarted ? 'Resume timer' : 'Start timer'}
+            className="px-6 py-2 sm:px-8 sm:py-3 bg-white text-gray-900 rounded-lg font-bold text-lg sm:text-xl hover:bg-gray-100 transition-colors shadow-lg active:scale-95 transform"
+          >
+            {isRunning ? 'Pause' : hasBeenStarted ? 'Resume' : 'Start'}
+          </button>
+          <button
+            onClick={handleReset}
+            aria-label="Reset timer"
+            className="px-6 py-2 sm:px-8 sm:py-3 bg-white/20 text-white rounded-lg font-bold text-lg sm:text-xl hover:bg-white/30 transition-colors backdrop-blur-sm active:scale-95 transform"
+          >
+            Reset
+          </button>
+        </div>
+      )}
     </div>
   );
 });

@@ -1,6 +1,6 @@
-import { memo, useState, useEffect, useRef, Suspense } from 'react';
+import { memo, useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings as SettingsIcon, X, Palette, Volume2, Sparkles, Bell, FileText, Trophy } from 'lucide-react';
+import { Settings as SettingsIcon, X, Palette, Volume2, Sparkles, Bell, FileText, Trophy, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useMouseActivity } from '../../hooks/useMouseActivity';
@@ -32,7 +32,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const isMouseActive = useMouseActivity(8000);
   const { appUser } = useAuth();
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'notifications' | 'music' | 'progress' | 'whats-new'>('timer');
+  const [activeTab, setActiveTab] = useState<'timer' | 'appearance' | 'sounds' | 'notifications' | 'timezone' | 'music' | 'progress' | 'whats-new'>('timer');
   const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameLoading, setUsernameLoading] = useState(false);
@@ -45,8 +45,33 @@ export const SettingsPopover = memo(function SettingsPopover() {
   });
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
+  const [viewportHeight, setViewportHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 1080);
 
-  const { isPortrait, isCompact } = useDeviceType();
+  const { isPortrait, isMobile } = useDeviceType();
+
+  // Track viewport dimensions for scaling logic
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+      setViewportHeight(window.innerHeight);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Determine scaling factor based on viewport dimensions
+  // We want to force desktop layout but scale it down to fit
+  let scaleClass = '';
+  if (viewportWidth < 800 || viewportHeight < 600) {
+    scaleClass = 'scale-[0.75] origin-top-right';
+  } else if (viewportWidth < 1200 || viewportHeight < 800) {
+    scaleClass = 'scale-[0.85] origin-top-right';
+  }
+
+  // Force desktop layout unless it's an actual mobile device (User Agent check)
+  // The user wants the 2-column layout even on small desktop windows
+  const showDesktopLayout = !isMobile;
 
   // Calculate total track count
   const totalTracks = lofiTracks.length + synthwaveTracks.length;
@@ -81,56 +106,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     }
   }, [open]);
 
-  // Close settings when mouse becomes inactive
-  useEffect(() => {
-    if (!isMouseActive && open) {
-      setOpen(false);
-    }
-  }, [isMouseActive, open]);
-
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    if (!open) return;
-
-    const handleKeyboard = (e: KeyboardEvent) => {
-      // Ignore keyboard shortcuts when typing in an input field
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-
-      // Escape to close
-      if (e.key === 'Escape') {
-        setOpen(false);
-        return;
-      }
-
-      // Cmd/Ctrl+S to save
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        handleSave();
-        return;
-      }
-
-      // Number keys 1-7 to jump to tabs
-      const numKey = parseInt(e.key);
-      if (numKey >= 1 && numKey <= tabs.length) {
-        setActiveTab(tabs[numKey - 1].id as typeof activeTab);
-        return;
-      }
-
-      // Arrow keys to navigate tabs
-      const currentIndex = tabs.findIndex(t => t.id === activeTab);
-      if (e.key === 'ArrowDown' && currentIndex < tabs.length - 1) {
-        setActiveTab(tabs[currentIndex + 1].id as typeof activeTab);
-      } else if (e.key === 'ArrowUp' && currentIndex > 0) {
-        setActiveTab(tabs[currentIndex - 1].id as typeof activeTab);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyboard);
-    return () => window.removeEventListener('keydown', handleKeyboard);
-  }, [open, activeTab]);
+  // Keyboard shortcuts (moved after handleSave to avoid stale closure)
 
   const handleRoleChange = (newRole: 'elf' | 'human') => {
     // Check daily cooldown
@@ -206,6 +182,13 @@ export const SettingsPopover = memo(function SettingsPopover() {
     firstLoginDate,
     playlist,
     setPlaylist,
+    timezone,
+    weekendDays,
+    pendingTimezone,
+    pendingTimezoneAppliesAt,
+    lastTimezoneChangeAt,
+    autoHideUI,
+    setAutoHideUI
   } = useSettingsStore();
 
   // Filter backgrounds based on viewport orientation (portrait vs landscape)
@@ -222,6 +205,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
   const [tempMusicVolume, setTempMusicVolume] = useState(musicVolume);
   const [tempAmbientVolumes, setTempAmbientVolumes] = useState(ambientVolumes);
   const [tempBackground, setTempBackground] = useState(background);
+  const [tempAutoHideUI, setTempAutoHideUI] = useState(autoHideUI);
   const [tempLevelSystemEnabled, setTempLevelSystemEnabled] = useState(levelSystemEnabled);
   const [tempPlaylist, setTempPlaylist] = useState(playlist);
   const [usernameInput, setUsernameInput] = useState(username);
@@ -237,8 +221,20 @@ export const SettingsPopover = memo(function SettingsPopover() {
     tempMusicVolume !== musicVolume ||
     JSON.stringify(tempAmbientVolumes) !== JSON.stringify(ambientVolumes) ||
     tempBackground !== background ||
+    tempAutoHideUI !== autoHideUI ||
     tempLevelSystemEnabled !== levelSystemEnabled ||
     tempPlaylist !== playlist;
+
+  // Close settings when mouse becomes inactive (unless there are pending changes or auto-hide is disabled)
+  useEffect(() => {
+    // Don't auto-close if there are unsaved changes or username operations pending
+    // Also don't auto-close if the user has disabled auto-hiding
+    const hasPendingChanges = hasUnsavedChanges || usernameLoading || usernameError !== null;
+
+    if (!isMouseActive && open && !hasPendingChanges && autoHideUI) {
+      setOpen(false);
+    }
+  }, [isMouseActive, open, hasUnsavedChanges, usernameLoading, usernameError, autoHideUI]);
 
   // Reset temporary state when modal opens
   useEffect(() => {
@@ -252,12 +248,13 @@ export const SettingsPopover = memo(function SettingsPopover() {
       setTempMusicVolume(musicVolume);
       setTempAmbientVolumes(ambientVolumes);
       setTempBackground(background);
+      setTempAutoHideUI(autoHideUI);
       setTempLevelSystemEnabled(levelSystemEnabled);
       setTempPlaylist(playlist);
       setUsernameInput(username);
       setActiveTab('timer'); // Default to General tab
     }
-  }, [open, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, playlist, username]);
+  }, [open, timers, pomodorosBeforeLongBreak, autoStartBreaks, autoStartPomodoros, soundEnabled, volume, musicVolume, ambientVolumes, background, levelSystemEnabled, playlist, username, autoHideUI]);
 
   const handleSaveUsername = async () => {
     if (!appUser) {
@@ -293,12 +290,12 @@ export const SettingsPopover = memo(function SettingsPopover() {
       }
 
       // Try free update first (let server decide if cooldown passed)
-      const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, false);
+      const updatedUser = await updateUsernameSecure(appUser.id, usernameInput, false);
 
       // Success - update local Zustand store with new username and timestamp
       setUsername(usernameInput);
 
-      console.log('[Settings] Username updated successfully (free):', updatedUser.username);
+      import.meta.env.DEV && console.log('[Settings] Username updated successfully (free):', updatedUser.username);
       toast.success('Username updated successfully!');
 
     } catch (error) {
@@ -321,12 +318,12 @@ export const SettingsPopover = memo(function SettingsPopover() {
               try {
                 setUsernameLoading(true);
                 // Retry with XP payment
-                const updatedUser = await updateUsernameSecure(appUser.id, appUser.discord_id, usernameInput, true);
+                const updatedUser = await updateUsernameSecure(appUser.id, usernameInput, true);
 
                 // Success - update local Zustand store with new username, XP, and timestamp
                 setUsername(usernameInput, true);
 
-                console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
+                import.meta.env.DEV && console.log('[Settings] Username updated successfully (50 XP cost):', updatedUser.username, 'XP:', updatedUser.xp);
                 toast.success('Username updated! 50 XP deducted.');
                 showGameToast('-50 XP Spent');
 
@@ -366,7 +363,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     // Apply all temporary settings to store
     setPomodoroDuration(tempTimers.pomodoro);
     setShortBreakDuration(tempTimers.shortBreak);
@@ -378,6 +375,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setVolume(tempVolume);
     setMusicVolume(tempMusicVolume);
     setBackground(tempBackground);
+    setAutoHideUI(tempAutoHideUI);
     setLevelSystemEnabled(tempLevelSystemEnabled);
     setPlaylist(tempPlaylist);
 
@@ -387,7 +385,79 @@ export const SettingsPopover = memo(function SettingsPopover() {
     });
 
     setOpen(false);
-  };
+  }, [
+    tempTimers,
+    tempPomodorosBeforeLongBreak,
+    tempAutoStartBreaks,
+    tempAutoStartPomodoros,
+    tempSoundEnabled,
+    tempVolume,
+    tempMusicVolume,
+    tempAmbientVolumes,
+    tempBackground,
+    tempAutoHideUI,
+    tempLevelSystemEnabled,
+    tempPlaylist,
+    setPomodoroDuration,
+    setShortBreakDuration,
+    setLongBreakDuration,
+    setPomodorosBeforeLongBreak,
+    setAutoStartBreaks,
+    setAutoStartPomodoros,
+    setSoundEnabled,
+    setVolume,
+    setMusicVolume,
+    setBackground,
+    setAutoHideUI,
+    setLevelSystemEnabled,
+    setPlaylist,
+    setAmbientVolume,
+    setOpen
+  ]);
+
+  // Handle keyboard shortcuts (placed here to use handleSave without stale closure)
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyboard = (e: KeyboardEvent) => {
+      // Ignore keyboard shortcuts when typing in an input field
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      // Escape to close
+      if (e.key === 'Escape') {
+        setOpen(false);
+        return;
+      }
+
+      // Cmd/Ctrl+S to save
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+        return;
+      }
+
+      // Number keys 1-7 to jump to tabs
+      const numKey = parseInt(e.key);
+      if (numKey >= 1 && numKey <= tabs.length) {
+        setActiveTab(tabs[numKey - 1].id as typeof activeTab);
+        return;
+      }
+
+      // Arrow keys to navigate tabs
+      const currentIndex = tabs.findIndex(t => t.id === activeTab);
+      if (e.key === 'ArrowDown' && currentIndex < tabs.length - 1) {
+        setActiveTab(tabs[currentIndex + 1].id as typeof activeTab);
+      } else if (e.key === 'ArrowUp' && currentIndex > 0) {
+        setActiveTab(tabs[currentIndex - 1].id as typeof activeTab);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, [open, activeTab, handleSave]);
 
   const handleReset = () => {
     // Reset temporary state to current store values
@@ -400,6 +470,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     setTempMusicVolume(musicVolume);
     setTempAmbientVolumes(ambientVolumes);
     setTempBackground(background);
+    setTempAutoHideUI(autoHideUI);
     setTempLevelSystemEnabled(levelSystemEnabled);
     setTempPlaylist(playlist);
     setUsernameInput(username);
@@ -410,6 +481,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'sounds', label: 'Sounds', icon: Volume2 },
     { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'timezone', label: 'Timezone', icon: Globe },
     { id: 'progress', label: 'Progress', icon: Trophy },
     { id: 'music', label: 'Credits', icon: FileText },
     { id: 'whats-new', label: "What's New", icon: Sparkles },
@@ -421,11 +493,13 @@ export const SettingsPopover = memo(function SettingsPopover() {
       ref={triggerButtonRef}
       onClick={() => setOpen(true)}
       aria-label="Open settings"
+      aria-hidden={!isMouseActive && autoHideUI}
+      tabIndex={(!isMouseActive && autoHideUI) ? -1 : 0}
       animate={{
-        padding: isMouseActive ? '0.75rem' : '0.25rem'
+        opacity: isMouseActive || !autoHideUI ? 1 : 0
       }}
       transition={{ duration: 0.5, ease: "easeInOut" }}
-      className="bg-black/40 backdrop-blur-md rounded-full text-gray-400 hover:bg-black/60 transition-colors border border-gray-400/60"
+      className={`p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors border border-gray-400/60 ${(!isMouseActive && autoHideUI) ? 'pointer-events-none' : ''}`}
     >
       <SettingsIcon size={24} />
     </motion.button>
@@ -434,13 +508,13 @@ export const SettingsPopover = memo(function SettingsPopover() {
   return (
     <>
       {/* Desktop: Popover */}
-      {!isCompact && (
+      {showDesktopLayout && (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             {trigger}
           </PopoverTrigger>
           <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[594px] p-0 max-h-[85vh] z-[100]"
+            className={`bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[594px] p-0 max-h-[85vh] z-[100] ${scaleClass}`}
             align="end"
             side="bottom"
             sideOffset={8}
@@ -521,6 +595,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         notificationPermission={notificationPermission}
                         tempBackground={tempBackground}
                         setTempBackground={setTempBackground}
+                        tempAutoHideUI={tempAutoHideUI}
+                        setTempAutoHideUI={setTempAutoHideUI}
                         filteredBackgrounds={filteredBackgrounds}
                         tempMusicVolume={tempMusicVolume}
                         setTempMusicVolume={setTempMusicVolume}
@@ -549,6 +625,11 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         pomodoroBoostActive={pomodoroBoostActive}
                         pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
                         firstLoginDate={firstLoginDate}
+                        timezone={timezone}
+                        weekendDays={weekendDays}
+                        pendingTimezone={pendingTimezone}
+                        pendingTimezoneAppliesAt={pendingTimezoneAppliesAt}
+                        lastTimezoneChangeAt={lastTimezoneChangeAt}
                       />
                     </div>
                   </ScrollArea>
@@ -587,7 +668,7 @@ export const SettingsPopover = memo(function SettingsPopover() {
       )}
 
       {/* Mobile: Centered Modal */}
-      {isCompact && (
+      {!showDesktopLayout && (
         <>
           <div onClick={() => setOpen(!open)}>
             {trigger}
@@ -625,31 +706,35 @@ export const SettingsPopover = memo(function SettingsPopover() {
                     </button>
                   </div>
 
-                  {/* Tabs */}
+                  {/* Tabs - Icon-only on mobile with active tab showing text */}
                   <div
                     role="tablist"
                     aria-label="Settings categories"
-                    className="flex gap-1 overflow-x-auto scroll-smooth snap-x snap-mandatory px-4 pt-4 border-b border-white/10 shrink-0"
+                    className="flex justify-around items-center px-2 py-3 border-b border-white/10 shrink-0"
                   >
                     {tabs.map((tab) => {
                       const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
                       return (
                         <button
                           key={tab.id}
                           role="tab"
-                          aria-selected={activeTab === tab.id}
+                          aria-selected={isActive}
                           aria-controls={`${tab.id}-panel`}
+                          aria-label={tab.label}
                           id={`${tab.id}-tab`}
                           onClick={() => setActiveTab(tab.id)}
-                          className={`px-3 py-2 text-sm whitespace-nowrap snap-start font-medium transition-colors relative flex items-center gap-2 ${activeTab === tab.id
-                            ? 'text-white'
-                            : 'text-gray-400 hover:text-gray-300'
+                          className={`flex flex-col items-center gap-1 min-w-0 transition-colors relative ${isActive ? 'text-white' : 'text-gray-400'
                             }`}
                         >
-                          <Icon size={16} />
-                          {tab.label}
-                          {activeTab === tab.id && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />
+                          <Icon size={20} className="shrink-0" />
+                          {isActive && (
+                            <>
+                              <span className="text-xs font-medium truncate max-w-[64px]">
+                                {tab.label}
+                              </span>
+                              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-purple-500" />
+                            </>
                           )}
                         </button>
                       );
@@ -679,6 +764,8 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         notificationPermission={notificationPermission}
                         tempBackground={tempBackground}
                         setTempBackground={setTempBackground}
+                        tempAutoHideUI={tempAutoHideUI}
+                        setTempAutoHideUI={setTempAutoHideUI}
                         filteredBackgrounds={filteredBackgrounds}
                         tempMusicVolume={tempMusicVolume}
                         setTempMusicVolume={setTempMusicVolume}
@@ -707,6 +794,11 @@ export const SettingsPopover = memo(function SettingsPopover() {
                         pomodoroBoostActive={pomodoroBoostActive}
                         pomodoroBoostExpiresAt={pomodoroBoostExpiresAt}
                         firstLoginDate={firstLoginDate}
+                        timezone={timezone}
+                        weekendDays={weekendDays}
+                        pendingTimezone={pendingTimezone}
+                        pendingTimezoneAppliesAt={pendingTimezoneAppliesAt}
+                        lastTimezoneChangeAt={lastTimezoneChangeAt}
                       />
                     </div>
                   </ScrollArea>

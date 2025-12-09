@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders } from '../_shared/cors.ts'
 
 serve(async (req) => {
     if (req.method === 'OPTIONS') {
@@ -45,9 +41,32 @@ serve(async (req) => {
             .map((b) => b.toString(16).padStart(2, "0"))
             .join("");
 
-        // Constant-time comparison (to prevent timing attacks, though low risk here)
-        if (signature !== expectedSignature) {
-            return new Response('Unauthorized: Invalid signature', { status: 401 })
+        // Timing-safe comparison to prevent timing attacks
+        const signatureBuffer = encoder.encode(signature);
+        const expectedSignatureStringBuffer = encoder.encode(expectedSignature);
+
+        // Ensure both buffers are same length (required for timingSafeEqual)
+        if (signatureBuffer.length !== expectedSignatureStringBuffer.length) {
+            return new Response('Unauthorized: Invalid signature', { status: 401, headers: corsHeaders })
+        }
+
+        // Timing-safe comparison implementation
+        const timingSafeEqual = (a: Uint8Array, b: Uint8Array) => {
+            if (a.byteLength !== b.byteLength) return false;
+            let mismatch = 0;
+            for (let i = 0; i < a.length; i++) {
+                mismatch |= a[i] ^ b[i];
+            }
+            return mismatch === 0;
+        };
+
+        const isValid = timingSafeEqual(
+            signatureBuffer,
+            expectedSignatureStringBuffer
+        );
+
+        if (!isValid) {
+            return new Response('Unauthorized: Invalid signature', { status: 401, headers: corsHeaders })
         }
 
         // Initialize Supabase with Service Role Key to bypass RLS
@@ -56,15 +75,23 @@ serve(async (req) => {
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
 
-        // Calculate expiration
+        // Validate and calculate expiration
+        const durationMap: Record<string, number | null> = {
+            '24h': 24 * 60,
+            '168h': 7 * 24 * 60,
+            'permanent': null,
+        };
+
+        if (!(duration in durationMap)) {
+            return new Response(`Invalid ban duration: ${duration}`, { status: 400, headers: corsHeaders })
+        }
+
         let expiresAt = null
-        if (duration !== 'permanent') {
-            const minutes = duration === '24h' ? 24 * 60 : (duration === '168h' ? 7 * 24 * 60 : 0)
-            if (minutes > 0) {
-                const date = new Date()
-                date.setMinutes(date.getMinutes() + minutes)
-                expiresAt = date.toISOString()
-            }
+        const minutes = durationMap[duration];
+        if (minutes !== null) {
+            const date = new Date()
+            date.setMinutes(date.getMinutes() + minutes)
+            expiresAt = date.toISOString()
         }
 
         // Insert ban
@@ -76,6 +103,8 @@ serve(async (req) => {
             .from('users')
             .select('id')
             .eq('username', 'System')
+            .order('created_at', { ascending: true })
+            .limit(1)
             .single()
 
         // 2. If not found, fall back to the first admin found
@@ -84,6 +113,7 @@ serve(async (req) => {
                 .from('users')
                 .select('id')
                 .eq('role', 'admin')
+                .order('created_at', { ascending: true })
                 .limit(1)
                 .single()
             bannerUser = adminUser

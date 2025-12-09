@@ -1,5 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Toaster } from 'sonner';
+
 import { VideoBackground } from './components/background/VideoBackground';
 import { PomodoroTimer } from './components/timer/PomodoroTimer';
 import { MusicPlayer, DailyGiftGrid, ChatContainer } from './components/lazy';
@@ -12,6 +13,9 @@ import { LoginScreen } from './components/auth/LoginScreen';
 import DiscordButton from './components/DiscordButton';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { AdminActionHandler } from './components/admin/AdminActionHandler';
+import { ChunkLoadErrorBoundary } from './components/ChunkLoadErrorBoundary';
+import { SnowOverlay } from './components/effects/SnowOverlay';
+import SnowToggle from './components/effects/SnowToggle';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useBuffActivation } from './hooks/useBuffActivation';
 import { useSettingsStore } from './store/useSettingsStore';
@@ -19,6 +23,9 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { getEnvironment } from './lib/environment';
 import { canClaimDailyGift } from './lib/userSyncAuth';
+import { useSmartPIPMode } from './hooks/useSmartPIPMode';
+import { useDeviceType } from './hooks/useDeviceType';
+
 
 function AppContent() {
   const { authenticated, loading, error, appUser } = useAuth();
@@ -33,6 +40,8 @@ function AppContent() {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [showDailyGift, setShowDailyGift] = useState(false);
   const [dailyGiftClaimed, setDailyGiftClaimed] = useState(false);
+  const isPIPMode = useSmartPIPMode(750);
+  const { isMobile } = useDeviceType();
 
   // Check if daily gift available (actual claim happens in DailyGiftGrid to prevent double-claiming)
   useEffect(() => {
@@ -40,16 +49,16 @@ function AppContent() {
     if (!settingsSyncComplete || !appUser?.id || dailyGiftClaimed) return;
 
     // Check if gift available (doesn't claim, just checks eligibility)
-    canClaimDailyGift(appUser.id, appUser.discord_id)
+    canClaimDailyGift(appUser.id)
       .then((canClaim) => {
         setDailyGiftClaimed(true); // Prevent re-checking
 
         if (canClaim) {
           // Show daily gift modal - DailyGiftGrid will handle actual claim
           setShowDailyGift(true);
-          console.log('[Daily Gift] Gift available, showing modal');
+          import.meta.env.DEV && console.log('[Daily Gift] Gift available, showing modal');
         } else {
-          console.log('[Daily Gift] Already claimed today');
+          import.meta.env.DEV && console.log('[Daily Gift] Already claimed today');
         }
       })
       .catch((error) => {
@@ -220,48 +229,79 @@ function AppContent() {
       {/* Video Background */}
       <VideoBackground />
 
+      {/* Snow Effect */}
+      <SnowOverlay />
+
       {/* Level Display (Top Left) */}
-      <LevelDisplay onOpenDailyGift={() => setShowDailyGift(true)} />
+      <LevelDisplay />
 
       {/* Online Presence Counter (Top Right, below settings button) */}
-      <div className="fixed top-20 right-4 z-10">
-        <OnlinePresenceCounter />
-      </div>
+      {!isPIPMode && (
+        <div className="fixed top-20 right-4 z-10">
+          <OnlinePresenceCounter />
+        </div>
+      )}
 
       {/* Main Content - Centered Timer */}
       <div className="flex-1 flex items-center justify-center px-4">
         <PomodoroTimer />
       </div>
 
-      {/* Music Player (Bottom) */}
+      {/* Music Player (Bottom) - Always mounted, UI hidden in PiP */}
       <Suspense fallback={<LoadingSpinner />}>
-        <MusicPlayer playing={musicPlaying} setPlaying={setMusicPlaying} />
-      </Suspense>
-
-      {/* Ambient Sounds Player (Hidden) */}
-      <AmbientSoundsPlayer musicPlaying={musicPlaying} />
-
-      {/* Daily Gift Grid */}
-      <Suspense fallback={<LoadingSpinner />}>
-        <DailyGiftGrid
-          show={showDailyGift}
-          onClose={() => setShowDailyGift(false)}
+        <MusicPlayer
+          playing={musicPlaying}
+          setPlaying={setMusicPlaying}
+          isPIPMode={isPIPMode}
         />
       </Suspense>
 
+      {/* Ambient Sounds Player (Hidden) - Always playing, even in PiP */}
+      <AmbientSoundsPlayer musicPlaying={musicPlaying} />
+
+      {/* Daily Gift Grid */}
+      <ChunkLoadErrorBoundary
+        fallback={
+          <div className="flex items-center justify-center p-8">
+            <div className="text-gray-400">Failed to load rewards calendar</div>
+          </div>
+        }
+        onError={(error) => {
+          console.error('[DailyGiftGrid] Chunk load failed:', error);
+        }}
+      >
+        <Suspense fallback={<LoadingSpinner />}>
+          <DailyGiftGrid
+            show={showDailyGift}
+            onClose={() => setShowDailyGift(false)}
+          />
+        </Suspense>
+      </ChunkLoadErrorBoundary>
+
       {/* Active Boost Indicator */}
-      <ActiveBoostIndicator />
+      {!isPIPMode && <ActiveBoostIndicator />}
 
       {/* Top Right Buttons - Discord & Settings */}
-      <div className="fixed top-4 right-4 z-[60] flex items-center gap-2">
-        <DiscordButton />
-        <SettingsPopover />
-      </div>
+      {!isPIPMode && (
+        <div className="fixed top-4 right-4 z-[60] flex items-center gap-2">
+          {/* Sentry Test Button */}
+
+          {!isMobile && <SnowToggle />}
+          <DiscordButton />
+          <SettingsPopover />
+        </div>
+      )}
 
       {/* Chat Container (Bottom Left) */}
-      <Suspense fallback={<LoadingSpinner />}>
-        <ChatContainer />
-      </Suspense>
+      {!isPIPMode && (
+        <ChunkLoadErrorBoundary
+          onError={(error) => console.error('[ChatContainer] Chunk load failed:', error)}
+        >
+          <Suspense fallback={<LoadingSpinner />}>
+            <ChatContainer />
+          </Suspense>
+        </ChunkLoadErrorBoundary>
+      )}
 
       {/* Toaster for notifications */}
       <Toaster position="top-center" />

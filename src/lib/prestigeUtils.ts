@@ -10,22 +10,23 @@
  */
 
 import type { PrestigeStar } from '../types';
-import starElfSvg from '../assets/star-elf.svg';
-import starHumanSvg from '../assets/star-human.svg';
+// SVG imports removed - referencing public assets directly
+// import starElfSvg from '../assets/star-elf.svg';
+// import starHumanSvg from '../assets/star-human.svg';
 
 // Icon types
 export type PrestigeIcon = {
   type: 'svg' | 'emoji';
   value: string;
   role?: 'elf' |
-   'human';
+  'human';
   tier: 'star' | 'crown' | 'diamond' | 'gem';
 };
 
-// Role-specific star SVG paths
+// Role-specific star SVG paths (referencing public/assets/buffs)
 export const STAR_SVGS = {
-  elf: starElfSvg,
-  human: starHumanSvg,
+  elf: '/assets/buffs/star-elf.svg',
+  human: '/assets/buffs/star-human.svg',
 } as const;
 
 const CROWN_ICON = '👑';

@@ -121,6 +121,7 @@ export const DEFAULT_SETTINGS = {
     underwater: 0,
   },
   background: 'room-video',
+  autoHideUI: true,
   playlist: 'lofi' as const,
   xp: 0,
   level: 1,
@@ -148,6 +149,12 @@ export const DEFAULT_SETTINGS = {
   comebackActive: false,
   comebackPomodoros: 0,
   activeBuffs: {},
+  timezone: 'America/New_York',
+  weekendDays: [0, 6],
+  pendingTimezone: null,
+  pendingTimezoneAppliesAt: null,
+  timezoneUpdatedAt: null,
+  lastTimezoneChangeAt: null,
 };
 
 export const USERNAME_EDIT_COOLDOWN = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds

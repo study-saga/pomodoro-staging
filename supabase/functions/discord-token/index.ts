@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { create, getNumericDate } from "https://deno.land/x/djwt@v2.8/mod.ts";
 import { corsHeaders } from '../_shared/cors.ts'
 
 serve(async (req) => {
@@ -37,7 +38,7 @@ serve(async (req) => {
     const origin = req.headers.get('origin') || ''
     // Match staging domains more precisely to avoid false positives
     const isStagingDomain = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?/.test(origin) ||
-                           origin.endsWith('.vercel.app')
+      origin.endsWith('.vercel.app')
     const isStaging = isStagingDomain
 
     // Use staging credentials if available and request is from staging, otherwise use production
@@ -90,10 +91,135 @@ serve(async (req) => {
     }
 
     const tokens = await tokenResponse.json()
+    const accessToken = tokens.access_token
 
+    // --- NEW: Mint Supabase JWT ---
+
+    // 1. Fetch Discord User ID
+    const userResponse = await fetch('https://discord.com/api/users/@me', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+
+    if (!userResponse.ok) {
+      console.error('Failed to fetch Discord user:', await userResponse.text())
+      // Fallback: Return just the Discord tokens (old behavior)
+      return new Response(JSON.stringify(tokens), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const discordUser = await userResponse.json()
+    const discordId = discordUser.id
+
+    // 2. Mint Supabase JWT
+    // We need the JWT Secret. In Supabase Edge Functions, it's usually available.
+    // If not, we can't sign.
+    const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET') || Deno.env.get('JWT_SECRET')
+
+    if (jwtSecret) {
+      // Create a custom JWT for this user
+      // We use the Discord ID as the 'sub' (subject) or map it to a UUID if we have one.
+      // Ideally we should query the database to get the real UUID, but we might not have DB access here easily without supabase-js.
+      // For now, let's assume we can use a deterministic UUID based on Discord ID or just use the Discord ID if UUID format isn't strictly enforced by Auth (it is).
+
+      // Wait, Auth requires UUID.
+      // We can't just use Discord ID (snowflake).
+      // We need to query the DB to get the `id` from `public.users` where `discord_id` = ...
+
+      // Let's use the Service Role to query DB.
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+      if (supabaseUrl && supabaseServiceKey) {
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+        // Find user by discord_id to see if they already have an auth_user_id
+        const { data: existingUser, error: fetchError } = await supabaseAdmin
+          .from('users')
+          .select('id, auth_user_id')
+          .eq('discord_id', discordId)
+          .maybeSingle()
+
+        if (fetchError) {
+          console.error('[Discord Token] Error fetching existing user:', fetchError)
+        }
+
+        let authUserId = existingUser?.auth_user_id
+        if (existingUser && !authUserId) {
+          console.log('[Discord Token] User found in public.users but auth_user_id is missing. Attempting to create Auth user...')
+        }
+
+        if (!authUserId) {
+          console.log('[Discord Token] Auth user not found, creating new Auth user for Discord ID:', discordId)
+
+          // Create new Auth user
+          // We use a dummy email because we don't have the real one, and we don't need it for Discord auth
+          const dummyEmail = `${discordId}@discord.placeholder.com`
+
+          const { data: newAuthUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+            email: dummyEmail,
+            password: crypto.randomUUID(), // Random password, they won't use it
+            email_confirm: true,
+            user_metadata: {
+              provider_id: discordId, // CRITICAL: This triggers handle_new_user to link accounts
+              full_name: discordUser.username,
+              avatar_url: discordUser.avatar,
+              discord_id: discordId // Redundant but helpful
+            }
+          })
+
+          if (createError) {
+            console.error('[Discord Token] Failed to create auth user:', createError)
+            return new Response(
+              JSON.stringify({ error: 'Failed to create auth user', details: createError }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          } else if (newAuthUser.user) {
+            authUserId = newAuthUser.user.id
+            console.log('[Discord Token] Created new Auth user:', authUserId)
+
+            // The handle_new_user trigger should have run and linked the accounts.
+            // But it might take a ms. We don't need to wait for it for the token to be valid.
+          }
+        }
+
+        if (authUserId) {
+          // User exists in auth.users, mint token for this UUID
+          const payload = {
+            aud: 'authenticated',
+            role: 'authenticated',
+            sub: authUserId,
+            exp: getNumericDate(60 * 60 * 24), // 24 hours
+            app_metadata: { provider: 'discord', discord_id: discordId },
+            user_metadata: { discord_id: discordId }
+          }
+
+          const key = await crypto.subtle.importKey(
+            "raw",
+            new TextEncoder().encode(jwtSecret),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["sign", "verify"],
+          );
+
+          const supabaseToken = await create({ alg: "HS256", typ: "JWT" }, payload, key);
+
+          // Return both tokens
+          return new Response(JSON.stringify({ ...tokens, supabase_token: supabaseToken }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+      }
+    }
+
+    // Fallback if we couldn't mint token
     return new Response(JSON.stringify(tokens), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
+
   } catch (error) {
     console.error('Error in discord-token function:', error)
     return new Response(

@@ -28,6 +28,11 @@ interface ChatContextValue {
   banUser: (userId: string, durationMinutes: number | null, reason: string) => Promise<void>;
   unbanUser: (userId: string) => Promise<void>;
   reportMessage: (messageId: string, reason: string, reportedUserId: string, reportedUsername: string, reportedContent: string) => Promise<void>;
+
+  // Connection state
+  connectionState: 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error';
+  retryCount: number;
+  manualRetry: () => void;
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null);
@@ -55,12 +60,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Rate limiting ref
   const lastMessageTimeRef = useRef<number>(0);
 
+  // Connection state management
+  const [connectionState, setConnectionState] = useState<'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error'>('disconnected');
+  const [retryCount, setRetryCount] = useState(0);
+  const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [retryTrigger, setRetryTrigger] = useState(0);
+
   // Ref to track banned state without triggering effect re-runs
   const isBannedRef = useRef(isBanned);
   useEffect(() => {
     isBannedRef.current = isBanned;
   }, [isBanned]);
 
+
+  // Ref to track previous connection state for reconnection detection
+  const prevConnectedRef = useRef<boolean | undefined>(undefined);
   // 0. Fetch User Role & Check Ban Status
   useEffect(() => {
     if (!appUser) {
@@ -275,6 +290,67 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     fetchMessages();
   }, [isChatEnabled, isBanned]);
 
+  // 2.5. Refetch messages on reconnection (tab visibility change)
+  useEffect(() => {
+    const wasDisconnected = prevConnectedRef.current === false;
+    const isNowConnected = isGlobalConnected === true;
+
+    // Only refetch if we went from disconnected → connected (reconnection)
+    if (wasDisconnected && isNowConnected) {
+      import.meta.env.DEV && console.log('[Chat] Reconnected - refetching messages to catch up');
+
+      const fetchMessages = async () => {
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select(`
+            id,
+            content,
+            created_at,
+            is_deleted,
+            user_id,
+            users (
+              id,
+              username,
+              avatar,
+              discord_id,
+              role
+            )
+          `)
+          .eq('is_deleted', false)
+          .order('created_at', { ascending: false })
+          .limit(MAX_MESSAGES);
+
+        if (error) {
+          console.error('[Chat] Error refetching messages on reconnection:', error);
+          return;
+        }
+
+        // Transform to ChatMessage type
+        const messages: ChatMessage[] = data.map((msg: any) => ({
+          id: msg.id,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+          deleted: msg.is_deleted,
+          user: {
+            id: msg.users?.id || msg.user_id,
+            username: msg.users?.username || 'Unknown',
+            avatar: msg.users?.avatar || null,
+            discord_id: msg.users?.discord_id,
+            role: msg.users?.role || 'user'
+          }
+        })).reverse(); // Reverse to show oldest first
+
+        setGlobalMessages(messages);
+        import.meta.env.DEV && console.log(`[Chat] Refetched ${messages.length} messages after reconnection`);
+      };
+
+      fetchMessages();
+    }
+
+    // Update ref for next check
+    prevConnectedRef.current = isGlobalConnected;
+  }, [isGlobalConnected]);
+
   // 3. Realtime Subscription (Postgres Changes + Presence)
   useEffect(() => {
     if (!appUser || !isChatEnabled || isBanned) {
@@ -285,32 +361,63 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     let channel: RealtimeChannel | null = null;
 
-    const connect = async () => {
-      // Channel for Presence AND Database Changes
-      channel = supabase.channel('global_chat_db', {
-        config: {
-          presence: { key: appUser.id }
-        }
-      });
+    const attemptConnection = async (attempt: number = 0): Promise<void> => {
+      const maxAttempts = 4;
+      const delays = [0, 1000, 2000, 4000]; // Exponential backoff
 
-      channel
-        // Listen for NEW messages (INSERT)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'chat_messages'
-          },
-          async (payload) => {
-            console.log('[Chat] Received INSERT payload:', payload);
+      if (attempt > 0) {
+        import.meta.env.DEV && console.log(`[Chat] Retry ${attempt}/${maxAttempts - 1} after ${delays[attempt]}ms`);
+        setConnectionState('reconnecting');
+        await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+      } else {
+        setConnectionState('connecting');
+      }
+
+      setRetryCount(attempt);
+
+      try {
+        await connectToChannel();
+        setConnectionState('connected');
+        setRetryCount(0);
+        clearTimeout(connectionTimeoutRef.current);
+        clearTimeout(retryTimeoutRef.current);
+      } catch (error: any) {
+        // Ignore aborted connections (intentional disconnects)
+        if (error.message === 'Connection aborted') return;
+
+        console.error(`[Chat] Attempt ${attempt} failed:`, error);
+
+        if (attempt < maxAttempts - 1) {
+          retryTimeoutRef.current = setTimeout(() => {
+            attemptConnection(attempt + 1);
+          }, 0);
+        } else {
+          setConnectionState('error');
+          clearTimeout(connectionTimeoutRef.current);
+        }
+      }
+    };
+
+    const connectToChannel = (): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        if (channelRef.current) {
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        }
+
+        channel = supabase.channel('global_chat_db', {
+          config: {
+            presence: { key: appUser.id }
+          }
+        });
+
+        let resolved = false;
+
+        channel
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, async (payload) => {
+            import.meta.env.DEV && console.log('[Chat] Received INSERT payload:', payload);
             const newMsg = payload.new as any;
 
-            // Fetch user details for the new message
-            // (RLS policies might restrict payload data, so safest to fetch or use what we have)
-            // Ideally we join, but realtime payload is just the row.
-            // We can optimistic update if it's us, or fetch user info.
-            // For now, let's fetch the user info to be safe and correct.
             const { data: userData, error: userError } = await supabase
               .from('users')
               .select('username, avatar, discord_id, role')
@@ -336,103 +443,134 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             };
 
             setGlobalMessages(prev => {
-              // Deduplicate just in case
               if (prev.some(m => m.id === message.id)) return prev;
               const updated = [...prev, message];
               return updated.slice(-MAX_MESSAGES);
             });
-          }
-        )
-        // Listen for DELETED/UPDATED messages (Soft Delete)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'chat_messages'
-          },
-          (payload) => {
-            console.log('[Chat] Received UPDATE payload:', payload);
+          })
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, (payload) => {
+            import.meta.env.DEV && console.log('[Chat] Received UPDATE payload:', payload);
             const updatedMsg = payload.new as any;
             if (updatedMsg.is_deleted) {
-              // Remove the message entirely
               setGlobalMessages(prev => prev.filter(msg => msg.id !== updatedMsg.id));
             } else {
-              // Handle other updates (e.g. edits if we had them)
               setGlobalMessages(prev => prev.map(msg =>
                 msg.id === updatedMsg.id ? { ...msg, content: updatedMsg.content } : msg
               ));
             }
-          }
-        )
-        // Listen for DELETE (in case RLS makes it look like a delete)
-        .on(
-          'postgres_changes',
-          {
-            event: 'DELETE',
-            schema: 'public',
-            table: 'chat_messages'
-          },
-          (payload) => {
-            console.log('[Chat] Received DELETE payload:', payload);
+          })
+          .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages' }, (payload) => {
+            import.meta.env.DEV && console.log('[Chat] Received DELETE payload:', payload);
             const deletedId = payload.old.id;
             if (deletedId) {
               setGlobalMessages(prev => prev.filter(msg => msg.id !== deletedId));
             }
-          }
-        )
-        // Presence Sync
-        .on('presence', { event: 'sync' }, () => {
-          const state = channel!.presenceState<{
-            id: string;
-            username: string;
-            avatar: string | null;
-            is_chatting: boolean;
-            online_at: string;
-            role?: UserRole;
-            discord_id?: string;
-          }>();
+          })
+          .on('presence', { event: 'sync' }, () => {
+            const state = channel!.presenceState<{
+              id: string;
+              username: string;
+              avatar: string | null;
+              is_chatting: boolean;
+              online_at: string;
+              role?: UserRole;
+              discord_id?: string;
+            }>();
 
-          const users: OnlineUser[] = [];
-          Object.values(state).forEach((presences) => {
-            const presence = presences[0];
-            if (presence) {
-              users.push({
-                id: presence.id,
-                username: presence.username,
-                avatar: presence.avatar,
-                isChatting: presence.is_chatting,
-                online_at: presence.online_at,
-                role: presence.role,
-                discord_id: presence.discord_id
+            const users: OnlineUser[] = [];
+            Object.values(state).forEach((presences) => {
+              const presence = presences[0];
+              if (presence) {
+                users.push({
+                  id: presence.id,
+                  username: presence.username,
+                  avatar: presence.avatar,
+                  isChatting: presence.is_chatting,
+                  online_at: presence.online_at,
+                  role: presence.role,
+                  discord_id: presence.discord_id
+                });
+              }
+            });
+            setOnlineUsers(users);
+          })
+          .subscribe(async (status, err) => {
+            import.meta.env.DEV && console.log(`[Chat] Status: ${status}`, err);
+
+            if (status === 'SUBSCRIBED') {
+              resolved = true;
+              setIsGlobalConnected(true);
+              import.meta.env.DEV && console.log('Connected to global chat (DB-backed)');
+
+              await channel!.track({
+                id: appUser.id,
+                username: appUser.username,
+                avatar: appUser.avatar,
+                is_chatting: isChatOpen,
+                online_at: new Date().toISOString(),
+                role: userRole,
+                discord_id: appUser.discord_id
               });
+
+              resolve();
+            } else if (status === 'CHANNEL_ERROR') {
+              resolved = true;
+              setIsGlobalConnected(false);
+              reject(new Error(`Channel error: ${err?.message || 'Unknown'}`));
+            } else if (status === 'CLOSED' && !resolved) {
+              // Check if this closure was intentional (channel removed via disconnect)
+              if (channelRef.current !== channel) {
+                resolved = true;
+                reject(new Error('Connection aborted'));
+                return;
+              }
+
+              resolved = true;
+              setIsGlobalConnected(false);
+              reject(new Error('Channel closed before subscription'));
             }
           });
-          setOnlineUsers(users);
-        })
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            setIsGlobalConnected(true);
-            console.log('Connected to global chat (DB-backed)');
 
-            await channel!.track({
-              id: appUser.id,
-              username: appUser.username,
-              avatar: appUser.avatar,
-              is_chatting: isChatOpen,
-              online_at: new Date().toISOString(),
-              role: userRole,
-              discord_id: appUser.discord_id
-            });
-          } else if (status === 'CLOSED') {
-            setIsGlobalConnected(false);
+        channelRef.current = channel;
+
+        // Backup timeout for subscription callback (9s)
+        // This fires before the global timeout (10s) to ensure we catch subscription hangs
+        setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            reject(new Error('Subscription callback timeout'));
           }
-        });
+        }, 9000);
+      });
+    };
 
-      channelRef.current = channel;
+    const connect = () => {
+      if (!appUser) return;
+
+      clearTimeout(connectionTimeoutRef.current);
+      clearTimeout(retryTimeoutRef.current);
+
+      // 10s global timeout
+      connectionTimeoutRef.current = setTimeout(() => {
+        console.error('[Chat] Timeout after 10s');
+        setConnectionState('error');
+        disconnect();
+      }, 10000);
+
+      attemptConnection(0);
     };
 
     const disconnect = () => {
+      import.meta.env.DEV && console.log('[Chat] Disconnecting');
+      clearTimeout(connectionTimeoutRef.current);
+      clearTimeout(retryTimeoutRef.current);
+      setConnectionState('disconnected');
+      setRetryCount(0);
+
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
       if (channel) {
         channel.unsubscribe();
         setIsGlobalConnected(false);
@@ -454,7 +592,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       disconnect();
     };
-  }, [appUser, isChatOpen, isChatEnabled, isBanned, userRole]);
+  }, [appUser?.id, isChatEnabled, isBanned, retryTrigger]); // Only reconnect if ID changes, or retry triggered
+
+  // 3.5. Update Presence when Role Update (without reconnecting)
+  useEffect(() => {
+    if (isGlobalConnected && channelRef.current && appUser) {
+      import.meta.env.DEV && console.log('[Chat] Updating presence with new role:', userRole);
+      channelRef.current.track({
+        id: appUser.id,
+        username: appUser.username,
+        avatar: appUser.avatar,
+        is_chatting: isChatOpen,
+        online_at: new Date().toISOString(),
+        role: userRole,
+        discord_id: appUser.discord_id
+      });
+    }
+  }, [userRole, isGlobalConnected, isChatOpen, appUser]);
 
   // Send Global Message (Database Insert)
   const sendGlobalMessage = useCallback(async (
@@ -632,6 +786,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [appUser, userRole]);
 
+  // Manual retry trigger state NOT NEEDED HERE
+
+  // Manual retry for reconnection
+  const manualRetry = useCallback(() => {
+    import.meta.env.DEV && console.log('[Chat] Manual retry triggered');
+    setConnectionState('connecting');
+    setRetryCount(0);
+    setRetryTrigger(prev => prev + 1);
+  }, []);
+
   const value: ChatContextValue = {
     globalMessages,
     sendGlobalMessage,
@@ -646,6 +810,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     banExpiresAt,
     banUser,
     unbanUser,
+    connectionState,
+    retryCount,
+    manualRetry,
     reportMessage: async (messageId: string, reason: string, reportedUserId: string, reportedUsername: string, reportedContent: string) => {
       if (!appUser) return;
 

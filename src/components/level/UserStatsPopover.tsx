@@ -53,6 +53,18 @@ export const UserStatsPopover = memo(function UserStatsPopover({
   const [roleChangeMessage, setRoleChangeMessage] = useState<string | null>(null);
   const sinceCardRef = useRef<HTMLDivElement>(null);
   const { isMobile } = useDeviceType();
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
+
+  // Track viewport width for scaling logic
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Determine if we need to scale down the UI (between 750px and 1200px)
+  // This prevents overlap without squishing the layout
+  const shouldScaleDown = viewportWidth < 1200 && !isMobile;
 
   const avgSessionLength = totalPomodoros > 0
     ? Math.round(totalStudyMinutes / totalPomodoros)
@@ -269,7 +281,7 @@ export const UserStatsPopover = memo(function UserStatsPopover({
           {/* IMPORTANT: Negative sideOffset and zero collisionPadding are intentional for tight positioning.
               Watch for regressions: popover clipping at screen edges or unexpected repositioning. */}
           <PopoverContent
-            className="bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[360px] p-0"
+            className={`bg-gray-900/95 backdrop-blur-xl border-white/10 rounded-2xl w-[360px] p-0 ${shouldScaleDown ? 'scale-[0.85] origin-top-left' : ''}`}
             align="start"
             side="right"
             sideOffset={-20}
@@ -350,40 +362,43 @@ export const UserStatsPopover = memo(function UserStatsPopover({
         </>
       )}
 
-      {/* Role Change Toast Notification */}
-      <AnimatePresence>
-        {roleChangeMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.3 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-[100] max-w-md w-[calc(100%-2rem)] sm:w-96"
-          >
-            <div className="relative bg-gradient-to-br from-purple-900/40 to-blue-900/40 backdrop-blur-xl border border-white/20 rounded-2xl p-4 sm:p-5 shadow-2xl overflow-hidden">
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 opacity-50" />
+      {/* Role Change Toast Notification - Portaled to escape transform/overflow clipping */}
+      {createPortal(
+        <AnimatePresence>
+          {roleChangeMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.3 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-[9999] max-w-md w-[calc(100%-2rem)] sm:w-96"
+            >
+              <div className="relative bg-gradient-to-br from-purple-900/40 to-blue-900/40 backdrop-blur-xl border border-white/20 rounded-2xl p-4 sm:p-5 shadow-2xl overflow-hidden">
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 opacity-50" />
 
-              {/* Content */}
-              <div className="relative flex items-start gap-3 sm:gap-4">
-                <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-white/10 rounded-xl border border-white/20 backdrop-blur-sm">
-                  <span className="text-2xl sm:text-3xl">{levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    <p className="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-wider">Role Changed</p>
+                {/* Content */}
+                <div className="relative flex items-start gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-white/10 rounded-xl border border-white/20 backdrop-blur-sm">
+                    <span className="text-2xl sm:text-3xl">{levelPath === 'elf' ? ROLE_EMOJI_ELF : ROLE_EMOJI_HUMAN}</span>
                   </div>
-                  <p className="text-sm sm:text-base text-white leading-relaxed">{roleChangeMessage}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                      <p className="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-wider">Role Changed</p>
+                    </div>
+                    <p className="text-sm sm:text-base text-white leading-relaxed">{roleChangeMessage}</p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Animated border */}
-              <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-purple-500 to-blue-500 opacity-50 blur-sm -z-10" />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                {/* Animated border */}
+                <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-purple-500 to-blue-500 opacity-50 blur-sm -z-10" />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Gandalf Easter Egg Tooltip - Portal to body (escapes all clipping) */}
       {showSinceTooltip && firstLoginDate && createPortal(

@@ -36,7 +36,7 @@ export function MusicCreditsModal({ tracks, onClose }: MusicCreditsModalProps) {
 
 
   return createPortal(
-    <div className="fixed inset-0 z-[150] flex items-center justify-center">
+    <div className="fixed inset-0 z-[250] flex items-center justify-center">
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}

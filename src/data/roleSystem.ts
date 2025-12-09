@@ -102,7 +102,7 @@ export const ELF_ROLE: RoleConfig = {
       effect: () => {
         // Check if completed 8+ pomodoros today
         // This would be tracked in state
-        console.log('[Elf Event] Checking for Perfect Day bonus');
+        import.meta.env.DEV && console.log('[Elf Event] Checking for Perfect Day bonus');
       },
     },
   ],
@@ -144,7 +144,7 @@ export const HUMAN_ROLE: RoleConfig = {
       description: '3 crits in a row grants +100 bonus XP',
       trigger: 'pomodoro_complete',
       effect: () => {
-        console.log('[Human Event] Checking for Lucky Streak');
+        import.meta.env.DEV && console.log('[Human Event] Checking for Lucky Streak');
         // Track consecutive crits
       },
     },
@@ -154,7 +154,7 @@ export const HUMAN_ROLE: RoleConfig = {
       description: 'Being 2+ levels below average player level grants +25% XP',
       trigger: 'pomodoro_complete',
       effect: () => {
-        console.log('[Human Event] Checking Underdog status');
+        import.meta.env.DEV && console.log('[Human Event] Checking Underdog status');
       },
     },
   ],

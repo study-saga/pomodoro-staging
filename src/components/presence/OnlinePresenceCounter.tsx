@@ -4,6 +4,7 @@ import { Users } from 'lucide-react'
 import { useChat } from '../../contexts/ChatContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useMouseActivity } from '../../hooks/useMouseActivity'
+import { useSettingsStore } from '../../store/useSettingsStore'
 
 const formatCount = (count: number): string => {
   if (count < 1000) return count.toString()
@@ -13,6 +14,7 @@ const formatCount = (count: number): string => {
 
 export const OnlinePresenceCounter = memo(function OnlinePresenceCounter() {
   const isMouseActive = useMouseActivity(8000); // 8 seconds
+  const autoHideUI = useSettingsStore((state) => state.autoHideUI);
   const { onlineUsers, isGlobalConnected } = useChat()
   const { appUser } = useAuth()
   const count = onlineUsers.length
@@ -22,9 +24,9 @@ export const OnlinePresenceCounter = memo(function OnlinePresenceCounter() {
     return (
       <motion.div
         initial={{ opacity: 1 }}
-        animate={{ opacity: isMouseActive ? 1 : 0 }}
+        animate={{ opacity: isMouseActive || !autoHideUI ? 1 : 0 }}
         transition={{ duration: 0.5 }}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 ${!isMouseActive ? 'pointer-events-none' : ''}`}
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 ${(!isMouseActive && autoHideUI) ? 'pointer-events-none' : ''}`}
       >
         <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse" />
         <Users size={14} className="opacity-50 text-gray-400" />
@@ -38,11 +40,11 @@ export const OnlinePresenceCounter = memo(function OnlinePresenceCounter() {
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{
-        opacity: isMouseActive ? 1 : 0,
-        y: isMouseActive ? 0 : -10
+        opacity: isMouseActive || !autoHideUI ? 1 : 0,
+        y: isMouseActive || !autoHideUI ? 0 : -10
       }}
       transition={{ duration: 0.5 }}
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 ${!isMouseActive ? 'pointer-events-none' : ''}`}
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 ${(!isMouseActive && autoHideUI) ? 'pointer-events-none' : ''}`}
       role="status"
       aria-live="polite"
       aria-atomic="true"

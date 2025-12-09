@@ -12,7 +12,7 @@ import {
   getXPNeeded,
 } from '../../data/levels';
 import { getAvatarUrl } from '../../lib/chatService';
-import { Gift } from 'lucide-react';
+import santaHat from '../../assets/hat.png';
 const buffElf = '/assets/buffs/buff-elf.svg';
 const buffHuman = '/assets/buffs/buff-human.svg';
 const buffBoost = '/assets/buffs/buff-boost.svg';
@@ -20,13 +20,10 @@ import { UserStatsPopover } from './UserStatsPopover';
 import { UserStatsModal } from './UserStatsModal';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useActiveEventBuffs } from '../../hooks/useActiveEventBuffs';
-import { getBuffStartDateText } from '../../data/eventBuffsData';
+import { getBuffStartDateText, getEventBuffEndDate } from '../../data/eventBuffsData';
+import { useSmartPIPMode } from '../../hooks/useSmartPIPMode';
 
-interface LevelDisplayProps {
-  onOpenDailyGift?: () => void;
-}
-
-export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: LevelDisplayProps) {
+export const LevelDisplay = memo(function LevelDisplay() {
   const isMouseActive = useMouseActivity(8000); // 8 seconds
 
   const {
@@ -38,24 +35,43 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     addXP,
     pomodoroBoostActive,
     pomodoroBoostExpiresAt,
+    autoHideUI,
   } = useSettingsStore();
 
-  const [selectedDay, setSelectedDay] = useState(1);
   const [showStatsPopover, setShowStatsPopover] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [activeBuffTooltip, setActiveBuffTooltip] = useState<string | null>(null);
   const [hoveredBuff, setHoveredBuff] = useState<string | null>(null);
   const [tooltipPositions, setTooltipPositions] = useState<Record<string, { top: number; left: number }>>({});
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
   const prevLevelRef = useRef(level);
   const roleBuffRef = useRef<HTMLDivElement>(null);
   const boostRef = useRef<HTMLDivElement>(null);
   const eventBuffRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const rafRef = useRef<number | null>(null);
 
-  const { isMobile, isCompact } = useDeviceType();
+  // Helper for formatting duration
+  const formatDuration = (ms: number) => {
+    if (ms <= 0) return 'Ending soon...';
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (days > 0) return `${days}d ${hours}h left`;
+    return `${hours}h ${minutes}m left`;
+  };
+
+  // Update time every minute for countdowns
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  const { isMobile, isTablet, isCompact } = useDeviceType();
   const { appUser } = useAuth();
-  const { activeBuffs, upcomingBuffs } = useActiveEventBuffs(levelPath);
+  const { activeBuffs, upcomingBuffs } = useActiveEventBuffs(appUser?.id || null, levelPath);
 
   const xpNeeded = getXPNeeded(level);
   const levelName = getLevelName(level, levelPath);
@@ -100,6 +116,19 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     }
   }, [isMouseActive, showStatsPopover]);
 
+  // Track viewport width for scaling logic
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Use Smart PIP mode hook (hides UI for small Discord Activity on desktop only)
+  const isPIPMode = useSmartPIPMode(750);
+
+  // Determine if we need to scale down the UI (small desktop range only)
+  // Tablets and mobile use their responsive sizing classes without scaling
+  const shouldScaleDown = viewportWidth >= 1024 && viewportWidth < 1200 && !isPIPMode;
 
 
   // Calculate boost time remaining with defensive fallbacks
@@ -155,7 +184,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
 
   // Debug logging for boost state
   if (import.meta.env.DEV && pomodoroBoostActive) {
-    console.log('[LevelDisplay] Boost state:', {
+    import.meta.env.DEV && console.log('[LevelDisplay] Boost state:', {
       active: pomodoroBoostActive,
       expiresAt: pomodoroBoostExpiresAt,
       now: Date.now(),
@@ -164,23 +193,6 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
     });
   }
 
-  // Simulate selected day (for testing)
-  const simulateNextDay = () => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-    useSettingsStore.setState({
-      lastLoginDate: yesterdayStr,
-      consecutiveLoginDays: selectedDay, // Set to the selected day directly
-      lastDailyGiftDate: null, // Reset to allow claiming gift
-    });
-
-    // Open the daily gift modal
-    if (onOpenDailyGift) {
-      onOpenDailyGift();
-    }
-  };
 
   // Update tooltip position based on buff ref with viewport boundary checks (Throttled)
   const updateTooltipPosition = (buffId: string, ref: React.RefObject<HTMLDivElement | null>) => {
@@ -290,9 +302,14 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
       {/* Level UI Container - Fixed position with fade animation */}
       <motion.div
         initial={{ opacity: 1 }}
-        animate={{ opacity: isMouseActive ? 1 : 0 }}
-        transition={{ duration: 0.5 }}
-        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-colors overflow-hidden ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' : 'p-4 min-w-[280px] max-w-[320px]'} ${!isMouseActive ? 'pointer-events-none' : ''}`}
+        animate={{ opacity: isPIPMode ? 0 : (isMouseActive || !autoHideUI ? 1 : 0) }}
+        transition={{ duration: isPIPMode ? 0 : 0.5 }}
+        className={`fixed top-4 left-4 z-30 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden
+          ${isMobile ? 'p-3 min-w-[180px] max-w-[240px]' :
+            isTablet ? 'p-3.5 min-w-[220px] max-w-[280px]' :
+              'p-4 min-w-[280px] max-w-[320px]'}
+          ${!isMouseActive || isPIPMode ? 'pointer-events-none opacity-0' : ''}
+          ${shouldScaleDown ? 'scale-[0.65] origin-top-left' : ''}`}
       >
         {/* Confetti - contained inside Level UI */}
         {showConfetti && (
@@ -361,23 +378,42 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div className={isCompact ? 'text-xl' : 'text-3xl'}>{levelBadge}</div>
+                <div className={isMobile ? 'text-xl' : isTablet ? 'text-2xl' : 'text-3xl'}>{levelBadge}</div>
                 <div className="min-w-0 overflow-hidden flex-1">
-                  <h2 className={`font-bold text-white truncate ${isCompact ? 'text-sm' : 'text-lg'}`}>
+                  <h2 className={`font-bold text-white truncate ${isMobile ? 'text-base' : isTablet ? 'text-lg' : 'text-xl'}`}>
                     {username}
                   </h2>
-                  <p className={`text-gray-300 ${isCompact ? 'text-[10px]' : 'text-xs'}`}>{levelTitle}</p>
+                  <p className={`text-gray-300 ${isMobile ? 'text-xs' : isTablet ? 'text-sm' : 'text-sm'}`}>{levelTitle}</p>
                 </div>
               </div>
-              <Avatar className={isMobile ? 'h-8 w-8' : 'h-10 w-10'}>
-                {appUser && <AvatarImage src={getAvatarUrl(appUser) || undefined} />}
-                <AvatarFallback>{username?.slice(0, 2).toUpperCase() || '??'}</AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className={isMobile ? 'h-8 w-8' : isTablet ? 'h-9 w-9' : 'h-10 w-10'}>
+                  {appUser && <AvatarImage src={getAvatarUrl(appUser) || undefined} />}
+                  <AvatarFallback>{username?.slice(0, 2).toUpperCase() || '??'}</AvatarFallback>
+                </Avatar>
+                {/* Santa Hat Overlay */}
+                <img
+                  src={santaHat}
+                  alt="Santa Hat"
+                  className={`absolute pointer-events-none z-10 
+                    ${isMobile
+                      ? '-top-3 -right-3 w-6'
+                      : isTablet
+                        ? '-top-3 -right-3 w-6'
+                        : '-top-3 -right-3 w-6'
+                    }
+                  `}
+                  style={{
+                    transform: 'rotate(43deg)',
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+                  }}
+                />
+              </div>
             </div>
 
             {/* XP Progress Bar */}
             <div>
-              <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-xs mb-1' : 'text-xs mb-1'}`}>
+              <div className={`flex justify-between text-gray-300 ${isMobile ? 'text-sm mb-1' : 'text-sm mb-1'}`}>
                 <span>{roleEmoji} Level {level}</span>
                 <span>
                   {xp} / {xpNeeded} XP
@@ -412,61 +448,39 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             </div>
           </div>
 
-          {/* Dev Tools (moved above buffs to avoid covering prestige stars) */}
+          {/* Dev Tools */}
           {import.meta.env.DEV && (
-            <div className="space-y-1 mt-2">
-              <div className="flex gap-1">
-                <button
-                  onClick={() => addXP(50)} // Adds 50 XP
-                  className="flex-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
-                >
-                  +50 XP
-                </button>
-                <button
-                  onClick={() => {
-                    // Add a prestige star for current role
-                    const currentStars = useSettingsStore.getState().prestigeStars || [];
-                    useSettingsStore.setState({
-                      prestigeStars: [
-                        ...currentStars,
-                        { role: levelPath, earnedAt: new Date().toISOString() }
-                      ]
-                    });
-                  }}
-                  className="flex-1 px-2 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors"
-                >
-                  +⭐ Star
-                </button>
-              </div>
-              <div className="flex gap-1">
-                <select
-                  value={selectedDay}
-                  onChange={(e) => setSelectedDay(Number(e.target.value))}
-                  className="px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:outline-none focus:border-pink-500"
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((day) => (
-                    <option key={day} value={day}>
-                      Day {day}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={simulateNextDay}
-                  className="flex-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded hover:from-pink-600 hover:to-rose-600 transition-colors flex items-center justify-center gap-1"
-                >
-                  <Gift className="w-3 h-3" />
-                  Daily Gift
-                </button>
-              </div>
+            <div className="flex gap-1 mt-2">
+              <button
+                onClick={() => addXP(50)} // Adds 50 XP
+                className="flex-1 px-2 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors"
+              >
+                +50 XP
+              </button>
+              <button
+                onClick={() => {
+                  // Add a prestige star for current role
+                  const currentStars = useSettingsStore.getState().prestigeStars || [];
+                  useSettingsStore.setState({
+                    prestigeStars: [
+                      ...currentStars,
+                      { role: levelPath, earnedAt: new Date().toISOString() }
+                    ]
+                  });
+                }}
+                className="flex-1 px-2 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition-colors"
+              >
+                +⭐ Star
+              </button>
             </div>
           )}
 
-          {/* Role Buff Icons - Ordered: Permanent first, then by expiration */}
-          <div className="flex gap-2">
+          {/* Role Buff Icons - Grid layout with 6 per row */}
+          <div className="grid grid-cols-6 gap-1">
             {/* 1. Role Buff (Permanent - Always first) */}
             <div
               ref={roleBuffRef}
-              className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}
+              className={`${isMobile ? 'w-7 h-7' : isTablet ? 'w-[30px] h-[30px]' : 'w-8 h-8'} bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center cursor-help overflow-hidden`}
               onClick={(e) => handleBuffClick(e, 'role-buff', roleBuffRef)}
               onMouseEnter={() => {
                 if (!isMobile) {
@@ -491,7 +505,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             {pomodoroBoostActive && pomodoroBoostExpiresAt && pomodoroBoostExpiresAt > Date.now() && (
               <div
                 ref={boostRef}
-                className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500`}
+                className={`${isMobile ? 'w-7 h-7' : isTablet ? 'w-[30px] h-[30px]' : 'w-8 h-8'} rounded-lg flex items-center justify-center cursor-help overflow-hidden bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500`}
                 onClick={(e) => handleBuffClick(e, 'boost', boostRef)}
                 onMouseEnter={() => {
                   if (!isMobile) {
@@ -668,7 +682,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             opacity: isMobile ? (activeBuffTooltip === 'role-buff' ? 1 : 0) : undefined,
           }}
         >
-          <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-4 py-2.5 shadow-lg min-w-[220px]">
+          <div className="bg-gray-900/95 backdrop-blur-xl border border-purple-500/30 rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] max-w-[260px]">
             <p className="text-sm font-semibold text-purple-300 mb-1">
               {levelPath === 'elf' ? 'Elf Consistency' : 'Human Risk/Reward'}
             </p>
@@ -691,7 +705,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
             opacity: isMobile ? (activeBuffTooltip === 'boost' ? 1 : 0) : undefined,
           }}
         >
-          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] border border-yellow-500/30">
+          <div className="bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] max-w-[260px] border border-yellow-500/30">
             <p className="text-sm font-semibold mb-1 text-yellow-300">
               🍅 +25% XP Boost
             </p>
@@ -723,12 +737,22 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               opacity: isMobile ? (activeBuffTooltip === buffId ? 1 : 0) : undefined,
             }}
           >
-            <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
+            <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] max-w-[260px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
               }`}>
-              <p className={`text-sm font-semibold mb-1 ${isElfBuff ? 'text-green-300' : 'text-cyan-300'
-                }`}>
-                {buff.title}
-              </p>
+              <div className="flex justify-between items-start mb-1">
+                <p className={`text-sm font-semibold ${isElfBuff ? 'text-green-300' : 'text-cyan-300'}`}>
+                  {buff.title}
+                </p>
+                {buff.showCountdown && (
+                  <span className="text-[10px] font-mono text-gray-400 bg-black/30 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">
+                    {(() => {
+                      const endDate = getEventBuffEndDate(buff);
+                      if (!endDate) return '';
+                      return formatDuration(endDate.getTime() - now);
+                    })()}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-400 leading-relaxed">
                 {buff.description}
               </p>
@@ -756,7 +780,7 @@ export const LevelDisplay = memo(function LevelDisplay({ onOpenDailyGift }: Leve
               opacity: isMobile ? (activeBuffTooltip === buffId ? 1 : 0) : undefined,
             }}
           >
-            <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
+            <div className={`bg-gray-900/95 backdrop-blur-xl rounded-lg px-4 py-2.5 shadow-lg min-w-[220px] max-w-[260px] border ${isElfBuff ? 'border-green-500/30' : 'border-cyan-500/30'
               }`}>
               <p className={`text-sm font-semibold mb-1 ${isElfBuff ? 'text-green-300' : 'text-cyan-300'
                 }`}>

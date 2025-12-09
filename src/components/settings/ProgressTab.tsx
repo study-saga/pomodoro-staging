@@ -271,7 +271,7 @@ export function ProgressTab(props: ProgressTabProps) {
                   try {
                     // Reset server state if user is authenticated
                     if (appUser?.id && appUser?.discord_id) {
-                      await resetUserProgress(appUser.id, appUser.discord_id);
+                      await resetUserProgress(appUser.id);
                     }
 
                     // Reset local state

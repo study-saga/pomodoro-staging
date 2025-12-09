@@ -1,9 +1,7 @@
-import { useEffect, useRef, useState, useCallback, memo, useLayoutEffect } from 'react';
+import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useChat } from '../../contexts/ChatContext';
 import type { AppUser } from '../../lib/types';
-import { VariableSizeList, type ListChildComponentProps } from 'react-window';
-import AutoSizer from 'react-virtualized-auto-sizer';
 import { ChatMessage } from './ChatMessage';
 import { ReportModal } from './ReportModal';
 import { ChatContextMenu } from './ChatContextMenu';
@@ -14,45 +12,14 @@ interface GlobalChatMessagesProps {
   isExpanded: boolean;
 }
 
-// Row component for virtualization
-const Row = memo(({ index, style, data }: ListChildComponentProps) => {
-  const { messages, currentUser, onContextMenu, onDelete, userRole, setSize } = data;
-  const msg = messages[index];
-  const rowRef = useRef<HTMLDivElement>(null);
-
-  // Calculate showAvatar logic
-  const showAvatar = index === 0 || messages[index - 1].user.id !== msg.user.id || (msg.timestamp - messages[index - 1].timestamp > 60000);
-
-  useEffect(() => {
-    if (rowRef.current) {
-      setSize(index, rowRef.current.getBoundingClientRect().height);
-    }
-  }, [setSize, index, msg.content, showAvatar]); // Re-measure if content or avatar status changes
-
-  return (
-    <div style={style}>
-      <div ref={rowRef} className="pb-0.5">
-        <ChatMessage
-          message={msg}
-          currentUser={currentUser}
-          showAvatar={showAvatar}
-          onContextMenu={onContextMenu}
-          onDelete={onDelete}
-          userRole={userRole}
-        />
-      </div>
-    </div>
-  );
-});
-
 /**
  * Global chat messages list
  * Displays the list of messages and handles auto-scrolling
  */
 export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: GlobalChatMessagesProps) {
-  const { globalMessages, deleteGlobalMessage, userRole, reportMessage, isGlobalConnected } = useChat();
-  const listRef = useRef<VariableSizeList>(null);
-  const sizeMap = useRef<Record<number, number>>({});
+  const { globalMessages, deleteGlobalMessage, userRole, reportMessage, connectionState, retryCount, manualRetry } = useChat();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const shouldAutoScrollRef = useRef(true);
   const prevIsExpandedRef = useRef(isExpanded);
@@ -60,104 +27,51 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; userId: string; username: string; messageId: string; content: string } | null>(null);
 
-  const setSize = useCallback((index: number, size: number) => {
-    if (sizeMap.current[index] !== size) {
-      sizeMap.current[index] = size;
-      listRef.current?.resetAfterIndex(index);
-    }
-  }, []);
-
-  const getSize = useCallback((index: number) => {
-    return sizeMap.current[index] || 60; // Default estimated height
-  }, []);
-
-  // Scroll to bottom - ALWAYS works
-  const scrollToBottom = useCallback(() => {
-    if (listRef.current && globalMessages.length > 0) {
-      listRef.current.scrollToItem(globalMessages.length - 1, 'end');
+  // Scroll to bottom helper
+  const scrollToBottom = useCallback((smooth = false) => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
       shouldAutoScrollRef.current = true;
       setShowScrollButton(false);
     }
-  }, [globalMessages.length]);
+  }, []);
 
-  // Auto-scroll on new messages (using useLayoutEffect for immediate execution)
+  // Handle scroll to detect if user is at bottom
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    // User is considered at bottom if within 100px of the bottom
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+
+    shouldAutoScrollRef.current = isAtBottom;
+    setShowScrollButton(!isAtBottom);
+  }, []);
+
+  // Auto-scroll on new messages
   useLayoutEffect(() => {
-    if (globalMessages.length > 0 && shouldAutoScrollRef.current) {
-      // Scroll immediately in layout phase
-      if (listRef.current) {
-        listRef.current.scrollToItem(globalMessages.length - 1, 'end');
-      }
-    }
-  }, [globalMessages.length]);
+    if (globalMessages.length === 0) return;
 
-  // Initial scroll on mount
-  useLayoutEffect(() => {
-    if (globalMessages.length > 0 && listRef.current) {
-      // Initial scroll to bottom
-      listRef.current.scrollToItem(globalMessages.length - 1, 'end');
-      shouldAutoScrollRef.current = true;
-    }
-  }, []); // Empty deps = run once on mount
+    const lastMessage = globalMessages[globalMessages.length - 1];
+    const isMe = lastMessage?.user.id === currentUser.id;
 
-  // Scroll to bottom when chat is reopened (detects false -> true transition)
+    // Scroll if we were already at the bottom OR if I sent the message
+    if (shouldAutoScrollRef.current || isMe) {
+      scrollToBottom();
+    }
+  }, [globalMessages, currentUser.id, scrollToBottom]);
+
+  // Scroll to bottom when chat is reopened
   useLayoutEffect(() => {
     const wasExpanded = prevIsExpandedRef.current;
     prevIsExpandedRef.current = isExpanded;
 
-    // Only scroll if chat was just opened (false -> true)
-    if (!wasExpanded && isExpanded && globalMessages.length > 0) {
-      // Use direct scrollTop manipulation which is more reliable than scrollToItem
-      const scrollToBottomDirect = () => {
-        const listInstance = listRef.current as any;
-        const outerElement = listInstance?.outerRef?.current as HTMLDivElement;
-
-        if (outerElement) {
-          // Set scrollTop to a very large number to force scroll to bottom
-          outerElement.scrollTop = 999999;
-          shouldAutoScrollRef.current = true;
-          setShowScrollButton(false);
-        }
-      };
-
-      // Try multiple times to ensure it catches the render
-      scrollToBottomDirect(); // Immediate
-      requestAnimationFrame(scrollToBottomDirect); // Next frame
-      setTimeout(scrollToBottomDirect, 50); // Safety
-      setTimeout(scrollToBottomDirect, 100); // Final
-      setTimeout(scrollToBottomDirect, 200); // Extra safety
+    if (!wasExpanded && isExpanded) {
+      // Small timeout to allow layout to settle
+      setTimeout(() => {
+        scrollToBottom();
+      }, 50);
     }
-  }, [isExpanded, globalMessages.length]);
-
-  // Handle scroll - detect if user scrolled up
-  const handleScroll = useCallback((props: { scrollDirection: 'forward' | 'backward'; scrollOffset: number; scrollUpdateWasRequested: boolean }) => {
-    const { scrollDirection, scrollUpdateWasRequested } = props;
-
-    // If this was a programmatic scroll (auto-scroll), don't change state
-    if (scrollUpdateWasRequested) {
-      return;
-    }
-
-    // User manually scrolled
-    if (scrollDirection === 'backward') {
-      // Scrolled up - disable auto-scroll and show button
-      shouldAutoScrollRef.current = false;
-      setShowScrollButton(true);
-    } else {
-      // Scrolled down - check if near bottom
-      const listInstance = listRef.current as any;
-      const outerElement = listInstance?.outerRef?.current as HTMLDivElement;
-
-      if (outerElement) {
-        const { scrollHeight, clientHeight, scrollTop } = outerElement;
-        const isNearBottom = scrollHeight - (scrollTop + clientHeight) < 100;
-
-        if (isNearBottom) {
-          shouldAutoScrollRef.current = true;
-          setShowScrollButton(false);
-        }
-      }
-    }
-  }, []);
+  }, [isExpanded, scrollToBottom]);
 
   // Close context menu on click outside
   useEffect(() => {
@@ -167,23 +81,18 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
   }, []);
 
   const handleContextMenu = useCallback((e: React.MouseEvent, userId: string, username: string, _targetRole?: string, messageId?: string, content?: string) => {
-    e.preventDefault(); // Always prevent default context menu
-    console.log('[GlobalChat] Context menu triggered for:', username, 'by role:', userRole);
+    e.preventDefault();
 
-    // Prevent banning self (or reporting self via context menu, though UI hides it)
     if (userId === currentUser.id) {
       return;
     }
-
-    // Role-based protection for BANNING is handled in handleBanClick and the UI rendering
-    // We allow the menu to open for everyone so they can Report
 
     if (messageId && content) {
       setContextMenu({ x: e.clientX, y: e.clientY, userId, username, messageId, content });
     } else {
       setContextMenu({ x: e.clientX, y: e.clientY, userId, username, messageId: '', content: '' });
     }
-  }, [currentUser.id, userRole]);
+  }, [currentUser.id]);
 
   const handleBanClick = () => {
     if (contextMenu) {
@@ -202,8 +111,6 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
   // Report Modal State
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [selectedUserToReport, setSelectedUserToReport] = useState<{ id: string; username: string; messageId: string; content: string } | null>(null);
-
-
 
   const handleReportClick = (messageId: string, userId: string, username: string, content: string) => {
     setSelectedUserToReport({ id: userId, username, messageId, content });
@@ -224,58 +131,73 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
     }
   };
 
-  const itemData = {
-    messages: globalMessages,
-    currentUser,
-    onContextMenu: handleContextMenu,
-    onDelete: deleteGlobalMessage,
-    onReport: handleReportClick,
-    userRole,
-    setSize
-  };
-
   return (
     <>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full relative">
         {/* Connection Status */}
-        {!isGlobalConnected && (
-          <div className="px-4 py-2 bg-yellow-500/10 backdrop-blur text-yellow-200 text-xs text-center border-b border-yellow-500/20">
+        {connectionState === 'connecting' && (
+          <div className="px-4 py-2 bg-yellow-500/10 backdrop-blur text-yellow-200 text-xs text-center border-b border-yellow-500/20 flex-shrink-0">
             Connecting to chat...
+          </div>
+        )}
+        {connectionState === 'reconnecting' && (
+          <div className="px-4 py-2 bg-yellow-500/10 backdrop-blur text-yellow-200 text-xs text-center border-b border-yellow-500/20 flex-shrink-0">
+            Reconnecting... (attempt {retryCount + 1}/4)
+          </div>
+        )}
+        {connectionState === 'error' && (
+          <div className="px-4 py-2 bg-red-500/10 backdrop-blur border-b border-red-500/20 flex-shrink-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-red-400">Connection failed</span>
+              <button
+                onClick={manualRetry}
+                className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 rounded text-red-400 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
           </div>
         )}
 
         {/* Messages List */}
-        <div className="flex-1 min-h-0 px-1.5">
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 min-h-0 px-1.5 overflow-y-auto no-scrollbar"
+        >
           {globalMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-500 text-xs">
               <p>No messages yet. Say hi! 👋</p>
             </div>
           ) : (
-            <AutoSizer>
-              {({ height, width }) => (
-                <VariableSizeList
-                  ref={listRef}
-                  height={height}
-                  width={width}
-                  itemCount={globalMessages.length}
-                  itemSize={getSize}
-                  itemData={itemData}
-                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                  className="[&::-webkit-scrollbar]:hidden"
-                  onScroll={handleScroll}
-                >
-                  {Row}
-                </VariableSizeList>
-              )}
-            </AutoSizer>
+            <div className="flex flex-col pb-2">
+              {globalMessages.map((msg, index) => {
+                const showAvatar = index === 0 || globalMessages[index - 1].user.id !== msg.user.id || (msg.timestamp - globalMessages[index - 1].timestamp > 60000);
+
+                return (
+                  <div key={msg.id} className="pb-0.5">
+                    <ChatMessage
+                      message={msg}
+                      currentUser={currentUser}
+                      showAvatar={showAvatar}
+                      onContextMenu={handleContextMenu}
+                      onDelete={deleteGlobalMessage}
+                      onReport={handleReportClick}
+                      userRole={userRole}
+                    />
+                  </div>
+                );
+              })}
+              <div ref={bottomRef} />
+            </div>
           )}
         </div>
 
         {/* Scroll to Bottom Button - appears when scrolled up */}
         {showScrollButton && globalMessages.length > 0 && (
           <button
-            onClick={scrollToBottom}
-            className="absolute bottom-4 right-4 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white rounded-full p-3 shadow-xl transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:border-white/30 z-10 group"
+            onClick={() => scrollToBottom(true)}
+            className="absolute bottom-6 right-6 md:bottom-4 md:right-4 bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/10 text-white rounded-full p-3 md:p-2 shadow-lg transition-all duration-300 hover:scale-110 z-10 group"
             aria-label="Scroll to bottom"
           >
             <svg
@@ -288,7 +210,7 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="transition-transform duration-300 group-hover:translate-y-0.5"
+              className="transition-transform duration-300 group-hover:translate-y-0.5 w-5 h-5 md:w-4 md:h-4"
             >
               <path d="M12 5v14M19 12l-7 7-7-7" />
             </svg>

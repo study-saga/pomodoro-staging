@@ -23,7 +23,26 @@ export interface BuffStackResult {
 /**
  * Get user's active buffs from database (JSONB column)
  */
-export async function getUserActiveBuffs(userId: string): Promise<Record<string, ActiveBuff>> {
+export async function getUserActiveBuffs(
+  userId: string,
+  discordId?: string
+): Promise<Record<string, ActiveBuff>> {
+  // Use Discord-specific RPC if Discord ID provided
+  if (discordId) {
+    const { data, error } = await supabase.rpc('get_active_buffs_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId
+    });
+
+    if (error) {
+      console.error('[BuffManager] Error fetching active buffs (Discord):', error);
+      return {};
+    }
+
+    return (data as Record<string, ActiveBuff>) || {};
+  }
+
+  // Fallback: Direct query (for web users with auth.uid())
   const { data, error } = await supabase
     .from('users')
     .select('active_buffs')
@@ -46,8 +65,30 @@ export async function setUserBuff(
   buffId: string,
   value: number,
   expiresAt: number | null = null,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, any> = {},
+  discordId?: string
 ): Promise<void> {
+  // Use Discord-specific RPC if Discord ID provided
+  if (discordId) {
+    const { error } = await supabase.rpc('set_user_buff_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId,
+      p_buff_id: buffId,
+      p_value: value,
+      p_expires_at: expiresAt,
+      p_metadata: metadata
+    });
+
+    if (error) {
+      console.error('[BuffManager] Error setting buff (Discord):', error);
+      throw new Error(`Failed to set buff: ${error.message}`);
+    }
+
+    import.meta.env.DEV && console.log(`[BuffManager] ✓ Set buff ${buffId} for user (Discord, value: ${value}, expires: ${expiresAt ? new Date(expiresAt) : 'never'})`);
+    return;
+  }
+
+  // Fallback: Web user RPC
   const { error } = await supabase.rpc('set_user_buff', {
     p_user_id: userId,
     p_buff_id: buffId,
@@ -61,13 +102,35 @@ export async function setUserBuff(
     throw new Error(`Failed to set buff: ${error.message}`);
   }
 
-  console.log(`[BuffManager] ✓ Set buff ${buffId} for user (value: ${value}, expires: ${expiresAt ? new Date(expiresAt) : 'never'})`);
+  import.meta.env.DEV && console.log(`[BuffManager] ✓ Set buff ${buffId} for user (value: ${value}, expires: ${expiresAt ? new Date(expiresAt) : 'never'})`);
 }
 
 /**
  * Remove a buff from a user
  */
-export async function removeUserBuff(userId: string, buffId: string): Promise<void> {
+export async function removeUserBuff(
+  userId: string,
+  buffId: string,
+  discordId?: string
+): Promise<void> {
+  // Use Discord-specific RPC if Discord ID provided
+  if (discordId) {
+    const { error } = await supabase.rpc('remove_user_buff_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId,
+      p_buff_id: buffId
+    });
+
+    if (error) {
+      console.error('[BuffManager] Error removing buff (Discord):', error);
+      throw new Error(`Failed to remove buff: ${error.message}`);
+    }
+
+    import.meta.env.DEV && console.log(`[BuffManager] ✓ Removed buff ${buffId} for user (Discord)`);
+    return;
+  }
+
+  // Fallback: Web user RPC
   const { error } = await supabase.rpc('remove_user_buff', {
     p_user_id: userId,
     p_buff_id: buffId
@@ -78,23 +141,40 @@ export async function removeUserBuff(userId: string, buffId: string): Promise<vo
     throw new Error(`Failed to remove buff: ${error.message}`);
   }
 
-  console.log(`[BuffManager] ✓ Removed buff ${buffId} for user`);
+  import.meta.env.DEV && console.log(`[BuffManager] ✓ Removed buff ${buffId} for user`);
 }
 
 /**
  * Clear expired buffs for a user
  */
-export async function clearExpiredBuffs(userId: string): Promise<void> {
+export async function clearExpiredBuffs(userId: string, discordId?: string): Promise<void> {
+  // Use Discord-specific RPC if Discord ID provided
+  if (discordId) {
+    const { error } = await supabase.rpc('clear_expired_buffs_discord', {
+      p_user_id: userId,
+      p_discord_id: discordId
+    });
+
+    if (error) {
+      console.error('[BuffManager] Error clearing expired buffs (Discord):', error);
+      throw new Error(`Failed to clear expired buffs: ${error.message}`);
+    }
+
+    import.meta.env.DEV && console.log('[BuffManager] ✓ Cleared expired buffs (Discord)');
+    return;
+  }
+
+  // Fallback: Web user RPC
   const { error } = await supabase.rpc('clear_expired_buffs', {
     p_user_id: userId
   });
 
   if (error) {
     console.error('[BuffManager] Error clearing expired buffs:', error);
-    return;
+    throw new Error(`Failed to clear expired buffs: ${error.message}`);
   }
 
-  console.log('[BuffManager] ✓ Cleared expired buffs');
+  import.meta.env.DEV && console.log('[BuffManager] ✓ Cleared expired buffs');
 }
 
 /**
@@ -122,7 +202,7 @@ export function calculateBuffStack(
   for (const [buffId, buffData] of Object.entries(activeBuffs)) {
     // Check if expired (skip time-limited buffs that expired)
     if (buffData.expiresAt && buffData.expiresAt <= now) {
-      console.log(`[BuffManager] Skipping expired buff: ${buffId}`);
+      import.meta.env.DEV && console.log(`[BuffManager] Skipping expired buff: ${buffId}`);
       continue;
     }
 
@@ -131,14 +211,13 @@ export function calculateBuffStack(
      * Allows future reactivation without re-granting the buff
      */
     if (buffId === 'slingshot_nov22') {
-      // UTC-based date check
-      const now = Date.now();
+      // UTC-based date check (uses outer 'now' variable)
       const startDate = Date.UTC(2025, 10, 22); // Nov 22 00:00 UTC (month is 0-indexed)
       const endDate = Date.UTC(2025, 10, 24);   // Nov 24 00:00 UTC (end of Nov 23)
       const isEventActive = now >= startDate && now < endDate;
 
       if (!isEventActive) {
-        console.log('[BuffManager] Slingshot event not active, keeping in storage');
+        import.meta.env.DEV && console.log('[BuffManager] Slingshot event not active, keeping in storage');
         continue; // Skip XP bonus but preserve in DB
       }
     }
@@ -152,7 +231,7 @@ export function calculateBuffStack(
 
     // Check if buff applies to this role
     if (!eventBuffAppliesToRole(buffConfig, roleType)) {
-      console.log(`[BuffManager] Buff ${buffId} doesn't apply to ${roleType}`);
+      import.meta.env.DEV && console.log(`[BuffManager] Buff ${buffId} doesn't apply to ${roleType}`);
       continue;
     }
 
@@ -167,7 +246,7 @@ export function calculateBuffStack(
     const percentage = Math.round(buffMultiplier * 100);
     result.bonusStrings.push(`+${percentage}% ${buffConfig.name}`);
 
-    console.log(`[BuffManager] Applied buff ${buffId}: +${percentage}%`);
+    import.meta.env.DEV && console.log(`[BuffManager] Applied buff ${buffId}: +${percentage}%`);
   }
 
   return result;
@@ -176,13 +255,13 @@ export function calculateBuffStack(
 /**
  * Activate slingshot buff (Nov 22-23, elf only, +25% XP)
  */
-export async function activateSlingshotBuff(userId: string): Promise<void> {
+export async function activateSlingshotBuff(userId: string, discordId?: string): Promise<void> {
   // UTC-based date check
   const now = Date.now();
   const startDate = Date.UTC(2025, 10, 22); // Nov 22 00:00 UTC (month is 0-indexed)
 
   if (now < startDate) {
-    console.log('[BuffManager] Slingshot buff not yet active (activates Nov 22 UTC)');
+    import.meta.env.DEV && console.log('[BuffManager] Slingshot buff not yet active (activates Nov 22 UTC)');
     return;
   }
 
@@ -192,16 +271,17 @@ export async function activateSlingshotBuff(userId: string): Promise<void> {
     'slingshot_nov22',
     0.25, // +25%
     null, // No expiration
-    { activatedAt: Date.now() }
+    { activatedAt: Date.now() },
+    discordId
   );
 
-  console.log('[BuffManager] ✓ Activated slingshot buff (+25% XP)');
+  import.meta.env.DEV && console.log('[BuffManager] ✓ Activated slingshot buff (+25% XP)');
 }
 
 /**
  * Activate day 10 gift boost (24 hours)
  */
-export async function activateDay10Boost(userId: string): Promise<void> {
+export async function activateDay10Boost(userId: string, discordId?: string): Promise<void> {
   const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
 
   await setUserBuff(
@@ -209,20 +289,22 @@ export async function activateDay10Boost(userId: string): Promise<void> {
     'day10_boost',
     0.25, // +25%
     expiresAt,
-    { claimedAt: Date.now() }
+    { claimedAt: Date.now() },
+    discordId
   );
 
-  console.log('[BuffManager] ✓ Activated day 10 boost (expires in 24h)');
+  import.meta.env.DEV && console.log('[BuffManager] ✓ Activated day 10 boost (expires in 24h)');
 }
 
 /**
  * Check if user should have slingshot buff activated automatically
+ * Uses UTC to ensure consistent activation across all timezones
  */
 export function shouldAutoActivateSlingshot(roleType: RoleType): boolean {
   if (roleType !== 'elf') return false;
 
-  const today = new Date();
-  const activationDate = new Date('2025-11-22');
+  const now = Date.now();
+  const activationDate = Date.UTC(2025, 10, 22); // Nov 22 00:00 UTC (month is 0-indexed)
 
-  return today >= activationDate;
+  return now >= activationDate;
 }

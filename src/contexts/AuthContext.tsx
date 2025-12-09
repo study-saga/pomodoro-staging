@@ -4,15 +4,10 @@ import type { DiscordSDK, DiscordSDKMock } from '@discord/embedded-app-sdk'
 
 // Discord Activity authentication (for Discord iframe)
 import { authenticateDiscordUser, type DiscordUser } from '../lib/discordAuth'
-import { syncDiscordUserToSupabase, type AppUser as DiscordAppUser } from '../lib/userSync'
-
 // Web authentication (for base website)
 import { authenticateWithSupabase, onAuthStateChange, signOut as supabaseSignOut, fetchOrCreateAppUser } from '../lib/supabaseAuth'
-import type { AppUser as SupabaseAppUser } from '../lib/supabaseAuth'
+import type { AppUser } from '../lib/supabaseAuth'
 import { supabase } from '../lib/supabase'
-
-// Unified AppUser type
-type AppUser = DiscordAppUser | SupabaseAppUser
 
 interface AuthContextType {
   // Authentication state
@@ -84,23 +79,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setLoading(true)
       setError(null)
 
-      console.log('[Auth] Starting Discord Activity authentication...')
+      import.meta.env.DEV && console.log('[Auth] Starting Discord Activity authentication...')
 
-      // Step 1: Authenticate with Discord SDK
+      // This function internally calls the edge function to mint a Supabase JWT
+      // and sets the session via supabase.auth.setSession()
       const authResult = await authenticateDiscordUser()
-      console.log('[Auth] Discord SDK authentication successful')
+      import.meta.env.DEV && console.log('[Auth] Discord SDK authentication successful')
 
-      // Step 2: Sync to Supabase database (without Supabase Auth)
-      const dbUser = await syncDiscordUserToSupabase(authResult.discordUser)
-      console.log('[Auth] User synced to database')
+      // Step 2: Verify Supabase Session was established
+      const { data: { session: newSession }, error: sessionError } = await supabase.auth.getSession()
 
-      // Step 3: Set state
+      if (sessionError || !newSession) {
+        console.error('[Auth] Failed to establish Supabase session:', sessionError)
+        throw new Error('Failed to establish secure session')
+      }
+
+      import.meta.env.DEV && console.log('[Auth] Supabase session verified')
+
+      // Step 3: Fetch User Profile (using standard Web flow function)
+      // This ensures we use the same logic for both Web and Discord Activity
+      const appUser = await fetchOrCreateAppUser(newSession.user)
+      import.meta.env.DEV && console.log('[Auth] User profile loaded:', appUser.username)
+
+      // Step 4: Set state
       setDiscordUser(authResult.discordUser)
       setDiscordSdk(authResult.discordSdk)
-      setAppUser(dbUser)
+      setUser(newSession.user)
+      setSession(newSession)
+      setAppUser(appUser)
       setAuthenticated(true)
 
-      console.log('[Auth] Discord Activity authentication complete!')
+      import.meta.env.DEV && console.log('[Auth] Discord Activity authentication complete!')
     } catch (err) {
       console.error('[Auth] Discord Activity authentication failed:', err)
       setError(err instanceof Error ? err.message : 'Discord authentication failed')
@@ -120,8 +129,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Supabase adds hash parameters after OAuth redirect
     // Check for access_token or error in hash
     return hash.includes('access_token') ||
-           hash.includes('error') ||
-           params.has('code')
+      hash.includes('error') ||
+      params.has('code')
   }
 
   /**
@@ -132,11 +141,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setLoading(true)
       setError(null)
 
-      console.log('[Auth] Starting web authentication (Supabase OAuth)...')
+      import.meta.env.DEV && console.log('[Auth] Starting web authentication (Supabase OAuth)...')
 
       // This will either return existing session or redirect to Discord OAuth
       const result = await authenticateWithSupabase()
-      console.log('[Auth] Supabase authentication successful')
+      import.meta.env.DEV && console.log('[Auth] Supabase authentication successful')
 
       // Set state
       setUser(result.user)
@@ -144,13 +153,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setAppUser(result.appUser)
       setAuthenticated(true)
 
-      console.log('[Auth] Web authentication complete:', result.appUser.username)
+      import.meta.env.DEV && console.log('[Auth] Web authentication complete:', result.appUser.username)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Authentication failed'
 
       // Don't show error if it's just a redirect message
       if (errorMessage.includes('Redirecting to Discord')) {
-        console.log('[Auth] Redirecting to Discord OAuth...')
+        import.meta.env.DEV && console.log('[Auth] Redirecting to Discord OAuth...')
         return
       }
 
@@ -166,20 +175,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Refresh user data
    */
   const refreshUser = async () => {
-    if (!appUser) return
+    if (!appUser || !user) return
 
     try {
-      console.log('[Auth] Refreshing user data...')
-
-      if (isDiscordActivity && discordUser) {
-        // Discord Activity: Re-sync from Discord SDK
-        const updatedUser = await syncDiscordUserToSupabase(discordUser)
-        setAppUser(updatedUser)
-      } else if (user) {
-        // Web: Re-fetch from Supabase
-        const result = await authenticateWithSupabase()
-        setAppUser(result.appUser)
-      }
+      import.meta.env.DEV && console.log('[Auth] Refreshing user data...')
+      const updatedUser = await fetchOrCreateAppUser(user)
+      setAppUser(updatedUser)
     } catch (err) {
       console.error('[Auth] Failed to refresh user:', err)
     }
@@ -203,7 +204,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setAppUser(null)
       setAuthenticated(false)
 
-      console.log('[Auth] Signed out successfully')
+      import.meta.env.DEV && console.log('[Auth] Signed out successfully')
     } catch (err) {
       console.error('[Auth] Failed to sign out:', err)
     }
@@ -213,7 +214,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     // Prevent duplicate initialization in React strict mode
     if (authInitializedRef.current) {
-      console.log('[Auth] Already initialized, skipping duplicate mount')
+      import.meta.env.DEV && console.log('[Auth] Already initialized, skipping duplicate mount')
       return
     }
     authInitializedRef.current = true
@@ -221,7 +222,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Development mode bypass (skip authentication entirely)
     const devMode = import.meta.env.VITE_DEV_MODE === 'true'
     if (devMode) {
-      console.log('[Auth] DEV MODE: Skipping authentication')
+      import.meta.env.DEV && console.log('[Auth] DEV MODE: Skipping authentication')
       setAuthenticated(true)
       setLoading(false)
       // Create a mock app user for development
@@ -250,20 +251,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     if (isDiscordActivity) {
-      console.log('[Auth] Environment: Discord Activity')
+      import.meta.env.DEV && console.log('[Auth] Environment: Discord Activity')
       authenticateDiscordActivity()
     } else {
-      console.log('[Auth] Environment: Web')
+      import.meta.env.DEV && console.log('[Auth] Environment: Web')
 
       // Set up auth state change listener first (handles OAuth callbacks)
       const { data: { subscription } } = onAuthStateChange(async (newSession) => {
-        console.log('[Auth] Auth state changed:', newSession ? 'signed in' : 'signed out')
+        import.meta.env.DEV && console.log('[Auth] Auth state changed:', newSession ? 'signed in' : 'signed out')
 
         if (newSession) {
           // Deduplicate: Skip if we've already processed this session
           const sessionId = newSession.access_token
           if (lastProcessedSessionRef.current === sessionId) {
-            console.log('[Auth] Already processed this session, skipping duplicate fetch')
+            import.meta.env.DEV && console.log('[Auth] Already processed this session, skipping duplicate fetch')
             return
           }
           lastProcessedSessionRef.current = sessionId
@@ -292,20 +293,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Check if we're in the middle of an OAuth callback
       if (isOAuthCallback()) {
-        console.log('[Auth] OAuth callback detected, waiting for session...')
+        import.meta.env.DEV && console.log('[Auth] OAuth callback detected, waiting for session...')
         // Don't call authenticateWeb() - let the auth state change listener handle it
         // But check after a short delay if no session was established
         setTimeout(async () => {
           const { data: { session: currentSession } } = await supabase.auth.getSession()
           if (!currentSession) {
-            console.log('[Auth] OAuth callback did not establish session, retrying...')
+            import.meta.env.DEV && console.log('[Auth] OAuth callback did not establish session, retrying...')
             setLoading(false)
             setError('OAuth authentication failed. Please try again.')
           }
         }, 3000) // Wait 3 seconds for OAuth to process
       } else {
         // No OAuth callback - check for existing session or redirect to login
-        console.log('[Auth] No OAuth callback, checking for session...')
+        import.meta.env.DEV && console.log('[Auth] No OAuth callback, checking for session...')
         authenticateWeb()
       }
 

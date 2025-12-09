@@ -22,7 +22,7 @@ export function useBuffActivation() {
 
       // Check if already active
       if (activeBuffs.slingshot_nov22) {
-        console.log('[BuffActivation] Slingshot buff already active');
+        import.meta.env.DEV && console.log('[BuffActivation] Slingshot buff already active');
         return;
       }
 
@@ -31,11 +31,11 @@ export function useBuffActivation() {
       const startDate = Date.UTC(2025, 10, 22); // Nov 22 00:00 UTC (month is 0-indexed)
 
       if (now < startDate) {
-        console.log('[BuffActivation] Slingshot buff not yet available (activates Nov 22 UTC)');
+        import.meta.env.DEV && console.log('[BuffActivation] Slingshot buff not yet available (activates Nov 22 UTC)');
         return;
       }
 
-      console.log('[BuffActivation] Auto-activating slingshot buff for elf');
+      import.meta.env.DEV && console.log('[BuffActivation] Auto-activating slingshot buff for elf');
 
       try {
         // Activate in database
@@ -44,7 +44,8 @@ export function useBuffActivation() {
           'slingshot_nov22',
           0.25, // +25%
           null, // No expiration (permanent event)
-          { autoActivatedAt: Date.now() }
+          { autoActivatedAt: Date.now() },
+          appUser.discord_id // Pass Discord ID for dual-auth
         );
 
         // Update local state
@@ -59,12 +60,12 @@ export function useBuffActivation() {
           }
         });
 
-        console.log('[BuffActivation] ✓ Slingshot buff activated');
+        import.meta.env.DEV && console.log('[BuffActivation] ✓ Slingshot buff activated');
       } catch (error) {
         console.error('[BuffActivation] Failed to activate slingshot buff:', error);
       }
     };
 
     activateSlingshotIfNeeded();
-  }, [appUser?.id, levelPath, settingsSyncComplete, activeBuffs]);
+  }, [appUser?.id, levelPath, settingsSyncComplete]);
 }

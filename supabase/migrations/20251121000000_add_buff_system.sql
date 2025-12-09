@@ -86,6 +86,15 @@ RETURNS VOID AS $$
 DECLARE
   v_buff_data JSONB;
 BEGIN
+  -- Verify caller owns this account
+  IF NOT EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = p_user_id
+      AND (auth_user_id = auth.uid() OR discord_id = auth.uid()::text)
+  ) THEN
+    RAISE EXCEPTION 'Not authorized to modify buffs for user %', p_user_id;
+  END IF;
+
   -- Build buff data
   v_buff_data := jsonb_build_object(
     'value', p_value,
@@ -100,7 +109,7 @@ BEGIN
     updated_at = NOW()
   WHERE id = p_user_id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION public.set_user_buff IS
   'Add or update a buff for a user.
@@ -123,13 +132,22 @@ CREATE OR REPLACE FUNCTION public.remove_user_buff(
 )
 RETURNS VOID AS $$
 BEGIN
+  -- Verify caller owns this account
+  IF NOT EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = p_user_id
+      AND (auth_user_id = auth.uid() OR discord_id = auth.uid()::text)
+  ) THEN
+    RAISE EXCEPTION 'Not authorized to modify buffs for user %', p_user_id;
+  END IF;
+
   UPDATE public.users
   SET
     active_buffs = active_buffs - p_buff_id,
     updated_at = NOW()
   WHERE id = p_user_id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION public.remove_user_buff IS
   'Remove a specific buff from a user.';
@@ -143,6 +161,15 @@ RETURNS VOID AS $$
 DECLARE
   v_active_buffs JSONB;
 BEGIN
+  -- Verify caller owns this account
+  IF NOT EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = p_user_id
+      AND (auth_user_id = auth.uid() OR discord_id = auth.uid()::text)
+  ) THEN
+    RAISE EXCEPTION 'Not authorized to modify buffs for user %', p_user_id;
+  END IF;
+
   -- Get active buffs (already filters expired)
   v_active_buffs := public.get_active_buffs(p_user_id);
 
@@ -153,7 +180,7 @@ BEGIN
     updated_at = NOW()
   WHERE id = p_user_id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION public.clear_expired_buffs IS
   'Remove all expired buffs from user.

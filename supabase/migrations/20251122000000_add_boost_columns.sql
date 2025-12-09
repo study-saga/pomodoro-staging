@@ -58,6 +58,15 @@ CREATE OR REPLACE FUNCTION public.set_user_buff(
 )
 RETURNS VOID AS $$
 BEGIN
+  -- Verify caller owns this account
+  IF NOT EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = p_user_id
+      AND (auth_user_id = auth.uid() OR discord_id = auth.uid()::text)
+  ) THEN
+    RAISE EXCEPTION 'Not authorized to modify buffs for user %', p_user_id;
+  END IF;
+
   UPDATE public.users
   SET
     active_buffs = COALESCE(active_buffs, '{}'::jsonb) || jsonb_build_object(
@@ -80,6 +89,15 @@ CREATE OR REPLACE FUNCTION public.remove_user_buff(
 )
 RETURNS VOID AS $$
 BEGIN
+  -- Verify caller owns this account
+  IF NOT EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = p_user_id
+      AND (auth_user_id = auth.uid() OR discord_id = auth.uid()::text)
+  ) THEN
+    RAISE EXCEPTION 'Not authorized to modify buffs for user %', p_user_id;
+  END IF;
+
   UPDATE public.users
   SET
     active_buffs = active_buffs - p_buff_id,
@@ -99,6 +117,15 @@ DECLARE
   v_expires BIGINT;
   v_now BIGINT;
 BEGIN
+  -- Verify caller owns this account
+  IF NOT EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = p_user_id
+      AND (auth_user_id = auth.uid() OR discord_id = auth.uid()::text)
+  ) THEN
+    RAISE EXCEPTION 'Not authorized to read buffs for user %', p_user_id;
+  END IF;
+
   v_now := EXTRACT(EPOCH FROM NOW()) * 1000;
 
   SELECT active_buffs INTO v_buffs
@@ -121,12 +148,21 @@ BEGIN
 
   RETURN v_result;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Clear expired buffs
 CREATE OR REPLACE FUNCTION public.clear_expired_buffs(p_user_id UUID)
 RETURNS VOID AS $$
 BEGIN
+  -- Verify caller owns this account
+  IF NOT EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = p_user_id
+      AND (auth_user_id = auth.uid() OR discord_id = auth.uid()::text)
+  ) THEN
+    RAISE EXCEPTION 'Not authorized to modify buffs for user %', p_user_id;
+  END IF;
+
   UPDATE public.users
   SET
     active_buffs = public.get_active_buffs(p_user_id),

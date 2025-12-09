@@ -23,7 +23,7 @@ export interface AuthResult {
  * Checks for existing session or redirects to Discord OAuth
  */
 export async function authenticateWithSupabase(): Promise<AuthResult> {
-  console.log('[Supabase Auth] Checking for existing session...')
+  import.meta.env.DEV && console.log('[Supabase Auth] Checking for existing session...')
 
   // Check for existing session
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -35,7 +35,7 @@ export async function authenticateWithSupabase(): Promise<AuthResult> {
 
   // If we have a valid session, fetch user data
   if (session?.user) {
-    console.log('[Supabase Auth] Found existing session for:', session.user.email || session.user.id)
+    import.meta.env.DEV && console.log('[Supabase Auth] Found existing session for:', session.user.email || session.user.id)
 
     try {
       const appUser = await fetchOrCreateAppUser(session.user)
@@ -51,7 +51,7 @@ export async function authenticateWithSupabase(): Promise<AuthResult> {
   }
 
   // No session - need to authenticate
-  console.log('[Supabase Auth] No session found, initiating Discord OAuth...')
+  import.meta.env.DEV && console.log('[Supabase Auth] No session found, initiating Discord OAuth...')
   await signInWithDiscord()
 
   // This will not return immediately - the page will redirect to Discord
@@ -62,14 +62,14 @@ export async function authenticateWithSupabase(): Promise<AuthResult> {
  * Sign in with Discord OAuth via Supabase Auth
  */
 export async function signInWithDiscord(): Promise<void> {
-  console.log('[Supabase Auth] Initiating Discord OAuth flow...')
+  import.meta.env.DEV && console.log('[Supabase Auth] Initiating Discord OAuth flow...')
 
   // Get the current URL for redirect
   // For web: Just use the base URL
   // For Discord Activity: Preserve frame_id/instance_id query params
   const redirectTo = window.location.origin + window.location.pathname + window.location.search
 
-  console.log('[Supabase Auth] Redirect URL:', redirectTo)
+  import.meta.env.DEV && console.log('[Supabase Auth] Redirect URL:', redirectTo)
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'discord',
@@ -86,7 +86,7 @@ export async function signInWithDiscord(): Promise<void> {
   }
 
   // Browser will redirect to Discord, then back to our app
-  console.log('[Supabase Auth] Redirecting to Discord...')
+  import.meta.env.DEV && console.log('[Supabase Auth] Redirecting to Discord...')
 }
 
 /**
@@ -94,7 +94,7 @@ export async function signInWithDiscord(): Promise<void> {
  * Exported for use in auth state change listeners
  */
 export async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
-  console.log('[Supabase Auth] Fetching app user for auth ID:', authUser.id)
+  import.meta.env.DEV && console.log('[Supabase Auth] Fetching app user for auth ID:', authUser.id)
 
   // Extract Discord data from user metadata
   // Discord OAuth may use different field names
@@ -117,7 +117,7 @@ export async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
                  authUser.user_metadata?.picture ||
                  null
 
-  console.log('[Supabase Auth] Discord data:', { discordId, username, avatar })
+  import.meta.env.DEV && console.log('[Supabase Auth] Discord data:', { discordId, username, avatar })
 
   // Try to fetch existing user
   const { data: existingUser, error: fetchError } = await supabase
@@ -133,7 +133,7 @@ export async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
 
   // If user exists, update and return
   if (existingUser) {
-    console.log('[Supabase Auth] Found existing user:', existingUser.username)
+    import.meta.env.DEV && console.log('[Supabase Auth] Found existing user:', existingUser.username)
 
     // Update last login and Discord data using RPC (maintains auth checks)
     const { data: updatedUser, error: updateError } = await supabase.rpc(
@@ -156,7 +156,7 @@ export async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
   }
 
   // User doesn't exist by auth_user_id - check for legacy account with discord_id
-  console.log('[Supabase Auth] No user found by auth_user_id, checking for legacy account...')
+  import.meta.env.DEV && console.log('[Supabase Auth] No user found by auth_user_id, checking for legacy account...')
 
   // Try to backfill legacy account (discord_id exists but auth_user_id is NULL)
   const { data: backfilled, error: backfillError } = await supabase.rpc(
@@ -175,7 +175,7 @@ export async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
 
   // RPC returns boolean: true if legacy account was linked, false if none exists
   if (backfilled === true) {
-    console.log('[Supabase Auth] Successfully linked legacy account')
+    import.meta.env.DEV && console.log('[Supabase Auth] Successfully linked legacy account')
 
     // Fetch the newly linked user
     const { data: linkedUser, error: fetchError } = await supabase
@@ -193,10 +193,10 @@ export async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
   }
 
   // backfilled === false means no legacy account exists - proceed to create new user
-  console.log('[Supabase Auth] No legacy account found, will create new user')
+  import.meta.env.DEV && console.log('[Supabase Auth] No legacy account found, will create new user')
 
   // No existing user found - create new profile
-  console.log('[Supabase Auth] Creating new user profile...')
+  import.meta.env.DEV && console.log('[Supabase Auth] Creating new user profile...')
 
   const { data: newUser, error: createError } = await supabase
     .from('users')
@@ -215,7 +215,7 @@ export async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
     throw new Error('Failed to create user profile')
   }
 
-  console.log('[Supabase Auth] Created new user:', newUser.username)
+  import.meta.env.DEV && console.log('[Supabase Auth] Created new user:', newUser.username)
   return newUser as AppUser
 }
 
@@ -223,7 +223,7 @@ export async function fetchOrCreateAppUser(authUser: User): Promise<AppUser> {
  * Sign out the current user
  */
 export async function signOut(): Promise<void> {
-  console.log('[Supabase Auth] Signing out...')
+  import.meta.env.DEV && console.log('[Supabase Auth] Signing out...')
 
   const { error } = await supabase.auth.signOut()
 
@@ -232,7 +232,7 @@ export async function signOut(): Promise<void> {
     throw new Error('Failed to sign out')
   }
 
-  console.log('[Supabase Auth] Signed out successfully')
+  import.meta.env.DEV && console.log('[Supabase Auth] Signed out successfully')
 }
 
 /**

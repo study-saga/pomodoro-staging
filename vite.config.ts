@@ -20,39 +20,14 @@ export default defineConfig({
     // Only override for remote dev environments
   },
   build: {
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: process.env.NODE_ENV === 'production',
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info'],
-      },
-      format: {
-        comments: false,
-      },
-    },
-    chunkSizeWarningLimit: 600,
-    sourcemap: process.env.NODE_ENV !== 'production',
+    outDir: 'dist',
+    sourcemap: true,
+    // Ensure we don't have conflicting chunk names
     rollupOptions: {
       output: {
+        entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'framer-motion': ['framer-motion'],
-          'radix-ui': [
-            '@radix-ui/react-avatar',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-label',
-            '@radix-ui/react-popover',
-            '@radix-ui/react-scroll-area',
-            '@radix-ui/react-slider',
-            '@radix-ui/react-tabs',
-          ],
-          'supabase': ['@supabase/supabase-js'],
-          'music': ['react-howler', 'howler'],
-        },
       },
     },
   },

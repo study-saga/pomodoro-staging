@@ -1,8 +1,9 @@
 import type { EventBuff } from '../types';
 import { isBuffActiveOnDate } from '../config/buffActivationRules';
+import decemberFestivitiesIcon from '../assets/3.png';
 const buffElfSlingshot = '/assets/buffs/buff-elf-slingshot.svg';
-const buffWintersBlessing = '/assets/buffs/buff-winters-blessing.svg';
-const buffWinterWisdom = '/assets/buffs/buff-winter-wisdom.svg';
+// const buffWintersBlessing = '/assets/buffs/buff-winters-blessing.svg';
+// const buffWinterWisdom = '/assets/buffs/buff-winter-wisdom.svg';
 const buffWeekendWarrior = '/assets/buffs/buff-weekend-warrior.svg';
 
 /**
@@ -79,6 +80,7 @@ const buffWeekendWarrior = '/assets/buffs/buff-weekend-warrior.svg';
  * See docs/EVENT_BUFFS.md for full guide!
  */
 
+
 export const EVENT_BUFFS: EventBuff[] = [
   // ============================================
   // WEEKEND BUFFS (Always Active)
@@ -149,49 +151,51 @@ export const EVENT_BUFFS: EventBuff[] = [
   // ============================================
   // DECEMBER 2025 - JANUARY 2026 (Holiday Season)
   // ============================================
-  {
-    id: 'winters_blessing_dec_2025',
-    title: "Winter's Blessing",
-    description: '+30% XP - Elven winter magic (Elf only)',
-    emoji: '❄️',
-    iconSrc: buffWintersBlessing,
-    xpMultiplier: 1.30,
-    dateRule: {
-      type: 'dateRange',
-      startDate: '2025-12-10',
-      endDate: '2026-01-01',
-      yearlyRecur: false,
-    },
-  },
-  {
-    id: 'winter_wisdom_dec_2025',
-    title: 'Winter Wisdom',
-    description: '+15 XP per session - Study through winter (Human only)',
-    emoji: '📚',
-    iconSrc: buffWinterWisdom,
-    xpMultiplier: 1.0, // No multiplier
-    flatXPBonus: 15,
-    dateRule: {
-      type: 'dateRange',
-      startDate: '2025-12-10',
-      endDate: '2026-01-01',
-      yearlyRecur: false,
-    },
-  },
-
   // {
-  //   id: 'december_festivities',
-  //   title: 'December Cheer',
-  //   description: '+30% XP all month',
-  //   emoji: '🎄',
-  //   xpMultiplier: 1.3,
+  //   id: 'winters_blessing_dec_2025',
+  //   title: "Winter's Blessing",
+  //   description: '+30% XP - Elven winter magic (Elf only)',
+  //   emoji: '❄️',
+  //   iconSrc: buffWintersBlessing,
+  //   xpMultiplier: 1.30,
   //   dateRule: {
-  //     type: 'monthDay',
-  //     month: 12,
-  //     day: 16, // Adjusted to create Dec 1 - Dec 31 window
-  //     daysAround: 15, // Dec 1 - Dec 31
+  //     type: 'dateRange',
+  //     startDate: '2025-12-10',
+  //     endDate: '2026-01-01',
+  //     yearlyRecur: false,
   //   },
   // },
+  // {
+  //   id: 'winter_wisdom_dec_2025',
+  //   title: 'Winter Wisdom',
+  //   description: '+20 XP per session - Study through winter (Human only)',
+  //   emoji: '📚',
+  //   iconSrc: buffWinterWisdom,
+  //   xpMultiplier: 1.0, // No multiplier
+  //   flatXPBonus: 20,
+  //   dateRule: {
+  //     type: 'dateRange',
+  //     startDate: '2025-12-10',
+  //     endDate: '2026-01-01',
+  //     yearlyRecur: false,
+  //   },
+  // },
+
+  {
+    id: 'december_festivities',
+    title: 'December Festivities',
+    description: 'The holiday spirit grants +30% XP to everyone! 🎁✨',
+    emoji: '🎄',
+    iconSrc: decemberFestivitiesIcon,
+    xpMultiplier: 1.3,
+    dateRule: {
+      type: 'monthDay',
+      month: 12,
+      day: 16, // Adjusted to create Dec 1 - Dec 31 window
+      daysAround: 15, // Dec 1 - Dec 31
+    },
+    showCountdown: true,
+  },
 
   // Christmas Magic - commented out for now
   // {
@@ -356,4 +360,68 @@ export function getBuffStartDateText(buff: EventBuff): string {
   }
 
   return 'Soon';
+}
+
+/**
+ * HELPER: Get buff end date for countdowns
+ */
+export function getEventBuffEndDate(buff: EventBuff, currentDate: Date = new Date()): Date | null {
+  const rule = buff.dateRule;
+
+  if (rule.type === 'dateRange') {
+    // End date is inclusive, so we set it to end of that day
+    const endDate = new Date(rule.endDate + 'T23:59:59');
+    return endDate;
+  }
+
+  if (rule.type === 'specificDate') {
+    return new Date(rule.date + 'T23:59:59');
+  }
+
+  if (rule.type === 'monthDay') {
+    // Calculate current year's occurrence
+    const currentYear = currentDate.getFullYear();
+    const daysAround = rule.daysAround || 0;
+
+    // Target date for the main event
+    let targetDate = new Date(currentYear, rule.month - 1, rule.day, 23, 59, 59);
+
+    // If active in January but event was December, we might need adjustments,
+    // but typically monthDay is simple year-agnostic recurrence.
+    // However, if we are currently active, we want the end date relative to the CURRENT activation.
+
+    // Calculate start and end for CURRENT YEAR instance
+    let startDate = new Date(targetDate);
+    startDate.setDate(startDate.getDate() - daysAround);
+    startDate.setHours(0, 0, 0, 0);
+
+    let endDate = new Date(targetDate);
+    endDate.setDate(endDate.getDate() + daysAround);
+
+    // Check if we are currently within this window
+    if (currentDate >= startDate && currentDate <= endDate) {
+      return endDate;
+    }
+
+    // If not, maybe it's a year-boundary case? (e.g. Dec - Jan window)
+    // If we are in Jan, and event is Dec, check PREVIOUS year's event window
+    const prevYearTarget = new Date(currentYear - 1, rule.month - 1, rule.day, 23, 59, 59);
+    let prevYearEnd = new Date(prevYearTarget);
+    prevYearEnd.setDate(prevYearEnd.getDate() + daysAround);
+    let prevYearStart = new Date(prevYearTarget);
+    prevYearStart.setDate(prevYearStart.getDate() - daysAround);
+    prevYearStart.setHours(0, 0, 0, 0);
+
+    if (currentDate >= prevYearStart && currentDate <= prevYearEnd) {
+      return prevYearEnd;
+    }
+
+    // If we are in Dec, and event is Jan, check NEXT year's event window?
+    // (Less common for 'daysAround', usually handles single date)
+
+    // Fallback: Return current year's end date if closest
+    return endDate;
+  }
+
+  return null;
 }

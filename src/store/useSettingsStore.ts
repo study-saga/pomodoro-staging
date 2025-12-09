@@ -45,7 +45,11 @@ interface SettingsStore extends Settings {
   setBackground: (background: string) => void;
   backgroundMobile: string;
   backgroundDesktop: string;
+  setAutoHideUI: (enabled: boolean) => void;
+  autoHideUI: boolean;
   setPlaylist: (playlist: 'lofi' | 'synthwave') => void;
+  snowEnabled: boolean;
+  toggleSnow: () => void;
 
   // Level system actions
   addXP: (minutes: number) => void;
@@ -135,13 +139,18 @@ export const useSettingsStore = create<SettingsStore>()(
           backgroundDesktop: !isMobile ? validBackground : state.backgroundDesktop
         }));
       },
+      setAutoHideUI: (enabled) => set({ autoHideUI: enabled }),
       setPlaylist: (playlist) => set({ playlist }),
+
+      // Effects
+      snowEnabled: true,
+      toggleSnow: () => set((state) => ({ snowEnabled: !state.snowEnabled })),
 
       // Level system actions
       addXP: (minutes) => {
         const state = get();
 
-        console.log('[XP] addXP called with minutes:', minutes, 'Current level:', state.level, 'Current XP:', state.xp, 'Role:', state.levelPath);
+        import.meta.env.DEV && console.log('[XP] addXP called with minutes:', minutes, 'Current level:', state.level, 'Current XP:', state.xp, 'Role:', state.levelPath);
 
         // Check if pomodoro boost is active and not expired
         let boostMultiplier = 1;
@@ -151,12 +160,12 @@ export const useSettingsStore = create<SettingsStore>()(
           if (Date.now() > state.pomodoroBoostExpiresAt) {
             // Boost has expired
             boostStillActive = false;
-            console.log('[XP] Pomodoro boost expired');
+            import.meta.env.DEV && console.log('[XP] Pomodoro boost expired');
           } else {
             // Boost is still active - use the actual multiplier from state
             boostMultiplier = state.pomodoroBoostMultiplier || 1.25;
             const boostPercent = Math.round((boostMultiplier - 1) * 100);
-            console.log(`[XP] Applying +${boostPercent}% XP boost!`);
+            import.meta.env.DEV && console.log(`[XP] Applying +${boostPercent}% XP boost!`);
           }
         }
 
@@ -172,7 +181,7 @@ export const useSettingsStore = create<SettingsStore>()(
 
         // Log role bonuses
         if (roleResult.bonuses.length > 0) {
-          console.log('[XP] Role buffs applied:', roleResult.bonuses.join(', '));
+          import.meta.env.DEV && console.log('[XP] Role buffs applied:', roleResult.bonuses.join(', '));
         }
 
         // Get all active event buffs (date-based)
@@ -195,20 +204,27 @@ export const useSettingsStore = create<SettingsStore>()(
         }, 1);
 
         // Calculate flat XP bonus from active buffs
-        const flatXPBonus = roleFilteredBuffs.reduce((total, buff) => {
-          return total + (buff.flatXPBonus || 0);
-        }, 0);
+        // ANTI-ABUSE: Only award flat bonus if session is at least 15 minutes
+        let flatXPBonus = 0;
+        if (minutes >= 15) {
+          flatXPBonus = roleFilteredBuffs.reduce((total, buff) => {
+            return total + (buff.flatXPBonus || 0);
+          }, 0);
+        } else if (roleFilteredBuffs.some(b => b.flatXPBonus && b.flatXPBonus > 0)) {
+        } else if (roleFilteredBuffs.some(b => b.flatXPBonus && b.flatXPBonus > 0)) {
+          import.meta.env.DEV && console.log('[XP] Session too short (min 15m) - Flat XP bonus skipped');
+        }
 
         if (eventBuffMultiplier > 1 && roleFilteredBuffs.length > 0) {
-          console.log(
+          import.meta.env.DEV && console.log(
             '[XP] Event buffs active:',
             roleFilteredBuffs.map((b) => `${b.title} (x${b.xpMultiplier})`).join(', ')
           );
-          console.log('[XP] Stacked event buff multiplier:', eventBuffMultiplier.toFixed(3));
+          import.meta.env.DEV && console.log('[XP] Stacked event buff multiplier:', eventBuffMultiplier.toFixed(3));
         }
 
         if (flatXPBonus > 0) {
-          console.log(`[XP] Flat XP bonus from event buffs: +${flatXPBonus}`);
+          import.meta.env.DEV && console.log(`[XP] Flat XP bonus from event buffs: +${flatXPBonus}`);
         }
 
         // Calculate final XP with all multipliers stacked
@@ -220,20 +236,20 @@ export const useSettingsStore = create<SettingsStore>()(
         let newLevel = state.level;
         let newPrestigeLevel = state.prestigeLevel;
 
-        console.log('[XP] XP gained:', xpGained, 'New XP total:', newXP, 'XP needed for next level:', getXPNeeded(newLevel));
+        import.meta.env.DEV && console.log('[XP] XP gained:', xpGained, 'New XP total:', newXP, 'XP needed for next level:', getXPNeeded(newLevel));
 
         // Check for level ups
         while (newLevel < MAX_LEVEL && newXP >= getXPNeeded(newLevel)) {
           newXP -= getXPNeeded(newLevel);
           newLevel++;
-          console.log('[XP] 🎉 LEVEL UP! New level:', newLevel, 'Remaining XP:', newXP);
+          import.meta.env.DEV && console.log('[XP] 🎉 LEVEL UP! New level:', newLevel, 'Remaining XP:', newXP);
         }
 
         // Check for prestige
         if (newLevel >= MAX_LEVEL && newXP > 0) {
           newPrestigeLevel++;
           newLevel = 1;
-          console.log('[XP] ⭐ PRESTIGE! New prestige level:', newPrestigeLevel);
+          import.meta.env.DEV && console.log('[XP] ⭐ PRESTIGE! New prestige level:', newPrestigeLevel);
           // XP continues to accumulate
         }
 
@@ -269,10 +285,10 @@ export const useSettingsStore = create<SettingsStore>()(
         if (state.levelPath === 'human') {
           if (criticalSuccess) {
             newConsecutiveCrits = Math.max(0, newConsecutiveCrits) + 1;
-            console.log('[XP] Consecutive crits:', newConsecutiveCrits);
+            import.meta.env.DEV && console.log('[XP] Consecutive crits:', newConsecutiveCrits);
           } else {
             newConsecutiveCrits = Math.min(0, newConsecutiveCrits) - 1;
-            console.log('[XP] Consecutive fails:', Math.abs(newConsecutiveCrits));
+            import.meta.env.DEV && console.log('[XP] Consecutive fails:', Math.abs(newConsecutiveCrits));
           }
 
           // Comeback buff: use and decrement
@@ -280,13 +296,13 @@ export const useSettingsStore = create<SettingsStore>()(
             newComebackPomodoros--;
             if (newComebackPomodoros === 0) {
               newComebackActive = false;
-              console.log('[XP] Comeback buff expired');
+              import.meta.env.DEV && console.log('[XP] Comeback buff expired');
             }
           }
         }
 
         // Update local store first (optimistic update for instant UI feedback)
-        console.log('[XP] Updating state - Old level:', state.level, '→ New level:', newLevel, '| Old XP:', state.xp, '→ New XP:', newXP);
+        import.meta.env.DEV && console.log('[XP] Updating state - Old level:', state.level, '→ New level:', newLevel, '| Old XP:', state.xp, '→ New XP:', newXP);
         set({
           xp: newXP,
           level: newLevel,
@@ -302,7 +318,7 @@ export const useSettingsStore = create<SettingsStore>()(
           comebackActive: newComebackActive,
           comebackPomodoros: newComebackPomodoros,
         });
-        console.log('[XP] State updated successfully');
+        import.meta.env.DEV && console.log('[XP] State updated successfully');
 
         // Sync to database in background (fire and forget)
         // This ensures XP persists across page refreshes
@@ -319,14 +335,14 @@ export const useSettingsStore = create<SettingsStore>()(
             }
 
             // Save pomodoro to database (this atomically updates XP and stats)
-            // RPC function handles both web and Discord auth modes
-            await saveCompletedPomodoro(userId, discordId, {
+            // RPC function validates auth.uid() session
+            await saveCompletedPomodoro(userId, {
               duration_minutes: minutes,
               xp_earned: xpGained,
               critical_success: criticalSuccess,
             });
 
-            console.log('[addXP] ✓ XP synced to database');
+            import.meta.env.DEV && console.log('[addXP] ✓ XP synced to database');
           } catch (error) {
             console.error('[addXP] Failed to sync XP to database:', error);
             // Non-fatal - local XP is already saved
@@ -361,7 +377,7 @@ export const useSettingsStore = create<SettingsStore>()(
         });
 
         if (skipSync) {
-          console.log(`[addDailyGiftXP] Skipping DB sync (handled externally)`);
+          import.meta.env.DEV && console.log(`[addDailyGiftXP] Skipping DB sync (handled externally)`);
           return;
         }
 
@@ -382,7 +398,7 @@ export const useSettingsStore = create<SettingsStore>()(
             // RPC function handles both web and Discord auth modes
             await incrementUserXP(userId, xpAmount);
 
-            console.log(`[addDailyGiftXP] ✓ ${xpAmount} XP synced to database`);
+            import.meta.env.DEV && console.log(`[addDailyGiftXP] ✓ ${xpAmount} XP synced to database`);
           } catch (error) {
             console.error('[addDailyGiftXP] Failed to sync XP to database:', error);
             // Non-fatal - local XP is already saved
@@ -449,9 +465,9 @@ export const useSettingsStore = create<SettingsStore>()(
 
       // Milestone system actions
       unlockMilestoneReward: (milestone) => {
-        console.log(`🎉 Milestone Unlocked: ${milestone.title}`);
-        console.log(`📝 ${milestone.description}`);
-        console.log(`🎁 Reward: ${milestone.rewardType} - ${milestone.unlockId}`);
+        import.meta.env.DEV && console.log(`🎉 Milestone Unlocked: ${milestone.title}`);
+        import.meta.env.DEV && console.log(`📝 ${milestone.description}`);
+        import.meta.env.DEV && console.log(`🎁 Reward: ${milestone.rewardType} - ${milestone.unlockId}`);
 
         // TODO: In the future, this will unlock actual backgrounds, themes, or badges
         // For now, just logging to console
@@ -489,7 +505,7 @@ export const useSettingsStore = create<SettingsStore>()(
 
         // First time user (no last login date)
         if (!state.lastLoginDate) {
-          console.log('[trackLogin] First time user - setting day 1');
+          import.meta.env.DEV && console.log('[trackLogin] First time user - setting day 1');
           set({
             lastLoginDate: today,
             consecutiveLoginDays: 1,
@@ -507,7 +523,7 @@ export const useSettingsStore = create<SettingsStore>()(
         if (state.lastLoginDate === today) {
           // Same day, check if gift was already claimed today
           const giftAlreadyClaimed = state.lastDailyGiftDate === today;
-          console.log('[trackLogin] Same day - lastDailyGiftDate:', state.lastDailyGiftDate, 'today:', today, 'claimed:', giftAlreadyClaimed);
+          import.meta.env.DEV && console.log('[trackLogin] Same day - lastDailyGiftDate:', state.lastDailyGiftDate, 'today:', today, 'claimed:', giftAlreadyClaimed);
           return {
             isNewDay: false,
             currentDay: state.consecutiveLoginDays,
@@ -534,7 +550,7 @@ export const useSettingsStore = create<SettingsStore>()(
         });
 
         // Gift hasn't been claimed today (it's a new day)
-        console.log('[trackLogin] New day - consecutiveLoginDays:', newConsecutiveDays, 'giftAlreadyClaimed: false');
+        import.meta.env.DEV && console.log('[trackLogin] New day - consecutiveLoginDays:', newConsecutiveDays, 'giftAlreadyClaimed: false');
         return {
           isNewDay: true,
           currentDay: newConsecutiveDays,
@@ -545,7 +561,7 @@ export const useSettingsStore = create<SettingsStore>()(
       markDailyGiftClaimed: () => {
         const today = new Date().toISOString().split('T')[0];
         set({ lastDailyGiftDate: today });
-        console.log('[DailyGift] Marked daily gift as claimed for', today);
+        import.meta.env.DEV && console.log('[DailyGift] Marked daily gift as claimed for', today);
       },
 
       // Computed

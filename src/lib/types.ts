@@ -80,6 +80,14 @@ export interface AppUser {
   // Role change tracking (CLIENT-CONTROLLED - cooldown enforcement)
   last_role_change_date: string | null  // ISO date (YYYY-MM-DD)
 
+  // Timezone settings (SERVER-CONTROLLED with 14-day cooldown)
+  timezone?: string
+  weekend_days?: number[]
+  pending_timezone?: string | null
+  pending_timezone_applies_at?: string | null
+  timezone_updated_at?: string | null
+  last_timezone_change_at?: string | null
+
   // Timestamps
   last_login: string | null
   created_at: string

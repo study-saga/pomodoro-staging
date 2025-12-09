@@ -18,7 +18,7 @@ A Pomodoro timer application built as a Discord Activity, featuring study tracki
 This is a feature-rich Pomodoro timer that runs as a Discord Activity, allowing friends to study together in voice channels. The app includes:
 
 - **Pomodoro Timer**: Custom durations (1-120 min), auto-start options
-- **XP & Leveling**: 2 XP/min (pomodoro), 1 XP/min (breaks), max level 50
+- **XP & Leveling**: 2 XP/min (pomodoro), 1 XP/min (breaks), max level 50. Auto-calculates via trigger when XP exact threshold met
 - **Event Buff System**: Extensible JSONB-based buffs with additive stacking (see [BUFF_SYSTEM.md](BUFF_SYSTEM.md))
 - **Daily Gifts**: Random XP rewards (10-100) for logging in, day 10 = +25% boost (24hrs)
 - **Break XP Sync**: Breaks award 1 XP/min synced to DB with +25% boost support
@@ -123,8 +123,34 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
 
 ## Version History
 
-**Last Updated**: 2025-11-29
-**Version**: 2.3.5 (Role-Based Prestige Stars)
+**Last Updated**: 2025-12-02
+**Version**: 2.4.0 (Production DB Merge - Buff System & Chat)
+
+**Major Changes in 2.4.0** (2025-12-02):
+- **Production Database Migration**: Merged dev schema with production (btjhclvebbtjxmdnprwz)
+  - **Phase 1 - Core Schema (CRITICAL)**:
+    - Buff system: Added `active_buffs` JSONB column + 8 functions (get, set, remove, clear) + GIN index
+    - Prestige stars: Added `prestige_stars` JSONB column + trigger + backfilled 1 user with P2
+    - Discord buffs: Added 4 Discord-specific buff functions (_discord suffix)
+    - Migration: `20251121000000_add_buff_system.sql`, `20251129000000_add_prestige_stars.sql`, `20251203000000_add_discord_buff_functions.sql`
+  - **Phase 2 - Chat System**:
+    - Tables: `chat_messages`, `chat_reports` with RLS policies
+    - Functions: `cleanup_old_chat_messages()`, `handle_ban_auto_delete()` trigger
+    - Edge Functions: `quick-ban` (HMAC-signed ban links), `report-message` (Discord webhook integration)
+    - Updated constraint: chat message length 500→200 chars
+    - Migration: `20251129160000_secure_chat_messages.sql`, `20251130000000_chat_reports.sql`, `20251130010000_auto_delete_banned_messages.sql`, `20251202175800_update_chat_length.sql`
+  - **Hotfixes Applied**:
+    - Fixed chat RLS INSERT: Discord users can now send messages (removed auth session requirement)
+    - Fixed chat RLS SELECT: Discord users can now read chat history (allow anon role)
+    - Fixed chat RLS UPDATE: Admins/moderators can delete messages (inline role check)
+    - Fixed Sentry CSP: Proxy Sentry via Discord tunnel (bypass CSP without disabling)
+    - Migrations: `fix_chat_rls_for_discord`, `fix_chat_select_for_discord`, `fix_chat_update_inline_check`
+    - Frontend: Added `/sentry` URL mapping to route through Discord proxy
+    - Added helper functions: `get_my_role()`, `get_my_user_id()` (for future use)
+  - **Status**: Production now has 9 migrations applied (was 4), all new features enabled
+  - **Users impacted**: 2833 production users (161 joined today), 0 data loss, all migrations additive
+  - **Security**: RLS enabled on all new tables, function search_path warnings noted (non-critical)
+  - **Performance**: Some unused indexes (expected), unindexed foreign keys (to optimize), RLS init plan warnings (to fix)
 
 **Major Changes in 2.3.5**:
 - **Implemented**: Role-specific prestige star system with tiered progression

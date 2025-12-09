@@ -90,7 +90,7 @@ export function MessageInput({
 
   const charCount = content.length;
   const showCharCount = charCount > 400;
-  const isOverLimit = charCount > 500;
+  const isOverLimit = charCount > 200;
 
   return (
     <div className={className}>
@@ -131,7 +131,7 @@ export function MessageInput({
               className={`absolute bottom-2.5 right-3 text-[10px] ${isOverLimit ? 'text-red-400' : 'text-gray-500'
                 }`}
             >
-              {charCount}/500
+              {charCount}/200
             </div>
           )}
         </div>
