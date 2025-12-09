@@ -32,3 +32,9 @@ DEV_IDEAS.md
 *.sw?
 *.mcp.json
 .mcp.json
+
+# Testing
+playwright-report/
+test-results/
+coverage/
+junit.xml
