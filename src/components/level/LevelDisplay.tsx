@@ -12,6 +12,7 @@ import {
   getXPNeeded,
 } from '../../data/levels';
 import { getAvatarUrl } from '../../lib/chatService';
+import santaHat from '../../assets/hat.png';
 const buffElf = '/assets/buffs/buff-elf.svg';
 const buffHuman = '/assets/buffs/buff-human.svg';
 const buffBoost = '/assets/buffs/buff-boost.svg';
@@ -385,10 +386,29 @@ export const LevelDisplay = memo(function LevelDisplay() {
                   <p className={`text-gray-300 ${isMobile ? 'text-xs' : isTablet ? 'text-sm' : 'text-sm'}`}>{levelTitle}</p>
                 </div>
               </div>
-              <Avatar className={isMobile ? 'h-8 w-8' : isTablet ? 'h-9 w-9' : 'h-10 w-10'}>
-                {appUser && <AvatarImage src={getAvatarUrl(appUser) || undefined} />}
-                <AvatarFallback>{username?.slice(0, 2).toUpperCase() || '??'}</AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className={isMobile ? 'h-8 w-8' : isTablet ? 'h-9 w-9' : 'h-10 w-10'}>
+                  {appUser && <AvatarImage src={getAvatarUrl(appUser) || undefined} />}
+                  <AvatarFallback>{username?.slice(0, 2).toUpperCase() || '??'}</AvatarFallback>
+                </Avatar>
+                {/* Santa Hat Overlay */}
+                <img
+                  src={santaHat}
+                  alt="Santa Hat"
+                  className={`absolute pointer-events-none z-10 
+                    ${isMobile
+                      ? '-top-3 -right-3 w-6'
+                      : isTablet
+                        ? '-top-3 -right-3 w-6'
+                        : '-top-3 -right-3 w-6'
+                    }
+                  `}
+                  style={{
+                    transform: 'rotate(43deg)',
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+                  }}
+                />
+              </div>
             </div>
 
             {/* XP Progress Bar */}
