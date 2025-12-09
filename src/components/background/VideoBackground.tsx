@@ -15,11 +15,13 @@ export function VideoBackground() {
     const { backgroundMobile, backgroundDesktop, setBackground } = useSettingsStore.getState();
 
     // Determine which background we SHOULD be showing
-    const targetBackground = isMobile ? backgroundMobile : backgroundDesktop;
+    // Use mobile preference if we are on a mobile device OR in portrait mode (tablet/desktop vertical)
+    const shouldUseMobilePref = isMobile || isPortrait;
+    const targetBackground = shouldUseMobilePref ? backgroundMobile : backgroundDesktop;
 
     // If current background doesn't match target (and target exists), switch it
     if (targetBackground && background !== targetBackground) {
-      import.meta.env.DEV && console.log(`[VideoBackground] Switching to ${isMobile ? 'mobile' : 'desktop'} preference: ${targetBackground}`);
+      import.meta.env.DEV && console.log(`[VideoBackground] Switching to ${shouldUseMobilePref ? 'mobile' : 'desktop'} preference: ${targetBackground}`);
       setBackground(targetBackground);
       return;
     }
