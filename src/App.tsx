@@ -14,6 +14,7 @@ import DiscordButton from './components/DiscordButton';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { AdminActionHandler } from './components/admin/AdminActionHandler';
 import { ChunkLoadErrorBoundary } from './components/ChunkLoadErrorBoundary';
+import { SnowOverlay } from './components/effects/SnowOverlay';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useBuffActivation } from './hooks/useBuffActivation';
 import { useSettingsStore } from './store/useSettingsStore';
@@ -224,6 +225,9 @@ function AppContent() {
     <div className="relative h-screen overflow-hidden flex flex-col">
       {/* Video Background */}
       <VideoBackground />
+
+      {/* Snow Effect */}
+      <SnowOverlay />
 
       {/* Level Display (Top Left) */}
       <LevelDisplay />
