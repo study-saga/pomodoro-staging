@@ -8,7 +8,6 @@ import { AmbientSoundsPlayer } from './components/music/AmbientSoundsPlayer';
 import { LevelDisplay } from './components/level/LevelDisplay';
 import { SettingsPopover } from './components/settings/SettingsPopover';
 import { OnlinePresenceCounter } from './components/presence/OnlinePresenceCounter';
-import { ActiveBoostIndicator } from './components/buffs/ActiveBoostIndicator';
 import { LoginScreen } from './components/auth/LoginScreen';
 import DiscordButton from './components/DiscordButton';
 import { LoadingSpinner } from './components/LoadingSpinner';
@@ -277,9 +276,6 @@ function AppContent() {
           />
         </Suspense>
       </ChunkLoadErrorBoundary>
-
-      {/* Active Boost Indicator */}
-      {!isPIPMode && <ActiveBoostIndicator />}
 
       {/* Top Right Buttons - Discord & Settings */}
       {!isPIPMode && (
