@@ -66,6 +66,9 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "slide-up": "slide-up 0.4s ease-out",
       },
+      screens: {
+        'xs': '375px',
+      },
     },
   },
   plugins: [],

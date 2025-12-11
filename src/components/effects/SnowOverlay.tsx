@@ -12,8 +12,8 @@ export const SnowOverlay = () => {
         <div
             style={{
                 position: 'fixed',
-                width: '100vw',
-                height: '100vh',
+                width: '100%',
+                height: '100%',
                 zIndex: 1, // Above background (-10) but behind Chat (40) and other controls
                 pointerEvents: 'none', // Allow clicking through
             }}

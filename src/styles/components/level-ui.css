@@ -1,0 +1,89 @@
+.level-ui {
+    width: var(--level-ui-width);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-sm);
+    padding: var(--padding);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    min-height: auto;
+    transition: all var(--duration-normal) var(--ease);
+}
+
+.level-ui__title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.level-ui__stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--text-sm);
+    padding: var(--padding-sm) 0;
+    border-bottom: 1px solid var(--color-bg-tertiary);
+}
+
+.level-ui__stat:last-child {
+    border-bottom: none;
+}
+
+.level-ui__value {
+    font-weight: 600;
+    color: var(--color-accent-primary);
+}
+
+.level-ui__progress {
+    width: 100%;
+    height: clamp(4px, 0.6vw, 8px);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-top: var(--gap-xs);
+}
+
+.level-ui__progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-accent-secondary), var(--color-accent-primary));
+    width: 45%;
+    transition: width var(--duration-normal) var(--ease);
+}
+
+/* Responsive adjustments */
+@container app (max-width: 900px) {
+    .level-ui {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        gap: var(--gap);
+        align-items: center;
+    }
+
+    .level-ui__stat {
+        flex: 1;
+        flex-direction: column;
+        gap: var(--gap-xs);
+        border-bottom: none;
+        padding: 0;
+        align-items: flex-start;
+    }
+}
+
+@container app (max-width: 480px) {
+    .level-ui {
+        flex-direction: column;
+        width: 100%;
+        padding: var(--padding-sm);
+        align-items: stretch;
+    }
+
+    .level-ui__stat {
+        flex-direction: row;
+        align-items: center;
+        padding: var(--padding-sm) 0;
+        border-bottom: 1px solid var(--color-bg-tertiary);
+    }
+}

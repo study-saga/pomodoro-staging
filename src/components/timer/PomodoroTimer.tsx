@@ -8,6 +8,8 @@ import type { TimerType } from '../../types';
 
 import { useSmartPIPMode } from '../../hooks/useSmartPIPMode';
 
+import { useDeviceType } from '../../hooks/useDeviceType';
+
 const XP_PER_MINUTE_BREAK = 1;
 
 export const PomodoroTimer = memo(function PomodoroTimer() {
@@ -17,6 +19,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
   const [isFlashing, setIsFlashing] = useState(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isPIPMode = useSmartPIPMode(750);
+  const { isMobile, isTablet } = useDeviceType();
 
   // Ref for audio to prevent pool exhaustion and allow pre-loading
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -481,7 +484,7 @@ export const PomodoroTimer = memo(function PomodoroTimer() {
       <div
         className={`font-bold text-white tracking-wider transition-all duration-300 ${isFlashing ? 'scale-110 text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]' : ''
           }`}
-        style={{ fontSize: 'clamp(3rem, 18vmin, 9rem)' }}
+        style={{ fontSize: isPIPMode ? '3rem' : (isMobile || isTablet ? '18vmin' : '12rem') }}
         role="timer"
         aria-live="off"
         aria-label={`${formatTime(minutes, seconds)} remaining`}

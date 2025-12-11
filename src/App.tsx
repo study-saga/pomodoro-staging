@@ -26,6 +26,10 @@ import { useSmartPIPMode } from './hooks/useSmartPIPMode';
 import { useDeviceType } from './hooks/useDeviceType';
 
 
+
+import { ScaleWrapper } from './components/layout/ScaleWrapper';
+
+
 function AppContent() {
   const { authenticated, loading, error, appUser } = useAuth();
   const settingsSyncComplete = useSettingsStore((state) => state.settingsSyncComplete);
@@ -224,87 +228,89 @@ function AppContent() {
 
   // Authenticated - show main app
   return (
-    <div className="relative h-screen overflow-hidden flex flex-col">
-      {/* Video Background */}
-      <VideoBackground />
+    <ScaleWrapper>
+      <div className="relative h-screen overflow-hidden flex flex-col">
+        {/* Video Background */}
+        <VideoBackground />
 
-      {/* Snow Effect */}
-      <SnowOverlay />
+        {/* Snow Effect */}
+        <SnowOverlay />
 
-      {/* Level Display (Top Left) */}
-      <LevelDisplay />
+        {/* Level Display (Top Left) */}
+        <LevelDisplay />
 
-      {/* Online Presence Counter (Top Right, below settings button) */}
-      {!isPIPMode && (
-        <div className="fixed top-20 right-4 z-10">
-          <OnlinePresenceCounter />
-        </div>
-      )}
-
-      {/* Main Content - Centered Timer */}
-      <div className="flex-1 flex items-center justify-center px-4">
-        <PomodoroTimer />
-      </div>
-
-      {/* Music Player (Bottom) - Always mounted, UI hidden in PiP */}
-      <Suspense fallback={<LoadingSpinner />}>
-        <MusicPlayer
-          playing={musicPlaying}
-          setPlaying={setMusicPlaying}
-          isPIPMode={isPIPMode}
-        />
-      </Suspense>
-
-      {/* Ambient Sounds Player (Hidden) - Always playing, even in PiP */}
-      <AmbientSoundsPlayer musicPlaying={musicPlaying} />
-
-      {/* Daily Gift Grid */}
-      <ChunkLoadErrorBoundary
-        fallback={
-          <div className="flex items-center justify-center p-8">
-            <div className="text-gray-400">Failed to load rewards calendar</div>
+        {/* Online Presence Counter (Top Right, below settings button) */}
+        {!isPIPMode && (
+          <div className="fixed top-20 right-4 z-10">
+            <OnlinePresenceCounter />
           </div>
-        }
-        onError={(error) => {
-          console.error('[DailyGiftGrid] Chunk load failed:', error);
-        }}
-      >
+        )}
+
+        {/* Main Content - Centered Timer */}
+        <div className="flex-1 flex items-center justify-center px-4">
+          <PomodoroTimer />
+        </div>
+
+        {/* Music Player (Bottom) - Always mounted, UI hidden in PiP */}
         <Suspense fallback={<LoadingSpinner />}>
-          <DailyGiftGrid
-            show={showDailyGift}
-            onClose={() => setShowDailyGift(false)}
+          <MusicPlayer
+            playing={musicPlaying}
+            setPlaying={setMusicPlaying}
+            isPIPMode={isPIPMode}
           />
         </Suspense>
-      </ChunkLoadErrorBoundary>
 
-      {/* Top Right Buttons - Discord & Settings */}
-      {!isPIPMode && (
-        <div className="fixed top-4 right-4 z-[60] flex items-center gap-2">
-          {/* Sentry Test Button */}
+        {/* Ambient Sounds Player (Hidden) - Always playing, even in PiP */}
+        <AmbientSoundsPlayer musicPlaying={musicPlaying} />
 
-          {!isMobile && <SnowToggle />}
-          <DiscordButton />
-          <SettingsPopover />
-        </div>
-      )}
-
-      {/* Chat Container (Bottom Left) */}
-      {!isPIPMode && (
+        {/* Daily Gift Grid */}
         <ChunkLoadErrorBoundary
-          onError={(error) => console.error('[ChatContainer] Chunk load failed:', error)}
+          fallback={
+            <div className="flex items-center justify-center p-8">
+              <div className="text-gray-400">Failed to load rewards calendar</div>
+            </div>
+          }
+          onError={(error) => {
+            console.error('[DailyGiftGrid] Chunk load failed:', error);
+          }}
         >
           <Suspense fallback={<LoadingSpinner />}>
-            <ChatContainer />
+            <DailyGiftGrid
+              show={showDailyGift}
+              onClose={() => setShowDailyGift(false)}
+            />
           </Suspense>
         </ChunkLoadErrorBoundary>
-      )}
 
-      {/* Toaster for notifications */}
-      <Toaster position="top-center" />
+        {/* Top Right Buttons - Discord & Settings */}
+        {!isPIPMode && (
+          <div className="fixed top-4 right-4 z-[60] flex items-center gap-2">
+            {/* Sentry Test Button */}
 
-      {/* Admin Action Handler (URL params) */}
-      <AdminActionHandler />
-    </div>
+            {!isMobile && <SnowToggle />}
+            <DiscordButton />
+            <SettingsPopover />
+          </div>
+        )}
+
+        {/* Chat Container (Bottom Left) */}
+        {!isPIPMode && (
+          <ChunkLoadErrorBoundary
+            onError={(error) => console.error('[ChatContainer] Chunk load failed:', error)}
+          >
+            <Suspense fallback={<LoadingSpinner />}>
+              <ChatContainer />
+            </Suspense>
+          </ChunkLoadErrorBoundary>
+        )}
+
+        {/* Toaster for notifications */}
+        <Toaster position="top-center" />
+
+        {/* Admin Action Handler (URL params) */}
+        <AdminActionHandler />
+      </div>
+    </ScaleWrapper>
   );
 }
 
