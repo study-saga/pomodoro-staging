@@ -3,7 +3,6 @@ import { Trash2, Shield, MoreVertical, AlertTriangle } from 'lucide-react';
 import { formatMessageTime, getAvatarUrl, hasMention } from '../../lib/chatService';
 import type { AppUser } from '../../lib/types';
 import type { ChatMessage as ChatMessageType } from '../../types/chat';
-import { HeartButton } from './HeartButton';
 
 interface ChatMessageProps {
     message: ChatMessageType;
