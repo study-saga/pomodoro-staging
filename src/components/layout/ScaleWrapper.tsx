@@ -34,6 +34,7 @@ export function ScaleWrapper({ children }: ScaleWrapperProps) {
             className="overflow-hidden"
         >
             {children}
+            <div id="scaled-portal-root" />
         </div>
     );
 }

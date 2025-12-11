@@ -53,17 +53,21 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     margin: 0;
     min-width: 320px;
     min-height: 100vh;
+    overflow: hidden;
   }
 }
+
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -73,7 +77,8 @@
 /* Mobile responsive typography */
 @media (max-width: 768px) {
   html {
-    font-size: 18px; /* Increase from 16px default */
+    font-size: 18px;
+    /* Increase from 16px default */
   }
 
   /* Minimum touch target sizes */
