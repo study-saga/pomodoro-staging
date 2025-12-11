@@ -89,8 +89,8 @@ export const ChatMessage = memo(({
 
             {/* Actions Button (Delete/Report/Heart) */}
             {!isDeleted && (
-                <div className="flex items-center gap-1.5">
-                    {/* Heart Button - always visible */}
+                <div className={`flex items-center gap-1.5 ${isHearted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                    {/* Heart Button with count */}
                     {onToggleReaction && (
                         <div className="flex items-center gap-0.5">
                             <button
@@ -126,8 +126,6 @@ export const ChatMessage = memo(({
                         </div>
                     )}
 
-                    {/* Other action buttons - show on hover */}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {/* Context Menu Button (For everyone on other users) */}
                     {!isMe && (
                         <button
@@ -153,17 +151,16 @@ export const ChatMessage = memo(({
                         </button>
                     )}
 
-                        {/* Delete Button (Own messages or Mods/Admins) */}
-                        {(isMe || userRole === 'moderator' || userRole === 'admin') && (
-                            <button
-                                onClick={() => onDelete(message.id)}
-                                className="p-1 text-gray-500 hover:text-red-400 transition-colors"
-                                title="Delete message"
-                            >
-                                <Trash2 size={14} />
-                            </button>
-                        )}
-                    </div>
+                    {/* Delete Button (Own messages or Mods/Admins) */}
+                    {(isMe || userRole === 'moderator' || userRole === 'admin') && (
+                        <button
+                            onClick={() => onDelete(message.id)}
+                            className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                            title="Delete message"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    )}
                 </div>
             )}
         </div>
