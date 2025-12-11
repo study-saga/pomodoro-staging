@@ -269,6 +269,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // Fetch reactions for these messages
+      const messageIds = data.map((msg: any) => msg.id);
+      const { data: reactionsData } = await supabase
+        .from('message_reactions')
+        .select('message_id, hearts, hearted_by')
+        .in('message_id', messageIds);
+
+      // Create reactions map
+      const reactionsMap = new Map<string, { hearts: number; hearted_by: string[] }>();
+      reactionsData?.forEach((reaction) => {
+        reactionsMap.set(reaction.message_id, {
+          hearts: reaction.hearts,
+          hearted_by: reaction.hearted_by || []
+        });
+      });
+
       // Transform to ChatMessage type
       const messages: ChatMessage[] = data.map((msg: any) => ({
         id: msg.id,
@@ -281,7 +297,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           avatar: msg.users?.avatar || null,
           discord_id: msg.users?.discord_id,
           role: msg.users?.role || 'user'
-        }
+        },
+        reactions: reactionsMap.get(msg.id)
       })).reverse(); // Reverse to show oldest first (top) -> newest (bottom)
 
       setGlobalMessages(messages);
@@ -325,6 +342,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        // Fetch reactions for these messages
+        const messageIds = data.map((msg: any) => msg.id);
+        const { data: reactionsData } = await supabase
+          .from('message_reactions')
+          .select('message_id, hearts, hearted_by')
+          .in('message_id', messageIds);
+
+        // Create reactions map
+        const reactionsMap = new Map<string, { hearts: number; hearted_by: string[] }>();
+        reactionsData?.forEach((reaction) => {
+          reactionsMap.set(reaction.message_id, {
+            hearts: reaction.hearts,
+            hearted_by: reaction.hearted_by || []
+          });
+        });
+
         // Transform to ChatMessage type
         const messages: ChatMessage[] = data.map((msg: any) => ({
           id: msg.id,
@@ -337,7 +370,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             avatar: msg.users?.avatar || null,
             discord_id: msg.users?.discord_id,
             role: msg.users?.role || 'user'
-          }
+          },
+          reactions: reactionsMap.get(msg.id)
         })).reverse(); // Reverse to show oldest first
 
         setGlobalMessages(messages);
@@ -464,6 +498,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             const deletedId = payload.old.id;
             if (deletedId) {
               setGlobalMessages(prev => prev.filter(msg => msg.id !== deletedId));
+            }
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reactions' }, (payload) => {
+            import.meta.env.DEV && console.log('[Chat] Received REACTION update:', payload);
+            const reactionData = payload.new as any;
+            if (reactionData) {
+              setGlobalMessages(prev => prev.map(msg =>
+                msg.id === reactionData.message_id
+                  ? {
+                      ...msg,
+                      reactions: {
+                        hearts: reactionData.hearts,
+                        hearted_by: reactionData.hearted_by || []
+                      }
+                    }
+                  : msg
+              ));
             }
           })
           .on('presence', { event: 'sync' }, () => {

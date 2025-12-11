@@ -12,6 +12,10 @@ export interface ChatMessage {
   content: string;
   timestamp: number;
   deleted?: boolean;
+  reactions?: {
+    hearts: number;
+    hearted_by: string[]; // user IDs who hearted this message
+  };
 }
 
 export interface PrivateMessage {

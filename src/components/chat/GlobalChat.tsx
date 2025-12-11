@@ -5,6 +5,7 @@ import type { AppUser } from '../../lib/types';
 import { ChatMessage } from './ChatMessage';
 import { ReportModal } from './ReportModal';
 import { ChatContextMenu } from './ChatContextMenu';
+import { toggleMessageReaction } from '../../lib/chatService';
 
 interface GlobalChatMessagesProps {
   currentUser: AppUser;
@@ -131,6 +132,31 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
     }
   };
 
+  // Rate limiting for reactions (prevent spam)
+  const reactionCooldownRef = useRef<Map<string, number>>(new Map());
+  const REACTION_COOLDOWN_MS = 500; // 500ms between toggles per message
+
+  const handleToggleReaction = useCallback(async (messageId: string) => {
+    // Check cooldown for this specific message
+    const now = Date.now();
+    const lastToggle = reactionCooldownRef.current.get(messageId) || 0;
+
+    if (now - lastToggle < REACTION_COOLDOWN_MS) {
+      console.log('[Chat] Reaction cooldown active, please wait');
+      return; // Ignore spam clicks
+    }
+
+    // Update cooldown timestamp
+    reactionCooldownRef.current.set(messageId, now);
+
+    try {
+      await toggleMessageReaction(messageId, currentUser.id);
+      // Reactions will update via realtime subscription
+    } catch (error) {
+      console.error('[Chat] Failed to toggle reaction:', error);
+    }
+  }, [currentUser.id]);
+
   return (
     <>
       <div className="flex flex-col h-full relative">
@@ -183,6 +209,7 @@ export function GlobalChatMessages({ currentUser, onBanUser, isExpanded }: Globa
                       onContextMenu={handleContextMenu}
                       onDelete={deleteGlobalMessage}
                       onReport={handleReportClick}
+                      onToggleReaction={handleToggleReaction}
                       userRole={userRole}
                     />
                   </div>

@@ -134,12 +134,14 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
     - Discord buffs: Added 4 Discord-specific buff functions (_discord suffix)
     - Migration: `20251121000000_add_buff_system.sql`, `20251129000000_add_prestige_stars.sql`, `20251203000000_add_discord_buff_functions.sql`
   - **Phase 2 - Chat System**:
-    - Tables: `chat_messages`, `chat_reports` with RLS policies
-    - Functions: `cleanup_old_chat_messages()`, `handle_ban_auto_delete()` trigger
+    - Tables: `chat_messages`, `chat_reports`, `message_reactions` with RLS policies
+    - Functions: `cleanup_old_chat_messages()`, `handle_ban_auto_delete()` trigger, `toggle_message_reaction()`
     - Edge Functions: `quick-ban` (HMAC-signed ban links), `report-message` (Discord webhook integration)
     - Updated constraint: chat message length 500→200 chars
-    - Migration: `20251129160000_secure_chat_messages.sql`, `20251130000000_chat_reports.sql`, `20251130010000_auto_delete_banned_messages.sql`, `20251202175800_update_chat_length.sql`
+    - Message reactions: Heart button on all messages with real-time sync, atomic toggle operations
+    - Migration: `20251129160000_secure_chat_messages.sql`, `20251130000000_chat_reports.sql`, `20251130010000_auto_delete_banned_messages.sql`, `20251202175800_update_chat_length.sql`, `DATABASE_MIGRATION_MESSAGE_REACTIONS.sql`
   - **Hotfixes Applied**:
+    - Fixed `toggle_message_reaction()`: Qualified column names with table prefix (resolved ambiguous column reference error 42702)
     - Fixed chat RLS INSERT: Discord users can now send messages (removed auth session requirement)
     - Fixed chat RLS SELECT: Discord users can now read chat history (allow anon role)
     - Fixed chat RLS UPDATE: Admins/moderators can delete messages (inline role check)

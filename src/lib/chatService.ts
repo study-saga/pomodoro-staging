@@ -1,3 +1,10 @@
+import { supabase } from './supabase';
+import {
+  RegExpMatcher,
+  englishDataset,
+  englishRecommendedTransformers,
+} from 'obscenity';
+
 /**
  * Get Discord avatar URL for a user
  */
@@ -116,11 +123,6 @@ export function truncateMessage(text: string, maxLength: number = 50): string {
 /**
  * Validate message content
  */
-import {
-  RegExpMatcher,
-  englishDataset,
-  englishRecommendedTransformers,
-} from 'obscenity';
 
 // Initialize Obscenity Matcher
 const matcher = new RegExpMatcher({
@@ -234,4 +236,64 @@ export function hasMention(content: string, username: string): boolean {
   const escapedUsername = escapeRegExp(username);
   const mentionPattern = new RegExp(`@${escapedUsername}\\b`, 'i');
   return mentionPattern.test(content);
+}
+
+/**
+ * Toggle message reaction (heart)
+ */
+export async function toggleMessageReaction(
+  messageId: string,
+  userId: string
+): Promise<{ success: boolean; hearts: number; hearted_by: string[] }> {
+  try {
+    const { data, error } = await supabase.rpc('toggle_message_reaction', {
+      p_message_id: messageId,
+      p_user_id: userId
+    });
+
+    if (error) {
+      console.error('[Chat] Error toggling reaction:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('[Chat] Failed to toggle reaction:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get message reactions
+ */
+export async function getMessageReactions(
+  messageIds: string[]
+): Promise<Record<string, { hearts: number; hearted_by: string[] }>> {
+  if (messageIds.length === 0) return {};
+
+  try {
+    const { data, error } = await supabase
+      .from('message_reactions')
+      .select('message_id, hearts, hearted_by')
+      .in('message_id', messageIds);
+
+    if (error) {
+      console.error('[Chat] Error fetching reactions:', error);
+      return {};
+    }
+
+    // Convert to record format
+    const reactions: Record<string, { hearts: number; hearted_by: string[] }> = {};
+    data?.forEach((reaction) => {
+      reactions[reaction.message_id] = {
+        hearts: reaction.hearts,
+        hearted_by: reaction.hearted_by || []
+      };
+    });
+
+    return reactions;
+  } catch (error) {
+    console.error('[Chat] Failed to fetch reactions:', error);
+    return {};
+  }
 }
