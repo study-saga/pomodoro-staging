@@ -71,42 +71,6 @@ export const ChatMessage = memo(({
                         <span className="text-[10px] text-gray-500">
                             {formatMessageTime(message.timestamp)}
                         </span>
-
-                        {/* Heart Button with count - inline after timestamp */}
-                        {!isDeleted && onToggleReaction && (
-                            <div className={`flex items-center gap-0.5 ${isHearted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onToggleReaction(message.id);
-                                    }}
-                                    className="p-0.5 transition-all duration-200 hover:scale-110"
-                                    title={isHearted ? 'Remove heart' : 'Add heart'}
-                                >
-                                    <svg
-                                        viewBox="0 0 16 16"
-                                        className={`transition-all duration-200 ${
-                                            isHearted
-                                                ? 'fill-red-500'
-                                                : 'fill-gray-500 hover:fill-gray-400'
-                                        }`}
-                                        height={12}
-                                        width={12}
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <path
-                                            d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314"
-                                            fillRule="evenodd"
-                                        />
-                                    </svg>
-                                </button>
-                                {reactions.hearts > 0 && (
-                                    <span className={`text-[10px] font-medium ${isHearted ? 'text-red-400' : 'text-gray-400'}`}>
-                                        {reactions.hearts}
-                                    </span>
-                                )}
-                            </div>
-                        )}
                     </div>
                 )}
 
@@ -123,9 +87,9 @@ export const ChatMessage = memo(({
                 )}
             </div>
 
-            {/* Actions Button (Delete/Report) */}
+            {/* Actions Button (Delete/Report/Heart) */}
             {!isDeleted && (
-                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className={`flex items-center gap-1.5 flex-shrink-0 ${isHearted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
                     {/* Context Menu Button (For everyone on other users) */}
                     {!isMe && (
                         <button
@@ -160,6 +124,42 @@ export const ChatMessage = memo(({
                         >
                             <Trash2 size={14} />
                         </button>
+                    )}
+
+                    {/* Heart Button with count - after other actions */}
+                    {onToggleReaction && (
+                        <div className="flex items-center gap-0.5">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleReaction(message.id);
+                                }}
+                                className="p-1 transition-all duration-200 hover:scale-110"
+                                title={isHearted ? 'Remove heart' : 'Add heart'}
+                            >
+                                <svg
+                                    viewBox="0 0 16 16"
+                                    className={`transition-all duration-200 ${
+                                        isHearted
+                                            ? 'fill-red-500'
+                                            : 'fill-gray-500 hover:fill-gray-400'
+                                    }`}
+                                    height={14}
+                                    width={14}
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314"
+                                        fillRule="evenodd"
+                                    />
+                                </svg>
+                            </button>
+                            {reactions.hearts > 0 && (
+                                <span className={`text-xs font-medium ${isHearted ? 'text-red-400' : 'text-gray-400'}`}>
+                                    {reactions.hearts}
+                                </span>
+                            )}
+                        </div>
                     )}
                 </div>
             )}

@@ -126,7 +126,14 @@ See **[Development & Deployment](docs/DEVELOPMENT.md)** for detailed setup instr
 **Last Updated**: 2025-12-02
 **Version**: 2.4.0 (Production DB Merge - Buff System & Chat)
 
-**Major Changes in 2.4.0** (2025-12-02):
+**Major Changes in 2.4.0** (2025-12-11):
+- **Xero {NPC} Chat Bot**: Automated motivational chat bot
+  - Edge Function posts random messages every 45min (55 templates: motivational, supportive, greetings, fun facts)
+  - Bot user created with `discord_id = 'bot-xero-npc'`, appears as regular user
+  - Service role bypass for RLS, controlled via `system_settings.xero_bot_config`
+  - Migration: `20251211000000_create_xero_npc_bot.sql`
+  - Edge Function: `supabase/functions/xero-bot-post/index.ts`
+  - Custom announcements: `xero-bot-announce` function - admin posts via SQL query immediately
 - **Production Database Migration**: Merged dev schema with production (btjhclvebbtjxmdnprwz)
   - **Phase 1 - Core Schema (CRITICAL)**:
     - Buff system: Added `active_buffs` JSONB column + 8 functions (get, set, remove, clear) + GIN index
