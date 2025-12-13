@@ -17,6 +17,7 @@ import { SnowOverlay } from './components/effects/SnowOverlay';
 import SnowToggle from './components/effects/SnowToggle';
 import { useSettingsSync } from './hooks/useSettingsSync';
 import { useBuffActivation } from './hooks/useBuffActivation';
+import { useSystemNotifications } from './hooks/useSystemNotifications';
 import { useSettingsStore } from './store/useSettingsStore';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
@@ -39,6 +40,9 @@ function AppContent() {
 
   // Auto-activate event buffs (slingshot for elves, etc.)
   useBuffActivation();
+
+  // Subscribe to admin-triggered system notifications
+  useSystemNotifications();
 
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [showDailyGift, setShowDailyGift] = useState(false);
